@@ -58,7 +58,6 @@ def ensure_language_models():
 
                 classla.download(
                     lang,
-                    package="standard",
                     dir=str(MODEL_DIR),
                 )
 
