@@ -284,3 +284,39 @@ class LanguagePackDB:
     def get_lines(self, line_ids: list[str]):
         rows = self._fetch_json_payloads("lines", "line_id", line_ids)
         return [rows[line_id] for line_id in line_ids if line_id in rows]
+
+    def find_line_ids_by_token_forms(self, forms: list[str], limit: int = 1200):
+        normalized_forms = [form.strip() for form in forms if isinstance(form, str) and form.strip()]
+
+        if not normalized_forms:
+            return []
+
+        conditions = []
+        params: list[str | int] = []
+
+        for form in normalized_forms:
+            lower_form = form.lower()
+            capitalized_form = lower_form[:1].upper() + lower_form[1:]
+
+            for variant in {lower_form, capitalized_form}:
+                conditions.append("payload LIKE ?")
+                params.append(f'%\"surface\": \"{variant}\"%')
+                conditions.append("payload LIKE ?")
+                params.append(f'%\"lemma\": \"{variant}\"%')
+
+        params.append(limit)
+
+        try:
+            rows = self._get_conn().execute(
+                (
+                    "SELECT line_id "
+                    "FROM lines "
+                    f"WHERE {' OR '.join(conditions)} "
+                    "LIMIT ?"
+                ),
+                params,
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+
+        return [row["line_id"] for row in rows]
