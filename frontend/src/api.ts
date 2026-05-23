@@ -59,7 +59,7 @@ function resolveLocalApi(centralApi: string) {
     return trimTrailingSlash(
       import.meta.env.VITE_ELECTRON_LOCAL_API
         ?? import.meta.env.VITE_LOCAL_API
-        ?? "http://localhost:8000/api",
+        ?? "http://localhost:8010/api",
     );
   }
 

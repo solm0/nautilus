@@ -9,6 +9,7 @@ let mainWindow;
 let backendProcess;
 const DEEP_LINK_PROTOCOL = "nautilus";
 const pendingDeepLinks = [];
+const DEV_BACKEND_PORT = 8010;
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -219,7 +220,7 @@ function killPort(port) {
 // ─── FastAPI 서버 실행 ───────────────────────────────────────
 async function startBackend() {
 
-  await killPort(8000);
+  await killPort(DEV_BACKEND_PORT);
 
   // 개발: 시스템 python / 배포: 번들된 실행파일
   const isPackaged = app.isPackaged;
@@ -235,15 +236,16 @@ async function startBackend() {
     );
     backendCwd = path.join(process.resourcesPath, "backend");
   } else {
-    // ↓ 시스템 uvicorn 대신 venv 안의 uvicorn 직접 지정
+    // venv 안의 python으로 uvicorn 모듈을 직접 실행한다.
+    // `venv/bin/uvicorn`은 경로 변경 후 shebang이 깨질 수 있다.
     backendExecutable = path.join(
-      __dirname, "..", "backend", "venv", "bin", "uvicorn"
+      __dirname, "..", "backend", "venv", "bin", "python"
     );
   }
 
   const args = isPackaged
     ? []
-    : ["main:app", "--reload", "--port", "8000", "--host", "0.0.0.0"];
+    : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "0.0.0.0"];
 
   backendProcess = spawn(backendExecutable, args, {
     cwd: backendCwd,
@@ -301,7 +303,7 @@ function createWindow() {
   // 개발: Vite dev server / 배포: FastAPI가 서빙하는 dist
   const startUrl = isDev
     ? "http://localhost:5173"
-    : "http://localhost:8000";
+    : `http://localhost:${DEV_BACKEND_PORT}`;
 
   mainWindow.loadURL(startUrl);
 
@@ -362,7 +364,7 @@ app.whenReady().then(async () => {
   await startBackend();
 
   try {
-    await waitForBackend("http://localhost:8000/docs");
+    await waitForBackend(`http://localhost:${DEV_BACKEND_PORT}/docs`);
   } catch (e) {
     dialog.showErrorBox(
       "Backend 오류",
