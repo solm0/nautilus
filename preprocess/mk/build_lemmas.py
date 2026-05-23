@@ -1,0 +1,423 @@
+import json
+import math
+import re
+import sys
+import unicodedata
+
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import classla
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from sqlite_pack_writer import (
+    DB_FILENAME,
+    connect_db,
+    replace_lemma_tables,
+    write_manifest,
+)
+
+# =====================
+# CONFIG
+# =====================
+
+LANG = "mk"
+VERSION = "1.0.0"
+
+BASE_DIR = Path(__file__).resolve().parent
+
+RELEASE_DIR = (
+    BASE_DIR / "../../releases/mk/mk-v1.0.0"
+)
+
+INPUT_FILE = (
+    BASE_DIR / "mkd_wikipedia_2021_300K-sentences.txt"
+)
+
+OUTPUT_DB = RELEASE_DIR / DB_FILENAME
+
+MAX_LINES = None
+
+GENERAL_MIN_FREQ = 3
+PROPN_MIN_FREQ = 20
+
+TOP_K = 5
+MAX_LINE_IDS = 200
+
+BATCH_SIZE = 64
+WINDOW_SIZE = 2
+
+# =====================
+# FILTERS
+# =====================
+
+STOP_POS = {
+    "PUNCT",
+    "SYM",
+    "SPACE",
+    "DET",
+    "CCONJ",
+    "SCONJ",
+    "PART",
+    "PRON",
+    "ADP",
+    "AUX",
+}
+
+STOP_LEMMAS = {
+    "биде",
+    "може",
+    "треба",
+    "има",
+}
+
+VALID_RE = re.compile(
+    r"^[а-шѓќжчџшљњјѕ-]+$"
+)
+
+# =====================
+# NORMALIZE
+# =====================
+
+def normalize(text: str) -> str:
+
+    text = unicodedata.normalize(
+        "NFC",
+        text,
+    )
+
+    text = text.lower().strip()
+
+    return text
+
+def valid_lemma(lemma: str) -> bool:
+
+    return bool(
+        VALID_RE.fullmatch(lemma)
+    )
+
+# =====================
+# NLP
+# =====================
+
+# 최초 1회만:
+#
+# import classla
+# classla.download("mk")
+
+nlp = classla.Pipeline(
+    lang="mk",
+    processors="tokenize,pos,lemma",
+    use_gpu=False,
+)
+
+# =====================
+# LOAD INPUT
+# =====================
+
+lines_raw = []
+
+with open(INPUT_FILE, "r", encoding="utf-8") as f:
+
+    for line in f:
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        if "\t" in line:
+            line = line.split("\t", 1)[1]
+
+        lines_raw.append(line)
+
+        if (
+            MAX_LINES
+            and len(lines_raw) >= MAX_LINES
+        ):
+            break
+
+print("loaded:", len(lines_raw))
+
+# =====================
+# STORAGE
+# =====================
+
+lines_out = []
+
+lemma_freq = Counter()
+
+lemma_lines = defaultdict(set)
+
+contexts = defaultdict(Counter)
+
+line_id = 0
+
+# =====================
+# PARSE
+# =====================
+
+for batch_start in range(
+    0,
+    len(lines_raw),
+    BATCH_SIZE,
+):
+
+    batch = lines_raw[
+        batch_start:
+        batch_start + BATCH_SIZE
+    ]
+
+    text = "\n\n".join(batch)
+
+    doc = nlp(text)
+
+    for sent in doc.sentences:
+
+        tokens = []
+
+        valid_sequence = []
+
+        for word in sent.words:
+
+            surface = word.text
+
+            lemma = normalize(
+                word.lemma or ""
+            )
+
+            pos = word.upos or ""
+
+            valid = True
+
+            if (
+                not lemma
+                or pos in STOP_POS
+                or lemma in STOP_LEMMAS
+                or not valid_lemma(lemma)
+            ):
+                valid = False
+
+            if valid:
+
+                key = f"{lemma}_{pos}"
+
+                lemma_freq[key] += 1
+
+                lemma_lines[key].add(
+                    line_id
+                )
+
+                valid_sequence.append(
+                    key
+                )
+
+            tokens.append({
+                "surface": surface,
+                "lemma": (
+                    lemma
+                    if valid
+                    else None
+                ),
+                "pos": pos,
+            })
+
+        # =====================
+        # WINDOW GRAPH
+        # =====================
+
+        for i, a in enumerate(
+            valid_sequence
+        ):
+
+            start = max(
+                0,
+                i - WINDOW_SIZE,
+            )
+
+            end = min(
+                len(valid_sequence),
+                i + WINDOW_SIZE + 1,
+            )
+
+            for j in range(start, end):
+
+                if i == j:
+                    continue
+
+                b = valid_sequence[j]
+
+                if a == b:
+                    continue
+
+                contexts[a][b] += 1
+
+        lines_out.append({
+            "line_id": line_id,
+            "tokens": tokens,
+        })
+
+        line_id += 1
+
+    print(
+        "processed:",
+        min(
+            batch_start + BATCH_SIZE,
+            len(lines_raw),
+        )
+    )
+
+print("lines:", len(lines_out))
+
+# =====================
+# FILTER VALID LEMMAS
+# =====================
+
+valid_lemmas = set()
+
+for lemma, freq in lemma_freq.items():
+
+    pos = lemma.rsplit("_", 1)[1]
+
+    if pos == "PROPN":
+
+        if freq >= PROPN_MIN_FREQ:
+            valid_lemmas.add(lemma)
+
+    elif freq >= GENERAL_MIN_FREQ:
+
+        valid_lemmas.add(lemma)
+
+print(
+    "valid lemmas:",
+    len(valid_lemmas),
+)
+
+# =====================
+# BUILD GRAPH
+# =====================
+
+graph = {}
+
+for lemma in valid_lemmas:
+
+    freq_a = lemma_freq[lemma]
+
+    candidates = []
+
+    for other, cofreq in (
+        contexts[lemma].items()
+    ):
+
+        if other not in valid_lemmas:
+            continue
+
+        freq_b = lemma_freq[other]
+
+        score = (
+            cofreq
+            / math.sqrt(freq_a * freq_b)
+        )
+
+        score *= (
+            1 / math.log1p(freq_b)
+        )
+
+        candidates.append(
+            (other, score)
+        )
+
+    candidates.sort(
+        key=lambda x: x[1],
+        reverse=True,
+    )
+
+    graph[lemma] = [
+        word
+        for word, _
+        in candidates[:TOP_K]
+    ]
+
+# =====================
+# STATS
+# =====================
+
+stats = {}
+
+for lemma in valid_lemmas:
+
+    stats[lemma] = {
+        "freq": lemma_freq[lemma],
+        "lines": list(
+            lemma_lines[lemma]
+        )[:MAX_LINE_IDS],
+    }
+
+# =====================
+# SQLITE
+# =====================
+
+lines_rows = [
+    (
+        line["line_id"],
+        json.dumps(
+            line,
+            ensure_ascii=False,
+        ),
+    )
+    for line in lines_out
+]
+
+stats_rows = [
+    (
+        lemma,
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+        ),
+    )
+    for lemma, payload
+    in stats.items()
+]
+
+graph_rows = [
+    (
+        lemma,
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+        ),
+    )
+    for lemma, payload
+    in graph.items()
+]
+
+conn = connect_db(OUTPUT_DB)
+
+try:
+
+    replace_lemma_tables(
+        conn,
+        lines_rows,
+        stats_rows,
+        graph_rows,
+    )
+
+finally:
+    conn.close()
+
+write_manifest(
+    RELEASE_DIR,
+    LANG,
+    VERSION,
+)
+
+print("DONE")
+
+print(
+    f"Saved {OUTPUT_DB.name}"
+)

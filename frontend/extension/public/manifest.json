@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Nautilus",
+  "version": "0.0.1",
+  "description": "Analyze page text in place with Nautilus.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "https://nautilus.solmi.wiki/*"
+  ],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

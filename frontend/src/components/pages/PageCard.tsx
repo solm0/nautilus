@@ -1,0 +1,463 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Check,
+  Ellipsis,
+  FilePlus2,
+  Folder,
+  FolderOpen,
+  Fullscreen,
+  Pencil,
+  Pin,
+  Trash2,
+  Type,
+} from "lucide-react";
+
+import type { Notebook, Page } from "./PageLayout";
+import { MiniPopup } from "../util/MiniPopup";
+import { IconButtonEvent } from "../util/Button";
+import { CENTRAL_API, authHeaders } from "../../api";
+
+const LONG_PRESS_MS = 420;
+const MOVE_CANCEL_DISTANCE = 10;
+
+type PageCardItem =
+  | { type: "page"; page: Page }
+  | { type: "notebook"; notebook: Notebook };
+
+function ActionButton({
+  icon,
+  label,
+  onClick,
+  danger = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      data-no-drag="true"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
+        danger
+          ? "text-red-600 hover:bg-red-50"
+          : "text-neutral-700 hover:bg-neutral-100"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+export default function PageCard({
+  item,
+  level,
+  currentPageId,
+  expanded = false,
+  reload,
+  isMobileLike,
+  isPinned = false,
+  dragging = false,
+  dragActive = false,
+  isDragTarget = false,
+  dropFlashed = false,
+  onToggleNotebook,
+  onTogglePinned,
+  onMove,
+  onDelete,
+  onPagePointerDown,
+  onOpenPage,
+  consumeSuppressedClick,
+  registerNotebookTarget,
+  openPopupId,
+  setOpenPopupId,
+}: {
+  item: PageCardItem;
+  level: number;
+  currentPageId: number | null;
+  expanded?: boolean;
+  reload: () => Promise<void>;
+  isMobileLike: boolean;
+  isPinned?: boolean;
+  dragging?: boolean;
+  dragActive?: boolean;
+  isDragTarget?: boolean;
+  dropFlashed?: boolean;
+  onToggleNotebook?: () => void;
+  onTogglePinned?: () => void;
+  onMove?: () => void;
+  onDelete: () => void;
+  onPagePointerDown?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onOpenPage?: () => void;
+  consumeSuppressedClick?: () => boolean;
+  registerNotebookTarget?: (element: HTMLDivElement | null) => void;
+  openPopupId: string | null;
+  setOpenPopupId: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
+  const navigate = useNavigate();
+
+  const [hovered, setHovered] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressPointerIdRef = useRef<number | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressNotebookClickRef = useRef(false);
+  const [value, setValue] = useState(
+    item.type === "page" ? item.page.name : item.notebook.name
+  );
+  const page = item.type === "page" ? item.page : null;
+  const notebook = item.type === "notebook" ? item.notebook : null;
+  const menuPopupId = `${item.type}-menu-${item.type === "page" ? item.page.id : item.notebook.id}`;
+  const createPopupId = notebook ? `notebook-create-${notebook.id}` : null;
+  const menuOpen = openPopupId === menuPopupId;
+  const createPageOpen = createPopupId ? openPopupId === createPopupId : false;
+
+  const isActivePage = page?.id === currentPageId;
+
+  const leftPadding = 4 + level * 24;
+
+  const trailingVisible =
+    editing || (!isMobileLike && (hovered || menuOpen || createPageOpen));
+  const showCreateButton = Boolean(notebook) && !editing && !isMobileLike;
+  const showMenuButton = !editing && !isMobileLike;
+
+  const fileOptions = useMemo(
+    () => (
+      <>
+        {!isMobileLike && notebook ? (
+          <Link
+            to="/new?mode=ocr"
+            state={{ notebookId: notebook.id }}
+            data-no-drag="true"
+            className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
+          >
+            <Fullscreen size={15} />
+            Upload an image
+          </Link>
+        ) : null}
+        {notebook ? (
+          <Link
+            to="/new?mode=paste"
+            state={{ notebookId: notebook.id }}
+            data-no-drag="true"
+            className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
+          >
+            <Type size={15} />
+            Paste text
+          </Link>
+        ) : null}
+      </>
+    ),
+    [isMobileLike, notebook]
+  );
+
+  const handleRename = async () => {
+    const nextName = value.trim();
+    if (!nextName) return;
+
+    const headers = authHeaders();
+    if (!headers) throw new Error("unauthorized");
+
+    const endpoint =
+      item.type === "page"
+        ? `/pages/${item.page.id}`
+        : `/notebooks/${item.notebook.id}`;
+
+    await fetch(CENTRAL_API + endpoint, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ name: nextName }),
+    });
+
+    setEditing(false);
+    setOpenPopupId(null);
+    await reload();
+  };
+
+  const removeNotebookLongPressListeners = () => {
+    window.removeEventListener("pointermove", handleNotebookLongPressMove);
+    window.removeEventListener("pointerup", handleNotebookLongPressEnd);
+    window.removeEventListener("pointercancel", handleNotebookLongPressEnd);
+  };
+
+  const clearNotebookLongPress = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+    }
+    longPressTimerRef.current = null;
+    longPressPointerIdRef.current = null;
+    longPressStartRef.current = null;
+  };
+
+  useEffect(
+    () => () => {
+      clearNotebookLongPress();
+      removeNotebookLongPressListeners();
+    },
+    []
+  );
+
+  const handleNotebookLongPressMove = (event: PointerEvent) => {
+    if (
+      longPressPointerIdRef.current !== event.pointerId ||
+      !longPressStartRef.current
+    ) {
+      return;
+    }
+
+    const dx = Math.abs(event.clientX - longPressStartRef.current.x);
+    const dy = Math.abs(event.clientY - longPressStartRef.current.y);
+
+    if (dx > MOVE_CANCEL_DISTANCE || dy > MOVE_CANCEL_DISTANCE) {
+      clearNotebookLongPress();
+      removeNotebookLongPressListeners();
+    }
+  };
+
+  const handleNotebookLongPressEnd = (event: PointerEvent) => {
+    if (longPressPointerIdRef.current !== event.pointerId) return;
+
+    clearNotebookLongPress();
+    removeNotebookLongPressListeners();
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (page && onPagePointerDown) {
+      onPagePointerDown(event);
+      return;
+    }
+
+    if (!notebook || !isMobileLike || editing || event.button !== 0) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest("[data-no-drag='true']")) return;
+
+    longPressPointerIdRef.current = event.pointerId;
+    longPressStartRef.current = { x: event.clientX, y: event.clientY };
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressNotebookClickRef.current = true;
+      setOpenPopupId(menuPopupId);
+      clearNotebookLongPress();
+      removeNotebookLongPressListeners();
+    }, LONG_PRESS_MS);
+
+    window.addEventListener("pointermove", handleNotebookLongPressMove);
+    window.addEventListener("pointerup", handleNotebookLongPressEnd);
+    window.addEventListener("pointercancel", handleNotebookLongPressEnd);
+  };
+
+  const handleClick = () => {
+    if (item.type === "page") {
+      if (consumeSuppressedClick?.()) {
+        return;
+      }
+
+      navigate(`/page/${item.page.id}`);
+      onOpenPage?.();
+      return;
+    }
+
+    if (suppressNotebookClickRef.current) {
+      suppressNotebookClickRef.current = false;
+      return;
+    }
+
+    onToggleNotebook?.();
+  };
+
+  const menuContent = (
+    <>
+      {isMobileLike && notebook ? (
+        <ActionButton
+          icon={<FilePlus2 size={13} />}
+          label="Create page"
+          onClick={() => {
+            navigate("/new?mode=paste", { state: { notebookId: notebook.id } });
+            setOpenPopupId(null);
+          }}
+        />
+      ) : null}
+
+      <ActionButton
+        icon={<Pencil size={13} />}
+        label="Rename"
+        onClick={() => {
+          setEditing(true);
+          setOpenPopupId(null);
+        }}
+      />
+
+      {page && onMove ? (
+        <ActionButton
+          icon={<Folder size={13} />}
+          label="Move"
+          onClick={() => {
+            onMove();
+            setOpenPopupId(null);
+          }}
+        />
+      ) : null}
+
+      {page && onTogglePinned ? (
+        <ActionButton
+          icon={<Pin size={13} fill={isPinned ? "currentColor" : "transparent"} />}
+          label={isPinned ? "Unpin" : "Pin"}
+          onClick={() => {
+            onTogglePinned();
+            setOpenPopupId(null);
+          }}
+        />
+      ) : null}
+
+      <ActionButton
+        icon={<Trash2 size={13} />}
+        label="Delete"
+        danger
+        onClick={() => {
+          onDelete();
+          setOpenPopupId(null);
+        }}
+      />
+    </>
+  );
+
+  return (
+    <div
+      ref={registerNotebookTarget}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false);
+      }}
+      onPointerDown={handlePointerDown}
+      onClick={handleClick}
+      className={`group relative min-h-10 md:min-h-8 flex items-center cursor-pointer rounded-md transition-all active:bg-neutral-400/10 ${
+        dragging
+          ? "bg-neutral-200/90"
+          : isDragTarget
+            ? "bg-neutral-200/80 ring-1 ring-neutral-300"
+            : dropFlashed
+              ? "bg-neutral-200/70"
+              : isActivePage
+                ? "bg-neutral-400/20"
+                : hovered && !dragActive
+                  ? "bg-neutral-400/10"
+                  : "bg-transparent"
+      }`}
+      style={{
+        paddingLeft: leftPadding,
+      }}
+    >
+      <div className="flex w-full min-h-8 items-center gap-2 pr-2">
+        {notebook &&
+          <div className="flex shrink-0 items-center gap-1 text-neutral-500">
+            {expanded ? (
+              <FolderOpen size={16} className="opacity-65" />
+            ) : (
+              <Folder size={16} className="opacity-65" />
+            )}
+          </div>
+        }
+
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <input
+              data-no-drag="true"
+              className="w-full rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1 text-sm focus:outline-none"
+              value={value}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void handleRename();
+                }
+                if (event.key === "Escape") {
+                  setEditing(false);
+                  setValue(item.type === "page" ? item.page.name : item.notebook.name);
+                }
+              }}
+              autoFocus
+            />
+          ) : (
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate text-sm text-neutral-800 select-none">
+                {item.type === "page" ? item.page.name : item.notebook.name}
+              </p>
+              {page ? (
+                <span className="shrink-0 text-[11px] text-neutral-400 select-none">
+                  {page.language}
+                </span>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        <div className={`relative flex shrink-0 items-center gap-1 transition-opacity ml-auto ${trailingVisible ? "opacity-100" : "opacity-0"}`}>
+          {editing ? (
+            <IconButtonEvent
+              icon={<Check size={13} />}
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleRename();
+              }}
+              title="Save"
+            />
+          ) : null}
+
+          {showCreateButton ? (
+            <div className="relative">
+              <IconButtonEvent
+                icon={<FilePlus2 size={14} />}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpenPopupId((current) =>
+                    current === createPopupId ? null : createPopupId
+                  );
+                }}
+                title="Create Page"
+              />
+              <MiniPopup
+                open={createPageOpen}
+                onClose={() => setOpenPopupId(null)}
+              >
+                {fileOptions}
+              </MiniPopup>
+            </div>
+          ) : null}
+
+          {showMenuButton ? (
+            <div className="relative">
+              <IconButtonEvent
+                icon={<Ellipsis size={14} />}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpenPopupId((current) =>
+                    current === menuPopupId ? null : menuPopupId
+                  );
+                }}
+                title="More"
+              />
+              <MiniPopup open={menuOpen} onClose={() => setOpenPopupId(null)}>
+                {menuContent}
+              </MiniPopup>
+            </div>
+          ) : null}
+        </div>
+
+        {isMobileLike && !editing ? (
+          <div className="absolute right-2 shrink-0">
+            <MiniPopup open={menuOpen} onClose={() => setOpenPopupId(null)}>
+              {menuContent}
+            </MiniPopup>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}

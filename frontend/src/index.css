@@ -1,0 +1,187 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: 'Source';
+  src: url('/SourceSerif4-VariableFont.woff2') format('woff2');
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/pretendard-variable.woff2') format('woff2');
+  font-style: normal;
+}
+
+
+
+:root {
+  --accent: #aa3bff;
+  --app-page-bg: #f7f6f4;
+  --app-surface-bg: #fbfaf8;
+  --app-border: #e2dfdb;
+  --app-border-strong: #d2cdc7;
+  --app-text: #46423e;
+  --app-text-strong: #24211e;
+  --app-neutral-50: #f7f6f4;
+  --app-neutral-100: #f1efec;
+  --app-neutral-200: #e2dfdb;
+  --app-neutral-300: #d2cdc7;
+  --app-neutral-400: #a59f98;
+  --app-neutral-500: #7c766f;
+  --app-neutral-600: #605b56;
+  --app-neutral-700: #46423e;
+  --app-neutral-800: #312d29;
+  --app-neutral-900: #24211e;
+  --app-neutral-950: #191715;
+  --app-neutral-transparent: #fbfaf8bb;
+  font: 16px/145% 'Pretendard';
+  color-scheme: light;
+  color: var(--app-text);
+
+  font-synthesis: none;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+.dark {
+  --accent: #b985ff;
+  --app-page-bg: #161514;
+  --app-surface-bg: #282523;
+  --app-border: #2d2a28;
+  --app-border-strong: #3d3935;
+  --app-text: #d0cbc5;
+  --app-text-strong: #f1ede8;
+  --app-neutral-50: #161514;
+  --app-neutral-100: #1d1b1a;
+  --app-neutral-200: #23211f;
+  --app-neutral-300: #35312e;
+  --app-neutral-400: #7d7770;
+  --app-neutral-500: #a39c95;
+  --app-neutral-600: #d0cbc5;
+  --app-neutral-700: #e0dbd5;
+  --app-neutral-800: #efebe5;
+  --app-neutral-900: #f6f2ed;
+  --app-neutral-950: #fcf9f5;
+  --app-neutral-transparent: #282523cc;
+  color-scheme: dark;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* background-color: var(--app-page-bg); */
+}
+
+body {
+  margin: 0;
+
+  color: var(--app-text);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+p {
+  margin: 0;
+}
+
+h2 {
+  font-size: var(--text-2xl);
+  line-height: var(--tw-leading, var(--text-2xl--line-height));
+  z-index: 50
+}
+
+h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold)
+}
+
+@theme inline {
+  --font-source: "Source", serif;
+  --font-pretendard: "Pretendard", sans-serif;
+  --color-neutral-transparent: var(--app-neutral-transparent);
+  --color-neutral-50: var(--app-neutral-50);
+  --color-neutral-100: var(--app-neutral-100);
+  --color-neutral-200: var(--app-neutral-200);
+  --color-neutral-300: var(--app-neutral-300);
+  --color-neutral-400: var(--app-neutral-400);
+  --color-neutral-500: var(--app-neutral-500);
+  --color-neutral-600: var(--app-neutral-600);
+  --color-neutral-700: var(--app-neutral-700);
+  --color-neutral-800: var(--app-neutral-800);
+  --color-neutral-900: var(--app-neutral-900);
+  --color-neutral-950: var(--app-neutral-950);
+
+  --color-nt-blue: #2e3aff;
+  --color-nt-blue-rgb: 46 58 255;
+  --color-nt-navy: #1a1459;
+  --color-nt-teal: #45bbbc;
+  --color-nt-coral: #f29966;
+  --color-nt-mint: #c9eebb;
+  --color-nt-pearl: #f2f4f0;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html.dark {
+  background-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.titlebar {
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding-left: 80px; /* mac 신호등 공간 */
+  padding-right: 12px;
+
+  -webkit-app-region: drag;
+
+  user-select: none;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+@keyframes waveform {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-waveform {
+  animation: waveform 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
