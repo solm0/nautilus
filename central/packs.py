@@ -54,4 +54,15 @@ PACKS = [
         ],
         "ocr_supported": False
     },
+    {
+        "lang": "sq",
+        "version": "1.0.0",
+        "filename": "sq-v1.0.0.zip",
+        "tag": "v1.0.0",
+        "corpus": [
+            {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+            {"Corpora used": "sqi_wikipedia_2021_300K, sqi_news_2020_1M"}
+        ],
+        "ocr_supported": False
+    },
 ]
