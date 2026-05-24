@@ -178,6 +178,7 @@ function LandingApp() {
                         blocks={demo.result.blocks}
                         lemmaInfo={demo.lemma_info}
                         panelData={panel}
+                        language={demo.language}
                         setPanelData={setPanel}
                         annotations={annotations}
                         setAnnotations={setAnnotations}

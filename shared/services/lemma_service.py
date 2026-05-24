@@ -51,8 +51,15 @@ def get_line_ids(key: str, lang: str):
 def find_match_indices(tokens, lemma, pos):
     indices = []
     for i, t in enumerate(tokens):
-        if t["lemma"] == lemma and t["pos"] == pos:
+        if t.get("lemma") == lemma and t.get("pos") == pos:
             indices.append(i)
+            continue
+
+        for morph in t.get("morphs") or []:
+            if morph.get("lemma") == lemma and morph.get("pos") == pos:
+                indices.append(i)
+                break
+
     return indices
 
 

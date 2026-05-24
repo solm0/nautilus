@@ -53,13 +53,19 @@ export default function LemmaExpansion({
           data={data.related}
           onSelect={onSelect}
           lemmaKey={data.global_key}
+          language={language}
         />
       </section>
     ) 
   } else if (idx === 1) {
     content = (
       <section className="min-h-0 h-full w-full flex items-start">
-        <LemmaKwic data={data.kwic} onSelect={onSelect} lemma={data.key} />
+        <LemmaKwic
+          data={data.kwic}
+          onSelect={onSelect}
+          lemma={data.key}
+          language={language}
+        />
       </section>
     )
   }

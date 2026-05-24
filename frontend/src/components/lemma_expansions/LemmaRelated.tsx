@@ -55,11 +55,13 @@ export default function LemmaRelated({
   data,
   onSelect,
   lemmaKey,
+  language,
   scrollOffset = 0,
 }: {
   data: string[];
   onSelect: (tokenKey: string) => void;
   lemmaKey: string;
+  language: string;
   scrollOffset?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -233,6 +235,7 @@ export default function LemmaRelated({
           <span className="bg-neutral-50 border border-neutral-200 px-3 py-1 rounded-sm">
             <TokenInLemmaExpansion
               token={{ lemma: lemmaKey.split("/")[0], pos: lemmaKey.split("/")[1], surface: formatLemma(lemmaKey.split("/")[0], lemmaKey.split("/")[1]), dep: null }}
+              language={language}
               isCenter={true}
             />
           </span>
@@ -247,6 +250,7 @@ export default function LemmaRelated({
             <span className="bg-neutral-200 px-2 py-1 rounded-sm">
               <TokenInLemmaExpansion
                 token={{ lemma: pos.word.split("_")[0], pos: pos.word.split("_")[1], surface: formatLemma(pos.word.split("_")[0], pos.word.split("_")[1]), dep: null }}
+                language={language}
                 onSelect={onSelect}
               />
             </span>

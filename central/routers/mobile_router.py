@@ -9,13 +9,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from db import get_db
-from language_config import get_nlp
 from language_config.sr import cyr_to_lat
 from models import User, UserLemma
 from routers.auth_router import get_current_user_optional
 from services.ipa_service import attach_token_ipa, describe_token_articulation
 from services import lemma_service, pattern_service
-from services.nlp_service import align_tokens
+from services.nlp_service import analyze_text
 from services.prediction_service import predict_next, search_prefix, tokenize
 
 router = APIRouter(prefix="/api/mobile", tags=["mobile"])
@@ -136,21 +135,6 @@ def analyze(req: AnalyzeRequest):
         len(req.blocks),
     )
 
-    try:
-        print("[mobile.analyze] entered", flush=True)
-        nlp = get_nlp(req.language)
-        logger.info(
-            "[mobile.analyze] pipeline ready language=%s elapsed=%.2fs",
-            req.language,
-            time.perf_counter() - started_at,
-        )
-    except Exception:
-        logger.exception(
-            "[mobile.analyze] pipeline init failed language=%s",
-            req.language,
-        )
-        raise
-
     out_blocks = []
 
     for index, block in enumerate(req.blocks):
@@ -174,14 +158,12 @@ def analyze(req: AnalyzeRequest):
                 index,
                 len(text),
             )
-            print("[mobile.analyze] pipeline ready", flush=True)
-            doc = nlp(text)
+            tokens_all = analyze_text(text, req.language)
             logger.info(
                 "[mobile.analyze] block=%s nlp_done elapsed=%.2fs",
                 index,
                 time.perf_counter() - block_started_at,
             )
-            print("[mobile.analyze] nlp(text) done", flush=True)
         except Exception:
             logger.exception(
                 "[mobile.analyze] block=%s nlp failed chars=%s",
@@ -189,10 +171,6 @@ def analyze(req: AnalyzeRequest):
                 len(text),
             )
             raise
-
-        tokens_all = []
-        for sent in doc.sentences:
-            tokens_all.extend(align_tokens(sent))
 
         out_blocks.append({
             "text": block.text,

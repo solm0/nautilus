@@ -1,9 +1,17 @@
+export type MorphToken = {
+  surface: string;
+  lemma: string | null;
+  pos: string | null;
+  dep?: string | null;
+};
+
 export type Token = {
   surface: string;
   lemma: string | null;
   pos: string | null;
   dep: string | null;
   ipa?: string | null;
+  morphs?: MorphToken[];
 };
 
 export type PatternSearchResponse = {
@@ -76,7 +84,7 @@ export type PageSource = "user" | "chrome" | "lrclib" | string;
 export type KwicData = {
   line_id: number;
   match_indices: number[];
-  tokens: { lemma: string; pos: string; surface: string; dep: string }[];
+  tokens: Token[];
 };
 
 export type LemmaData = {

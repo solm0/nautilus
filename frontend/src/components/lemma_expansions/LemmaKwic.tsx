@@ -76,6 +76,7 @@ function highlightIntersect(
 interface KwicRowProps {
   d: KwicData;
   lemma: string;
+  language: string;
   onSelect: (tokenKey: string) => void;
   hovered: { pos: string | null; dep: string | null, x: number, y: number };
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; dep: string | null, x: number, y: number }>>
@@ -89,7 +90,7 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, onSelect, hovered, setHovered },
+  { d, lemma, language, onSelect, hovered, setHovered },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -97,7 +98,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
 
   const tokens = d.tokens;
   const baseLemma = lemma.split("_")[0];
-  const targetIdx = tokens.findIndex((t) => t.lemma === baseLemma);
+  const targetIdx = d.match_indices[0] ?? tokens.findIndex((t) => t.lemma === baseLemma);
 
   const left = tokens.slice(0, targetIdx);
   const target = tokens[targetIdx];
@@ -153,12 +154,8 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
       />
       <div className="relative z-10">
         <TokenInLemmaExpansion
-          token={{
-            lemma: t.lemma,
-            pos: t.pos,
-            surface: t.surface,
-            dep: t.dep,
-          }}
+          token={t}
+          language={language}
           onSelect={onSelect}
         />
       </div>
@@ -204,10 +201,12 @@ export default function LemmaKwic({
   data,
   onSelect,
   lemma,
+  language,
 }: {
   data: KwicData[];
   onSelect: (tokenKey: string) => void;
   lemma: string;
+  language: string;
 }) {
   const [hovered, setHovered] = useState<{
     pos: string | null;
@@ -246,6 +245,7 @@ export default function LemmaKwic({
             }}
             d={d}
             lemma={lemma}
+            language={language}
             onSelect={onSelect}
             hovered={hovered}
             setHovered={setHovered}

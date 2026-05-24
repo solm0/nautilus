@@ -25,6 +25,7 @@ import { isCapacitorApp } from "../../platform";
 import { isTrackReferenceMatch } from "../../nowPlaying";
 import { useNowPlaying } from "../lyric/useNowPlaying";
 import { getActiveTimedBlockIndex } from "../lyric/spotifyLyrics";
+import { getLookupMorph } from "../tokenLookup";
 
 const lemmaInfoCache = new Map<string, Record<string, LemmaData>>();
 const lemmaAttemptedKeysCache = new Map<string, Set<string>>();
@@ -219,16 +220,17 @@ export default function PageView() {
       const block = result.blocks[blockIndex];
 
       block?.tokens?.forEach((token) => {
-        if (!token.lemma || !token.pos) return;
+        const lookup = getLookupMorph(token, language);
+        if (!lookup) return;
 
-        const key = `${token.lemma}_${token.pos}`;
+        const key = `${lookup.lemma}_${lookup.pos}`;
         if (lemmaInfo[key]) return;
         if (attemptedKeys.has(key)) return;
         if (inflightLemmaKeysRef.current.has(key)) return;
         if (pendingKeys.has(key)) return;
 
         pendingKeys.add(key);
-        pendingItems.push({ lemma: token.lemma, pos: token.pos });
+        pendingItems.push(lookup);
       });
     }
 
@@ -387,6 +389,7 @@ export default function PageView() {
               onDeleteMetadata={handleDeleteMetadata}
               pageId={Number(id)}
               panelData={panel}
+              language={language ?? ""}
               setPanelData={setPanel}
               scrollRef={(fn) => (scrollRef.current = fn)}
               setAnnotations={setAnnotations}

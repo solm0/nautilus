@@ -1,37 +1,33 @@
 import type { Token } from "../pageTypes";
-
-const stopPos = [
-    "PUNCT",
-    "SYM",
-    "SPACE",
-    "DET",
-    "CCONJ",
-    "SCONJ",
-    "PART",
-    "PRON",
-    "ADP",
-]
+import { getLookupKey } from "../tokenLookup";
 
 export function TokenInLemmaExpansion({
-  token, onSelect, isCenter = false, className = "", inheritTextColor = false
+  token,
+  onSelect,
+  language,
+  isCenter = false,
+  className = "",
+  inheritTextColor = false,
 }:{
   token: Token;
   onSelect?: (tokenKey: string) => void;
+  language: string;
   isCenter?: boolean
   className?: string;
   inheritTextColor?: boolean;
 }) {
-  const isMutedToken = !token.pos || stopPos.includes(token.pos);
+  const lookupKey = getLookupKey(token, language);
+  const isMutedToken = lookupKey == null;
 
   return (
     <span
       onClick={() => {
-        if (token.pos === "" || !onSelect || isCenter) return;
-        else onSelect(`${token.lemma}_${token.pos}`);
+        if (!lookupKey || !onSelect || isCenter) return;
+        onSelect(lookupKey);
       }}
       className={`
         transition-all
-        ${isCenter ? 'cursor-default' : token.pos == "" ? 'cursor-pointer' : 'hover:font-[480] cursor-pointer'}
+        ${isCenter ? 'cursor-default' : lookupKey ? 'hover:font-[480] cursor-pointer' : 'cursor-default'}
         ${isMutedToken ? 'text-neutral-400 pointer-events-none' : inheritTextColor ? 'text-inherit' : 'text-neutral-600'}
         ${className}
       `}

@@ -5,10 +5,9 @@ from pydantic import ConfigDict
 from pydantic import BaseModel
 from typing import List
 
-from services.nlp_service import align_tokens
+from services.nlp_service import analyze_text
 from services.ipa_service import attach_token_ipa, describe_token_articulation
 from services.prediction_service import predict_next, search_prefix, tokenize
-from language_config import get_nlp
 from language_config.sr import cyr_to_lat
 import unicodedata
 
@@ -110,8 +109,6 @@ def search(q: str, language: str, text: str | None = None, context: str | None =
 
 @router.post("/analyze")
 def analyze(req: AnalyzeRequest):
-    nlp = get_nlp(req.language)
-
     out_blocks = []
 
     for block in req.blocks:
@@ -128,15 +125,9 @@ def analyze(req: AnalyzeRequest):
         if req.language == "sr":
             text = normalize_sr(text)
 
-        doc = nlp(text)
-
-        tokens_all = []
-        for sent in doc.sentences:
-            tokens_all.extend(align_tokens(sent))
-
         out_blocks.append({
             "text": block.text,
-            "tokens": tokens_all or []
+            "tokens": analyze_text(text, req.language) or []
         })
 
     return {"blocks": out_blocks}

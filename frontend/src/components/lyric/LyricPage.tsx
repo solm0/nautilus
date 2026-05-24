@@ -17,6 +17,7 @@ import { useNowPlaying } from "./useNowPlaying";
 import { useAutoCenterActiveItem } from "./useAutoCenterActiveItem";
 import { Speaker } from "lucide-react";
 import { isCapacitorApp } from "../../platform";
+import { getLookupMorph } from "../tokenLookup";
 
 function median(values: number[]) {
   if (values.length === 0) return 0;
@@ -289,11 +290,8 @@ export default function LyricPage() {
 
       const items = analyzedBlocks
         .flatMap((block) => block.tokens ?? [])
-        .filter((token) => token.lemma && token.pos)
-        .map((token) => ({
-          lemma: token.lemma as string,
-          pos: token.pos as string,
-        }));
+        .map((token) => getLookupMorph(token, language.lang))
+        .filter((item): item is { lemma: string; pos: string } => item !== null);
 
       if (items.length > 0) {
         const uniqueItems = Array.from(

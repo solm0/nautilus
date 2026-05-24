@@ -9,6 +9,7 @@ import type { SidePanelState } from "./PageView";
 import EmojiPickerPopover from "./EmojiPickerPopover";
 import { useAutoCenterActiveItem } from "../lyric/useAutoCenterActiveItem";
 import { useSettings } from "../useSettings";
+import { canDrillDownToken, getLookupKey } from "../tokenLookup";
 
 const LONG_PRESS_MS = 600;
 const DRAG_THRESHOLD = 8;
@@ -18,6 +19,7 @@ export default function PageContent({
   lemmaInfo,
   onVisibleBlockRangeChange,
   panelData,
+  language,
   setPanelData,
   annotations,
   activeLyricBlockIndex = -1,
@@ -36,6 +38,7 @@ export default function PageContent({
   lemmaInfo: Record<string, LemmaData>;
   onVisibleBlockRangeChange?: (range: { start: number; end: number }) => void;
   panelData: SidePanelState;
+  language: string;
   setPanelData?: (p: SidePanelState | null) => void;
   annotations?: Annotation[];
   activeLyricBlockIndex?: number;
@@ -456,8 +459,9 @@ export default function PageContent({
       wrapperStyle={{ touchAction: isSelecting ? "none" : "pan-y" }}
       lemmaInfo={lemmaInfo}
       getTokenProps={({ token, index }) => {
-        const key = `${token.lemma}_${token.pos}`;
-        const info = lemmaInfo[key];
+        const key = getLookupKey(token, language);
+        const info = key ? lemmaInfo[key] : undefined;
+        const canDrillDown = canDrillDownToken(token, language);
         const isInHover =
           hoverRange != null &&
           index >= hoverRange.start &&
@@ -473,7 +477,7 @@ export default function PageContent({
           index <= panelData?.data.end_index;
         const isInPanelLemma =
           panelData?.type === 'lemma' &&
-          token.lemma === panelData?.data.key.split('_')[0];
+          key === panelData?.data.key;
         const isSelected = range && index >= range[0] && index <= range[1];
         const isStart = range && index === range[0];
         const isEnd = range && index === range[1];
@@ -496,10 +500,11 @@ export default function PageContent({
           className: `
             font-source px-1  transition-all text-[18px] md:text-[20px]
             ${
-              info
+              canDrillDown
                 ? "font-[370]"
                 : "font-[280]"
             }
+            ${canDrillDown ? "text-neutral-700" : "text-neutral-400"}
             ${info && 'hover:font-[500]'}
             ${isInHover || isInPanel || isInPanelLemma && 'font-[500] rounded-sm'}
             ${hasGapFillHighlight && 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]'}

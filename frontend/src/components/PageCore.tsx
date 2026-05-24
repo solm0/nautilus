@@ -960,109 +960,109 @@ export default function PageCore({
               previousBlockHasTokens;
 
             return (
-          <div
-            key={blockIndex}
-            data-block-index={blockIndex}
-            data-lyric-line={block.timestamp_ms != null ? "true" : "false"}
-            className={`
-              relative z-1 flex w-full max-w-[48em] flex-wrap content-start justify-between
-              after:basis-0 after:flex-auto after:content-['']
-              transition-all duration-300 origin-left
-              ${block.tokens?.length === 0 && 'h-[1.7em] shrink-0'}
-              ${visualState.blockMinHeightClass}
-              ${visualState.blockAlignClass}
-              ${visualState.blockPaddingClass}
-            `}
-            style={{
-              opacity: visualState.blockOpacity,
-            }}
-          >
-            {block.tokens?.map((token, tokenPosition) => {
-              const tokenIndex = globalIndex++;
+              <div
+                key={blockIndex}
+                data-block-index={blockIndex}
+                data-lyric-line={block.timestamp_ms != null ? "true" : "false"}
+                className={`
+                  relative z-1 flex w-full max-w-[48em] flex-wrap content-start justify-between
+                  after:basis-0 after:flex-auto after:content-['']
+                  transition-all duration-300 origin-left
+                  ${block.tokens?.length === 0 && 'h-[1.7em] shrink-0'}
+                  ${visualState.blockMinHeightClass}
+                  ${visualState.blockAlignClass}
+                  ${visualState.blockPaddingClass}
+                `}
+                style={{
+                  opacity: visualState.blockOpacity,
+                }}
+              >
+                {block.tokens?.map((token, tokenPosition) => {
+                  const tokenIndex = globalIndex++;
 
-              const tokenProps =
-                getTokenProps?.({
-                  token,
-                  index: tokenIndex,
-                }) ?? {};
+                  const tokenProps =
+                    getTokenProps?.({
+                      token,
+                      index: tokenIndex,
+                    }) ?? {};
 
-              const {
-                className,
-                style,
-                ...restTokenProps
-              } = tokenProps;
-
-              const highlightPalette =
-                getHighlightPalette(token.dep, settings);
-
-              return (
-                <span
-                  key={tokenIndex}
-                  data-idx={tokenIndex}
-                  data-token-dep={token.dep ?? ""}
-                  data-token-highlight={
-                    highlightPalette
-                      ? "true"
-                      : "false"
-                  }
-                  className={[
-                    "relative z-10 flex flex-col px-1",
-                    settings.lemma_info && pageId
-                      ? "min-h-[4em] h-auto gap-1"
-                      : isLyricPage
-                        ? "h-auto min-h-[1.6em] gap-0 justify-center"
-                      : pageId
-                        ? "min-h-[1.5em] h-auto gap-0"
-                        : "",
-                    pageId ? "transition-all" : "",
-                    visualState.tokenSizeClass,
-                    visualState.tokenPaddingClass,
+                  const {
                     className,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  style={{
-                    ...(shouldIndentFirstLine && tokenPosition === 0
-                      ? { marginInlineStart: "2em" }
-                      : {}),
-                    ...style,
-                  }}
-                  {...restTokenProps}
-                >
-                  <span className="grid">
+                    style,
+                    ...restTokenProps
+                  } = tokenProps;
+
+                  const highlightPalette =
+                    getHighlightPalette(token.dep, settings);
+
+                  return (
                     <span
-                      aria-hidden="true"
-                      className="invisible col-start-1 row-start-1 font-[500]"
+                      key={tokenIndex}
+                      data-idx={tokenIndex}
+                      data-token-dep={token.dep ?? ""}
+                      data-token-highlight={
+                        highlightPalette
+                          ? "true"
+                          : "false"
+                      }
+                      className={[
+                        "relative z-10 flex flex-col px-1",
+                        settings.lemma_info && pageId
+                          ? "min-h-[4em] h-auto gap-1"
+                          : isLyricPage
+                            ? "h-auto min-h-[1.6em] gap-0 justify-center"
+                          : pageId
+                            ? "min-h-[1.5em] h-auto gap-0"
+                            : "",
+                        pageId ? "transition-all" : "",
+                        visualState.tokenSizeClass,
+                        visualState.tokenPaddingClass,
+                        className,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      style={{
+                        ...(shouldIndentFirstLine && tokenPosition === 0
+                          ? { marginInlineStart: "2em" }
+                          : {}),
+                        ...style,
+                      }}
+                      {...restTokenProps}
                     >
-                      {token.surface}
+                      <span className="grid">
+                        <span
+                          aria-hidden="true"
+                          className="invisible col-start-1 row-start-1 font-[500]"
+                        >
+                          {token.surface}
+                        </span>
+                        <span className="col-start-1 row-start-1">
+                          {token.surface}
+                        </span>
+                      </span>
+                      <div
+                        className={`
+                          flex-col text-xs font-normal font-pretendard
+                          ${settings.lemma_info
+                            ? "flex w-max opacity-80 transition-opacity duration-700"
+                            : "max-h-0 w-0 opacity-0 transition-opacity duration-700"}
+                          ${(token.pos === "X" || token.dep === "flat") ? "opacity-0" : ""}
+                          ${!pageId ? "hidden" : ""}
+                        `}
+                      >
+                        <span>{token.lemma}</span>
+                        <span>{token.pos}</span>
+                        <span>{token.dep}</span>
+                      </div>
+                      {lemmaInfo && lemmaInfo[`${token.lemma}_${token.pos}`]?.is_favorite === true &&
+                        <div className="absolute right-0 -top-1">
+                          <Star size={11} fill="var(--color-neutral-400)" stroke="transparent" />
+                        </div>
+                      }
                     </span>
-                    <span className="col-start-1 row-start-1">
-                      {token.surface}
-                    </span>
-                  </span>
-                  <div
-                    className={`
-                      flex-col text-xs font-normal font-pretendard
-                      ${settings.lemma_info
-                        ? "flex w-max opacity-80 transition-opacity duration-700"
-                        : "max-h-0 w-0 opacity-0 transition-opacity duration-700"}
-                      ${(token.pos === "X" || token.dep === "flat") ? "opacity-0" : ""}
-                      ${!pageId ? "hidden" : ""}
-                    `}
-                  >
-                    <span>{token.lemma}</span>
-                    <span>{token.pos}</span>
-                    <span>{token.dep}</span>
-                  </div>
-                  {lemmaInfo && lemmaInfo[`${token.lemma}_${token.pos}`]?.is_favorite === true &&
-                    <div className="absolute right-0 -top-1">
-                      <Star size={11} fill="var(--color-neutral-400)" stroke="transparent" />
-                    </div>
-                  }
-                </span>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
             );
           })()
         ))}

@@ -59,4 +59,14 @@ PACKS = [
             {"Corpora used": "sqi_wikipedia_2021_300K, sqi_news_2020_1M"}
         ],
     },
+    {
+        "lang": "ko",
+        "version": "1.0.0",
+        "filename": "ko-v1.0.0.zip",
+        "tag": "v1.0.0",
+        "corpus": [
+            {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+            {"Corpora used": "kor_wikipedia_2021_300K, kor-kr_web_2020_1M"}
+        ],
+    },
 ]

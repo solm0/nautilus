@@ -7,6 +7,7 @@ import { isCapacitorApp } from "../../platform";
 import { TokenInLemmaExpansion } from "../lemma_expansions/TokenInLemmaExpansion";
 import type { SidePanelState } from "./PageView";
 import { Fingerprint, Languages } from "lucide-react";
+import { getLookupMorph } from "../tokenLookup";
 
 type PatternSketch = NonNullable<PatternSearchResponse["query"]>["sketch"];
 
@@ -158,6 +159,7 @@ function QueryTokens({
             tokenContent={
               <TokenInLemmaExpansion
                 token={token}
+                language={language}
                 onSelect={() => onSelectToken(token, language)}
                 inheritTextColor
               />
@@ -241,6 +243,7 @@ function PatternResult({
               tokenContent={
                 <TokenInLemmaExpansion
                   token={token}
+                  language={language}
                   onSelect={() => onSelectToken(token, language)}
                   inheritTextColor
                 />
@@ -352,22 +355,24 @@ export default function PatternPanel({
   const showInitialResultsSkeleton = !hasPreviousResults && loading && !error;
 
   async function handleSelectToken(token: Token, tokenLanguage: string) {
-    if (!setPanelData || !token.lemma || !token.pos) {
+    const lookup = getLookupMorph(token, tokenLanguage);
+
+    if (!setPanelData || !lookup) {
       return;
     }
 
-    const lookupKey = `${tokenLanguage}:${token.lemma}:${token.pos}`;
+    const lookupKey = `${tokenLanguage}:${lookup.lemma}:${lookup.pos}`;
     setLookupLoadingKey(lookupKey);
     setError(null);
 
     try {
-      const lemmaData = await lemmaLookupOne(
-        {
-          lemma: token.lemma,
-          pos: token.pos,
-        },
-        tokenLanguage,
-      );
+        const lemmaData = await lemmaLookupOne(
+          {
+          lemma: lookup.lemma,
+          pos: lookup.pos,
+          },
+          tokenLanguage,
+        );
 
       setPanelData({
         type: "lemma",
