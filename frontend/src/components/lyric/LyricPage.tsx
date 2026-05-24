@@ -223,7 +223,6 @@ export default function LyricPage() {
 
   const [language, setLanguage] = useState<{
     lang: string;
-    ocr_supported?: boolean;
   } | null>(null);
   const mobileApp = isCapacitorApp();
 

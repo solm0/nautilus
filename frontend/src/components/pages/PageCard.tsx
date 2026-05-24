@@ -6,7 +6,6 @@ import {
   FilePlus2,
   Folder,
   FolderOpen,
-  Fullscreen,
   Pencil,
   Pin,
   Trash2,
@@ -131,20 +130,9 @@ export default function PageCard({
   const fileOptions = useMemo(
     () => (
       <>
-        {!isMobileLike && notebook ? (
-          <Link
-            to="/new?mode=ocr"
-            state={{ notebookId: notebook.id }}
-            data-no-drag="true"
-            className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
-          >
-            <Fullscreen size={15} />
-            Upload an image
-          </Link>
-        ) : null}
         {notebook ? (
           <Link
-            to="/new?mode=paste"
+            to="/new"
             state={{ notebookId: notebook.id }}
             data-no-drag="true"
             className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"

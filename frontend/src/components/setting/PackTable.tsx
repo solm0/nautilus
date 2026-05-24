@@ -15,7 +15,6 @@ export type Pack = {
     "Data source"?: string;
     "Corpora used"?: string;
   }[];
-  ocr_supported: boolean;
 };
 
 export const LANG_MAP: Record<string, string> = {
@@ -29,6 +28,7 @@ export const LANG_MAP: Record<string, string> = {
   es: "Spanish",
   sr: "Serbian",
   mk: "Macedonian",
+  sq: "Albanian",
 };
 
 export default function PackTable() {

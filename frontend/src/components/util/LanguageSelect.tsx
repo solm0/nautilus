@@ -7,17 +7,14 @@ export type InstalledPack = {
   lang: string;
   version: string;
   installed: boolean;
-  ocr_supported: boolean;
 };
 
 export type LanguageOption = {
   lang: string;
-  ocr_supported?: boolean;
 };
 
 type NormalizedLanguageOption = {
   lang: string;
-  ocr_supported: boolean;
 };
 
 let installedLanguagesCache: NormalizedLanguageOption[] | null = null;
@@ -26,7 +23,6 @@ let installedLanguagesPromise: Promise<NormalizedLanguageOption[]> | null = null
 function normalizeOptions(options: LanguageOption[]) {
   return options.map((option) => ({
     lang: option.lang,
-    ocr_supported: Boolean(option.ocr_supported),
   }));
 }
 
@@ -42,7 +38,6 @@ async function loadInstalledLanguages() {
           .filter((pack) => pack.installed)
           .map((pack) => ({
             lang: pack.lang,
-            ocr_supported: Boolean(pack.ocr_supported),
           }));
 
         installedLanguagesCache = langs;
@@ -66,11 +61,11 @@ export default function LanguageSelect({
   allowUnselected = false,
 }: {
   language: string | null;
-  setLanguage: (l: { lang: string; ocr_supported?: boolean } | null) => void;
+  setLanguage: (l: { lang: string } | null) => void;
   handleReset?: () => void;
   setAnyLangInstalled?: (i: boolean) => void;
   background?: boolean;
-  options?: { lang: string; ocr_supported?: boolean }[];
+  options?: { lang: string }[];
   allowUnselected?: boolean;
 }) {
   const mobileApp = isCapacitorApp();
@@ -131,10 +126,7 @@ export default function LanguageSelect({
     }
   }, [allowUnselected, language, languages, setLanguage]);
 
-  function handleLanguageChange(langObj: {
-    lang: string;
-    ocr_supported?: boolean;
-  }) {
+  function handleLanguageChange(langObj: { lang: string }) {
     setLanguage(langObj);
     if (handleReset) handleReset();
   }

@@ -1,12 +1,11 @@
 import json
 
-from fastapi import APIRouter, File, UploadFile, Form
+from fastapi import APIRouter
 from pydantic import ConfigDict
 from pydantic import BaseModel
 from typing import List
 
 from services.nlp_service import align_tokens
-from services.ocr_service import run_ocr, postprocess
 from services.ipa_service import attach_token_ipa, describe_token_articulation
 from services.prediction_service import predict_next, search_prefix, tokenize
 from language_config import get_nlp
@@ -106,31 +105,6 @@ def search(q: str, language: str, text: str | None = None, context: str | None =
         "query": q,
         "tokens": context_tokens,
         "predictions": search_prefix(q, language, context_tokens=context_tokens)
-    }
-
-
-@router.post("/ocr")
-async def ocr_image(
-    file: UploadFile = File(...),
-    language: str = Form(...)
-):
-    import cv2
-    import numpy as np
-
-    img_bytes = await file.read()
-
-    np_arr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
-    if img is None:
-        return {"text": "", "blocks": []}
-
-    blocks, texts = run_ocr(img, language)
-    full_text = postprocess(texts, language)
-
-    return {
-        "text": full_text,
-        "blocks": blocks
     }
 
 

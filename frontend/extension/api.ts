@@ -43,7 +43,6 @@ export type InstalledPack = {
   lang: string;
   version: string;
   installed: boolean;
-  ocr_supported: boolean;
 };
 
 async function sendMessage<T>(message: unknown) {

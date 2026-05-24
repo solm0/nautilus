@@ -1,4 +1,4 @@
-import { FilePlusCorner, FolderPlus, Fullscreen, Type } from "lucide-react";
+import { FilePlusCorner, FolderPlus, Type } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
@@ -53,17 +53,8 @@ export function Toolbar({
 
   const fileOptions = (
     <>
-      {!mobileApp && (
-        <Link
-          to='/new?mode=ocr'
-          className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2"
-        >
-          <Fullscreen size={16} />
-          Upload an image
-        </Link>
-      )}
       <Link
-        to='/new?mode=paste'
+        to='/new'
         className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2">
         <Type size={16} />
         Paste text

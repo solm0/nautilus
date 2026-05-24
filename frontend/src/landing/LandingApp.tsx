@@ -16,7 +16,7 @@ type DemoPayload = {
   lemma_info: Record<string, LemmaData>;
 };
 
-const fixedLanguageOptions = [{ lang: "en", ocr_supported: false }];
+const fixedLanguageOptions = [{ lang: "en" }];
 
 function LandingApp() {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
@@ -96,7 +96,8 @@ function LandingApp() {
                 사용자가 번역기에 의존하지 않고도 목표 언어의 텍스트를 독해하고 작성해볼 수 있도록 보조합니다.
               </p>
               <p>
-                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어를 지원합니다.
+                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어, 알바니아어를 지원합니다.
+                <a href="#contribute">당신의 언어, 또는 당신이 배우고 있는 언어를 추가하거나 발전시키는 것을 도와주세요.</a>
               </p>
             </div>
             <div className="flex flex-col gap-2">

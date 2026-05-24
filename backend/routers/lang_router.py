@@ -37,7 +37,6 @@ def get_installed():
             "lang": p["lang"],
             "version": p["version"],
             "installed": installed,
-            "ocr_supported": p["ocr_supported"]
         })
 
     return result

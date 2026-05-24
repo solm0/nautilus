@@ -879,7 +879,6 @@ export async function getInstalled() {
       lang: pack.lang,
       version: pack.version,
       installed: enabledLangs.includes(pack.lang),
-      ocr_supported: false,
     }));
   }
 

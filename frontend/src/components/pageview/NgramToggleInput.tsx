@@ -16,7 +16,6 @@ type NgramToggleInputProps = {
   background?: boolean;
   languageOptions?: {
     lang: string;
-    ocr_supported?: boolean;
   }[];
   onHasTextChange?: (hasText: boolean) => void;
 };
@@ -65,7 +64,6 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   const [tokens, setTokens] = useState<string[]>([]);
   const [language, setLanguage] = useState<{
     lang: string;
-    ocr_supported?: boolean;
   } | null>(pageLanguage ? {lang: pageLanguage} : null);
 
   const initializedRef = useRef(false);

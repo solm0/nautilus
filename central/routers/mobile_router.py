@@ -328,8 +328,3 @@ def search_pattern(req: PatternSearchRequest):
         query_tokens=req.tokens,
         limit=req.limit,
     )
-
-
-@router.post("/ocr")
-def ocr_not_supported():
-    raise HTTPException(status_code=501, detail="OCR is not supported on mobile")

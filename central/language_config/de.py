@@ -22,10 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = BASE_DIR / "models"
 
 
-def get_ocr():
-    return None
-
-
 def get_nlp():
     global _nlp
 
@@ -55,7 +51,6 @@ def get_config(base_dir: Path):
     return {
         "normalize": normalize,
         "tokenize": tokenize,
-        "get_ocr": get_ocr,
         "get_nlp": get_nlp,
         "pack_db": pack_db,
         "db_path": db_path,

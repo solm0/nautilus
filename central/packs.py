@@ -8,7 +8,6 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "rus_wikipedia_2021_300K, rus-ru_web-public_2019_1M"}
         ],
-        "ocr_supported": True
     },
     {
         "lang": "de",
@@ -19,7 +18,6 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "deu_wikipedia_2021_300K, deu-de_web_2021_1M"}
         ],
-        "ocr_supported": True
     },
     {
         "lang": "en",
@@ -30,7 +28,6 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "eng-simple_wikipedia_2021_300K, eng-uk_web-public_2018_1M"}
         ],
-        "ocr_supported": True
     },
     {
         "lang": "sr",
@@ -41,7 +38,6 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "srp_wikipedia_2021_300K, srp-rs_web_2016_1M"}
         ],
-        "ocr_supported": False
     },
     {
         "lang": "mk",
@@ -52,7 +48,6 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "mkd_wikipedia_2021_300K, mkd-mk_web_2015_1M"}
         ],
-        "ocr_supported": False
     },
     {
         "lang": "sq",
@@ -63,6 +58,5 @@ PACKS = [
             {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
             {"Corpora used": "sqi_wikipedia_2021_300K, sqi_news_2020_1M"}
         ],
-        "ocr_supported": False
     },
 ]

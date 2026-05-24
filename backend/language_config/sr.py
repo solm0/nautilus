@@ -69,13 +69,6 @@ def get_nlp():
     return _nlp
 
 # =====================
-# OCR (DISABLED)
-# =====================
-
-def get_ocr():
-    return None
-
-# =====================
 # CONFIG
 # =====================
 
@@ -91,8 +84,6 @@ def get_config(base_dir: Path):
     return {
         "normalize": normalize,
         "tokenize": tokenize,
-
-        "get_ocr": get_ocr,
         "get_nlp": get_nlp,
 
         "pack_db": LanguagePackDB(db_path) if db_path else None,

@@ -20,6 +20,7 @@ ESPEAK_VOICE_MAP = {
     "es": "es",
     "sr": "sr",
     "mk": "mk",
+    "sq": "sq",
 }
 
 IPA_STRESS_MARKS = {"ˈ", "ˌ", ".", "|"}
@@ -237,6 +238,12 @@ def postprocess_macedonian_ipa(ipa: str) -> str:
     return ipa
 
 
+def postprocess_albanian_ipa(ipa: str) -> str:
+    # Albanian is left conservative for now until we verify corpus-specific
+    # rewrites that are broadly safe.
+    return ipa
+
+
 @lru_cache(maxsize=8192)
 def surface_to_ipa(surface: str, language: str) -> str | None:
     if not surface or not should_generate_ipa(surface):
@@ -268,6 +275,8 @@ def surface_to_ipa(surface: str, language: str) -> str | None:
             ipa = postprocess_serbian_ipa(ipa)
         elif language == "mk":
             ipa = postprocess_macedonian_ipa(ipa)
+        elif language == "sq":
+            ipa = postprocess_albanian_ipa(ipa)
 
     return ipa or None
 

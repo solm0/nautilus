@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { OCRBlock, OCRResponse } from "../src/components/pageTypes";
 import {
   analyzeTextBlocks,
+  EXTENSION_DEEPLINK_BASE,
   enrichBlocksWithIpa,
   getInstalledLanguages,
   isAuthenticated,
@@ -45,7 +46,6 @@ function inferLanguage() {
 
 type InstalledLanguageOption = {
   lang: string;
-  ocr_supported: boolean;
 };
 
 function normalizeTextPreservingBreaks(text: string) {
@@ -369,7 +369,6 @@ function OverlayApp() {
           .filter((pack: InstalledPack) => pack.installed)
           .map((pack: InstalledPack) => ({
             lang: pack.lang,
-            ocr_supported: Boolean(pack.ocr_supported),
           }));
 
         setInstalledLanguages(normalized);

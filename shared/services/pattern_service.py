@@ -158,6 +158,7 @@ SUPPORTED_LANGUAGES = {
     "ko",
     "mk",
     "ru",
+    "sq",
     "sr",
     "zh",
 }
@@ -302,6 +303,21 @@ ANCHOR_LEMMAS = {
         "zato",
         "za",
     },
+    "sq": {
+        "dhe",
+        "kur",
+        "me",
+        "në",
+        "ndërsa",
+        "nëse",
+        "ose",
+        "pa",
+        "për",
+        "por",
+        "sepse",
+        "te",
+        "tek",
+    },
 }
 
 COPULA_LEMMAS = {
@@ -347,6 +363,20 @@ COPULA_LEMMAS = {
         "smo",
         "ste",
         "su",
+    },
+    "sq": {
+        "jam",
+        "je",
+        "është",
+        "jemi",
+        "jeni",
+        "janë",
+        "isha",
+        "ishe",
+        "ishte",
+        "ishim",
+        "ishit",
+        "ishin",
     },
 }
 
@@ -429,6 +459,21 @@ CROSS_ANCHOR_MAP = {
         "za": "@goal_to",
         "nema": "@neg_exist",
     },
+    "sq": {
+        "dhe": "@coord_add",
+        "por": "@coord_contrast",
+        "ose": "@coord_alt",
+        "kur": "@temp_subord",
+        "ndërsa": "@temp_subord",
+        "sepse": "@cause_subord",
+        "nëse": "@cond_subord",
+        "me": "@comitative_adp",
+        "pa": "@without_adp",
+        "në": "@loc_in",
+        "te": "@loc_near",
+        "tek": "@loc_near",
+        "për": "@goal_to",
+    },
 }
 
 AUX_SEMANTIC_MAP = {
@@ -507,6 +552,22 @@ AUX_SEMANTIC_MAP = {
         "moći": "@aux_modal",
         "može": "@aux_modal",
         "mogu": "@aux_modal",
+    },
+    "sq": {
+        "jam": "@aux_be",
+        "je": "@aux_be",
+        "është": "@aux_be",
+        "jemi": "@aux_be",
+        "jeni": "@aux_be",
+        "janë": "@aux_be",
+        "kam": "@aux_have",
+        "ke": "@aux_have",
+        "ka": "@aux_have",
+        "kemi": "@aux_have",
+        "keni": "@aux_have",
+        "kanë": "@aux_have",
+        "mund": "@aux_modal",
+        "duhet": "@aux_modal",
     },
 }
 

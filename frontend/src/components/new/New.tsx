@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import PagePreview from "./PagePreview";
 import { fetchNotebooks, savePage } from "../../api";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import OcrReader from "./OcrReader";
+import { useLocation, useNavigate } from "react-router-dom";
 import PasteReader from "./PasteReader";
 import Button from "../util/Button";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import type { OCRResponse } from "../pageTypes";
 import { filterOCRResponseByRanges, type SelectionRange } from "../pageUtils";
 import LanguageSelect from "../util/LanguageSelect";
-import { isCapacitorApp } from "../../platform";
 
 export type FooterAction = {
   text: string;
@@ -18,9 +16,7 @@ export type FooterAction = {
 };
 
 export default function New() {
-  const mobileApp = isCapacitorApp();
   const [result, setResult] = useState<OCRResponse | null>(null);
-  const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [footerAction, setFooterAction] = useState<FooterAction | null>(null);
   const [selectedRanges, setSelectedRanges] = useState<SelectionRange[]>([]);
@@ -32,7 +28,6 @@ export default function New() {
 
   const [language, setLanguage] = useState<{
     lang: string;
-    ocr_supported?: boolean;
   } | null>(null);
 
   // /notebook에서 생성한 page일 경우
@@ -41,13 +36,6 @@ export default function New() {
   const [selectedNotebook, setSelectedNotebook] = useState<number | null>(initialNotebookId);
 
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const requestedMode = params.get("mode") || "paste";
-  const mode = mobileApp && requestedMode === "ocr" ? "paste" : requestedMode;
-
-  function setMode(t: string) {
-    setParams({ mode: t });
-  }
 
   const hasTokens = result?.blocks?.every(b => b.tokens);
   const isPreviewStep = !!result;
@@ -58,7 +46,6 @@ export default function New() {
   const isReady =
     isPreviewStep &&
     hasTokens &&
-    !loading &&
     !analyzing;
 
   const handleNext = () => {
@@ -73,12 +60,6 @@ export default function New() {
       .then(setNotebooks)
       .catch(() => setNotebooks([]));
   }, [openModal]);
-
-  useEffect(() => {
-    if (mobileApp && requestedMode === "ocr") {
-      setParams({ mode: "paste" }, { replace: true });
-    }
-  }, [mobileApp, requestedMode, setParams]);
 
   const handleSave = async () => {
     if (!result) return;
@@ -109,16 +90,13 @@ export default function New() {
     }
   };
 
-  const statusText = loading
-    ? "Running OCR..."
-    : analyzing
+  const statusText = analyzing
     ? "Running Stanza analysis..."
     : null;
 
   const handleReset = () => {
     setResult(null);
     setAnalyzing(false);
-    setLoading(false);
     setFooterAction(null);
     setSelectedRanges([]);
   };
@@ -128,29 +106,12 @@ export default function New() {
   }, [result]);
 
   return (
-    <div className={`flex flex-col items-start h-full w-full gap-2 pr-4 pb-18 md:pb-4 md:pr-6 pl-3 md:pl-6 ${mobileApp ? 'bg-neutral-200' : 'bg-neutral-transparent'}`}>
+    <div className="flex flex-col items-start h-full w-full gap-2 pr-4 pb-18 md:pb-4 md:pr-6 pl-3 md:pl-6 bg-neutral-transparent">
 
       {/* SECTION 1: HEADER */}
       <div className="flex flex-col gap-2 pt-12 pb-2">
         <h2 className="flex items-baseline gap-4">
-
-          {mode === "ocr" ? "Upload an image" : "Paste text"}
-
-          {!mobileApp && (
-            <button
-              onClick={() => {
-                setMode(mode === "ocr" ? "paste" : "ocr");
-                setResult(null);
-                setAnalyzing(false);
-                setLoading(false);
-                setFooterAction(null);
-                setSelectedRanges([]);
-              }}
-              className="text-neutral-500 hover:text-neutral-600 text-base transition-colors cursor-pointer"
-            >
-              {mode === "ocr" ? "or paste text?" : "or upload image?"}
-            </button>
-          )}
+          Paste text
         </h2>
 
       </div>
@@ -161,7 +122,7 @@ export default function New() {
         setLanguage={(l) => setLanguage(l)}
         handleReset={handleReset}
         setAnyLangInstalled={setAnyLangInstalled}
-        background={!mobileApp}
+        background
       />
 
       {/* SECTION 3 + 4 */}
@@ -173,32 +134,13 @@ export default function New() {
               w-full flex-1 md:w-1/2 flex flex-col items-end
               ${showPreview ? "hidden md:flex opacity-50 pointer-events-none" : "opacity-100"}
             `}>
-              {mode === "ocr"
-                ? language.ocr_supported !== false
-                  ? (
-                    <OcrReader
-                      key={language.lang}
-                      language={language.lang}
-                      setLoading={setLoading}
-                      setResult={setResult}
-                      setAnalyzing={setAnalyzing}
-                      setFooterAction={setFooterAction}
-                      handleRectChange={handleReset}
-                    />
-                  ): (
-                    <div className="w-full flex justify-start pt-3">OCR is not supported for this language.</div>
-                  )
-                : null
-              }
-              {mode === "paste" && (
-                <PasteReader
-                  key={language.lang}
-                  language={language.lang}
-                  setResult={setResult}
-                  setAnalyzing={setAnalyzing}
-                  setFooterAction={setFooterAction}
-                />
-              )}
+              <PasteReader
+                key={language.lang}
+                language={language.lang}
+                setResult={setResult}
+                setAnalyzing={setAnalyzing}
+                setFooterAction={setFooterAction}
+              />
             </div>
           ): (
             <div className="w-full flex-1 md:w-1/2 flex items-center justify-center">Loading...</div>
