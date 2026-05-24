@@ -23,6 +23,7 @@ from routers.demo_router import router as demo_router
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
+CLASSLA_MODEL_DIR = BASE_DIR / "classla_models"
 LANDING_DIR = BASE_DIR / "static" / "landing"
 
 CLASSLA_LANGS = {"sr", "mk"}
@@ -34,8 +35,13 @@ def model_exists(lang: str) -> bool:
     return (MODEL_DIR / lang).exists()
 
 
+def classla_model_exists(lang: str) -> bool:
+    return (CLASSLA_MODEL_DIR / lang).exists()
+
+
 def ensure_language_models():
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    CLASSLA_MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
     checked = set()
 
@@ -53,14 +59,22 @@ def ensure_language_models():
 
         try:
             if lang in CLASSLA_LANGS:
+                if classla_model_exists(lang):
+                    print(f"[skip] classla model exists: {lang}")
+                    continue
+
                 print(f"[classla] downloading: {lang}")
 
                 classla.download(
                     lang,
-                    dir=str(MODEL_DIR),
+                    dir=str(CLASSLA_MODEL_DIR),
                 )
 
             else:
+                if model_exists(lang):
+                    print(f"[skip] model exists: {lang}")
+                    continue
+
                 print(f"[stanza] downloading: {lang}")
 
                 stanza.download(

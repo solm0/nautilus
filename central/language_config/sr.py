@@ -40,7 +40,7 @@ def tokenize(text: str):
 
 _nlp = None
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_DIR = BASE_DIR / "models"
+MODEL_DIR = BASE_DIR / "classla_models"
 
 
 def get_nlp():

@@ -1,16 +1,16 @@
 import re
 import unicodedata
-from pathlib import Path
 
+from pathlib import Path
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
 
-def normalize(text: str) -> str:
+def normalize(text: str):
     text = unicodedata.normalize("NFC", text)
     return text.lower()
 
 
-TOKEN_RE = re.compile(r"[а-шѓќжчџшљњјѕ0-9-]+", re.IGNORECASE)
+TOKEN_RE = re.compile(r"[a-zçë0-9-]+", re.IGNORECASE)
 
 
 def tokenize(text: str):
@@ -19,18 +19,18 @@ def tokenize(text: str):
 
 _nlp = None
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_DIR = BASE_DIR / "classla_models"
+MODEL_DIR = BASE_DIR / "models"
 
 
 def get_nlp():
     global _nlp
 
     if _nlp is None:
-        import classla
+        import stanza
 
-        _nlp = classla.Pipeline(
-            lang="mk",
-            processors="tokenize,pos,lemma",
+        _nlp = stanza.Pipeline(
+            lang="sq",
+            processors="tokenize,pos,lemma,depparse",
             use_gpu=False,
             dir=str(MODEL_DIR),
             download_method=None,
@@ -40,7 +40,7 @@ def get_nlp():
 
 
 def get_config(base_dir: Path):
-    lang_dir = base_dir / "mk"
+    lang_dir = base_dir / "sq"
 
     from .registry import get_latest_version_path
 
