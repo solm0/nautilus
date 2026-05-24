@@ -16,7 +16,7 @@ from packs import PACKS
 # 6. zip 다운로드
 # 7. ./data/static/{lang}/{version}/ 에 압축 해제
 
-GITHUB_REPO = "solm0/capstone"
+GITHUB_REPO = "solm0/nautilus"
 
 BASE_DIR = Path("./data/static")
 TMP_DIR = Path("./tmp_packs")

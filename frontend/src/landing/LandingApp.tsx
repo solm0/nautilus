@@ -143,7 +143,7 @@ function LandingApp() {
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_3.png" className="grayscale brightness-130"/>
                 <p className="font-semibold">의미를 맥락으로 보조</p>
-                <p>단어의 연관어 및 코퍼스에서 단어가 등장한 문장을 제시합니다.</p>
+                <p>단어의 연관어 및 코퍼스 속 해당 단어가 등장한 문장을 재귀적으로 제시합니다.</p>
                 <p>단어의 의미와 문장 내 역할을 문맥 속에서 추론하고 습득할 수 있도록 합니다.</p>
               </div>
               <div className="flex-1 relative flex flex-col gap-4">
@@ -155,20 +155,20 @@ function LandingApp() {
             </div>
 
             <div className="grid gap-6">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-                <div className="border border-neutral-300">
+              <div className="flex">
+                <div className="flex-1 border border-neutral-300">
                   <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <p className="text-xs text-neutral-500">
-                        구조를 시각으로 보조
-                      </p>
-                      <h3 className="mt-2 font-source text-2xl text-neutral-900">
-                        Reading Inferface
-                      </h3>
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4">
+                      <div className="flex flex-col">
+                        <p className="text-xs text-neutral-500">
+                          구조를 시각으로 보조
+                        </p>
+                        <h3 className="mt-2 text-neutral-900">
+                          Reading Inferface
+                        </h3>
+                      </div>
+                      <p className="text-sm">클릭 가능한 토큰을</p>
                     </div>
-                    <p className="max-w-xl text-sm leading-6 text-neutral-600">
-                      하이라이트된 토큰을 눌러 현재 lemma expansion demo를 바꿀 수 있다.
-                    </p>
                   </div>
 
                   <div className="h-[640px] min-h-0">
@@ -187,7 +187,7 @@ function LandingApp() {
                   </div>
                 </div>
 
-                <div className="border border-neutral-300 bg-neutral-50">
+                <div className="flex-1 border border-neutral-300 border-l-0">
                   <div className="border-b border-neutral-200 px-5 py-4 md:px-6">
                     <p className="text-xs text-neutral-500">
                       의미를 맥락으로 보조
