@@ -613,6 +613,7 @@ export default function PageCore({
   pageId,
   pageName,
   pageSource,
+  language,
   metadataItems,
   onAddMetadata,
   onUpdateMetadata,
@@ -627,6 +628,7 @@ export default function PageCore({
   onPointerUp,
   onPointerCancel,
   getTokenProps,
+  renderTokenContent,
   rightAside,
   overlay,
   lemmaInfo,
@@ -635,6 +637,7 @@ export default function PageCore({
   pageId?: number;
   pageName?: string;
   pageSource?: string;
+  language?: string;
   metadataItems?: string[];
   onAddMetadata?: (value: string) => Promise<void>;
   onUpdateMetadata?: (index: number, value: string) => Promise<void>;
@@ -653,6 +656,10 @@ export default function PageCore({
     token: Token;
     index: number;
   }) => TokenRenderProps;
+  renderTokenContent?: (args: {
+    token: Token;
+    index: number;
+  }) => ReactNode;
   rightAside?: ReactNode;
   overlay?: ReactNode;
   wrapperStyle?: CSSProperties;
@@ -968,6 +975,7 @@ export default function PageCore({
                   relative z-1 flex w-full max-w-[48em] flex-wrap content-start justify-between
                   after:basis-0 after:flex-auto after:content-['']
                   transition-all duration-300 origin-left
+                  ${language === "ko" ? "leading-10" : ""}
                   ${block.tokens?.length === 0 && 'h-[1.7em] shrink-0'}
                   ${visualState.blockMinHeightClass}
                   ${visualState.blockAlignClass}
@@ -1015,6 +1023,7 @@ export default function PageCore({
                             ? "min-h-[1.5em] h-auto gap-0"
                             : "",
                         pageId ? "transition-all" : "",
+                        
                         visualState.tokenSizeClass,
                         visualState.tokenPaddingClass,
                         className,
@@ -1037,7 +1046,12 @@ export default function PageCore({
                           {token.surface}
                         </span>
                         <span className="col-start-1 row-start-1">
-                          {token.surface}
+                          {renderTokenContent
+                            ? renderTokenContent({
+                              token,
+                              index: tokenIndex,
+                            })
+                            : token.surface}
                         </span>
                       </span>
                       <div

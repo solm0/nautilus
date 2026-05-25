@@ -13,7 +13,11 @@
   font-style: normal;
 }
 
-
+@font-face {
+  font-family: 'Source-kr';
+  src: url('/SourceHanSerifKR-VF.ttf.woff2') format('woff2');
+  font-style: normal;
+}
 
 :root {
   --accent: #aa3bff;
@@ -106,7 +110,7 @@ h3 {
 }
 
 @theme inline {
-  --font-source: "Source", serif;
+  --font-source: "Source", "Source-kr", serif;
   --font-pretendard: "Pretendard", sans-serif;
   --color-neutral-transparent: var(--app-neutral-transparent);
   --color-neutral-50: var(--app-neutral-50);

@@ -9,7 +9,8 @@ import type { SidePanelState } from "./PageView";
 import EmojiPickerPopover from "./EmojiPickerPopover";
 import { useAutoCenterActiveItem } from "../lyric/useAutoCenterActiveItem";
 import { useSettings } from "../useSettings";
-import { canDrillDownToken, getLookupKey } from "../tokenLookup";
+import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
+import type { MorphToken, Token } from "../pageTypes";
 
 const LONG_PRESS_MS = 600;
 const DRAG_THRESHOLD = 8;
@@ -126,6 +127,50 @@ export default function PageContent({
     if (!scrollRef) return;
     scrollRef(scrollToAnnotation);
   }, []);
+
+  function openLemmaPanelByKey(key: string | null) {
+    if (!key || !setPanelData) return;
+
+    const info = lemmaInfo[key];
+    if (!info) return;
+
+    setSelection(null);
+    setFinalSelection(null);
+    setMenu(null);
+    setPanelData({ type: "lemma", data: info });
+  }
+
+  function renderTokenSurface(token: Token) {
+    if (language !== "ko" || !token.morphs || token.morphs.length === 0) {
+      return token.surface;
+    }
+
+    return (
+      <>
+        {token.morphs.map((morph: MorphToken, morphIndex: number) => {
+          const key = getLookupKeyForMorph(morph, language);
+          const clickable = key != null && lemmaInfo[key] != null;
+
+          return (
+            <span
+              key={`${morph.surface}-${morphIndex}`}
+              onClick={(event) => {
+                if (!clickable || blockClickRef.current) return;
+                event.stopPropagation();
+                openLemmaPanelByKey(key);
+              }}
+              className={[
+                clickable ? "cursor-pointer text-neutral-700 hover:font-[500]" : "",
+                clickable ? "" : "text-neutral-700",
+              ].filter(Boolean).join(" ")}
+            >
+              {morph.surface}
+            </span>
+          );
+        })}
+      </>
+    );
+  }
 
   function clearPointerState() {
     pointerDownRef.current = false;
@@ -443,6 +488,7 @@ export default function PageContent({
       pageId={pageId}
       pageName={pageName}
       pageSource={pageSource}
+      language={language}
       metadataItems={pageMetadata}
       onAddMetadata={onAddMetadata}
       onUpdateMetadata={onUpdateMetadata}
@@ -461,7 +507,6 @@ export default function PageContent({
       getTokenProps={({ token, index }) => {
         const key = getLookupKey(token, language);
         const info = key ? lemmaInfo[key] : undefined;
-        const canDrillDown = canDrillDownToken(token, language);
         const isInHover =
           hoverRange != null &&
           index >= hoverRange.start &&
@@ -498,13 +543,12 @@ export default function PageContent({
             cursor: info ? "pointer" : "default",
           },
           className: `
-            font-source px-1  transition-all text-[18px] md:text-[20px]
+            font-source px-1 transition-all text-[18px] md:text-[20px]
             ${
-              canDrillDown
-                ? "font-[370]"
+              info
+                ? `${language === 'ko' ? 'font-[480]' : 'font-[370]'}`
                 : "font-[280]"
             }
-            ${canDrillDown ? "text-neutral-700" : "text-neutral-400"}
             ${info && 'hover:font-[500]'}
             ${isInHover || isInPanel || isInPanelLemma && 'font-[500] rounded-sm'}
             ${hasGapFillHighlight && 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]'}
@@ -516,6 +560,7 @@ export default function PageContent({
             isSelected || isInPanel || isInHover ? "true" : undefined,
         };
       }}
+      renderTokenContent={({ token }) => renderTokenSurface(token)}
       rightAside={
         <Gutter
           annotations={annotations}

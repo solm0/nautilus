@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import unicodedata
 
-from language_config import get_config
-
 
 BASE_STOP_POS = {
     "PUNCT",
@@ -19,6 +17,7 @@ BASE_STOP_POS = {
 
 LANGUAGE_STOP_POS = {
     "ko": BASE_STOP_POS | {"AUX"},
+    "sr": BASE_STOP_POS | {"AUX", "X"},
 }
 
 
@@ -126,6 +125,8 @@ def align_tokens(sent, language: str):
 
 
 def analyze_text(text: str, language: str):
+    from language_config import get_config
+
     cfg = get_config(language)
     analyze = cfg.get("analyze_text")
 

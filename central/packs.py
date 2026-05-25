@@ -69,4 +69,14 @@ PACKS = [
             {"Corpora used": "kor_wikipedia_2021_300K, kor-kr_web_2020_1M"}
         ],
     },
+    {
+        "lang": "ja",
+        "version": "1.0.0",
+        "filename": "ja-v1.0.0.zip",
+        "tag": "v1.0.0",
+        "corpus": [
+            {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+            {"Corpora used": "jpn_wikipedia_2021_300K, jpn-jp_web_2020_1M"}
+        ],
+    },
 ]

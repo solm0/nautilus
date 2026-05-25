@@ -774,6 +774,10 @@ def _token_to_dep_group(token: dict[str, Any]) -> str:
     return DEP_GROUPS.get(dep, dep)
 
 
+def _has_dependency_signal(tokens: list[dict[str, Any]]) -> bool:
+    return any(_base_dep(token) is not None for token in tokens)
+
+
 def _token_to_pos_symbol(token: dict[str, Any]) -> str:
     pos = token.get("pos")
     return pos if pos else "?"
@@ -986,14 +990,22 @@ def _score_window(
     fine_score = _score_symbol_sequence(query_sketch["fine"], candidate_sketch["fine"])
     pos_score = _score_symbol_sequence(query_sketch["pos"], candidate_sketch["pos"])
     coarse_score = _score_symbol_sequence(query_sketch["coarse"], candidate_sketch["coarse"])
-    dep_score = _score_symbol_sequence(query_sketch["deps"], candidate_sketch["deps"])
     lemma_score = _score_symbol_sequence(query_sketch["lemmas"], candidate_sketch["lemmas"])
     anchor_score = _score_anchor_overlap(query_sketch["anchors"], candidate_sketch["anchors"])
     shared_anchor_count = _shared_anchor_count(query_sketch["anchors"], candidate_sketch["anchors"])
-    query_profile = _structure_profile(query_core_tokens)
-    candidate_profile = _structure_profile(candidate_core_tokens)
-    structure_score = _score_structure_profile(query_profile, candidate_profile)
-    boundary_score = _score_boundary_compatibility(query_sketch, candidate_sketch)
+    dependency_available = _has_dependency_signal(query_core_tokens) and _has_dependency_signal(candidate_core_tokens)
+
+    if dependency_available:
+        dep_score = _score_symbol_sequence(query_sketch["deps"], candidate_sketch["deps"])
+        query_profile = _structure_profile(query_core_tokens)
+        candidate_profile = _structure_profile(candidate_core_tokens)
+        structure_score = _score_structure_profile(query_profile, candidate_profile)
+        boundary_score = _score_boundary_compatibility(query_sketch, candidate_sketch)
+    else:
+        dep_score = 0.5
+        structure_score = 0.5
+        boundary_score = 0.5
+
     lemma_bonus = _lemma_bonus(
         lemma_score=lemma_score,
         dep_score=dep_score,
@@ -1040,6 +1052,7 @@ def _score_window(
         "structure_score": round(structure_score, 4),
         "boundary_score": round(boundary_score, 4),
         "shared_anchor_count": shared_anchor_count,
+        "dependency_available": dependency_available,
     }
 
 
@@ -1082,6 +1095,8 @@ def _is_reasonable_candidate(best_window: dict[str, Any] | None):
     if best_window is None:
         return False
 
+    dependency_available = best_window.get("dependency_available", True)
+
     if best_window["boundary_score"] < 0.25:
         return False
 
@@ -1089,7 +1104,16 @@ def _is_reasonable_candidate(best_window: dict[str, Any] | None):
         return False
 
     if best_window["shared_anchor_count"] > 0:
+        if not dependency_available:
+            return best_window["score"] >= 0.38
+
         return best_window["score"] >= 0.38 and best_window["dep_score"] >= 0.35
+
+    if not dependency_available:
+        return (
+            best_window["score"] >= 0.60
+            and best_window["boundary_score"] >= 0.50
+        )
 
     return (
         best_window["score"] >= 0.60
