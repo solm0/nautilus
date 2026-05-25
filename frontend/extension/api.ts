@@ -2,6 +2,12 @@ import type { LemmaData, OCRBlock, OCRResponse } from "../src/components/pageTyp
 
 const DEFAULT_INSTALL_URL = "https://nautilus.solmi.wiki";
 const DEFAULT_LOCAL_API = "http://localhost:8000/api";
+const FALLBACK_LOCAL_APIS = [
+  "http://localhost:8010/api",
+  "http://127.0.0.1:8010/api",
+  "http://localhost:8000/api",
+  "http://127.0.0.1:8000/api",
+];
 const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
 const DEFAULT_DEEPLINK_BASE = "nautilus://page/";
 const TOKEN_STORAGE_KEY = "nautilus_extension_token";
@@ -22,6 +28,19 @@ export const EXTENSION_INSTALL_URL = getEnv(
 
 export const EXTENSION_LOCAL_API = trimTrailingSlash(
   getEnv("VITE_EXTENSION_LOCAL_API", DEFAULT_LOCAL_API),
+);
+
+const localApiCandidates = Array.from(
+  new Set(
+    [
+      import.meta.env.VITE_EXTENSION_LOCAL_API,
+      import.meta.env.VITE_LOCAL_API,
+      EXTENSION_LOCAL_API,
+      ...FALLBACK_LOCAL_APIS,
+    ]
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .map(trimTrailingSlash),
+  ),
 );
 
 export const EXTENSION_CENTRAL_API = trimTrailingSlash(
@@ -45,8 +64,21 @@ export type InstalledPack = {
   installed: boolean;
 };
 
+let activeLocalApi: string | null = null;
+
 async function sendMessage<T>(message: unknown) {
   return chrome.runtime.sendMessage(message) as Promise<T>;
+}
+
+async function probeSpecificLocalApi(localApi: string) {
+  const result = await sendMessage<{ ok: boolean }>({
+    type: "nautilus:probe-local",
+    input: {
+      localApi,
+    },
+  });
+
+  return result.ok;
 }
 
 async function parseResponse<T>(response: ExtensionResponse) {
@@ -133,14 +165,15 @@ export async function logoutExtensionAuth() {
 }
 
 export async function probeLocalApi() {
-  const result = await sendMessage<{ ok: boolean }>({
-    type: "nautilus:probe-local",
-    input: {
-      localApi: EXTENSION_LOCAL_API,
-    },
-  });
+  for (const candidate of localApiCandidates) {
+    const ok = await probeSpecificLocalApi(candidate);
+    if (!ok) continue;
 
-  return result.ok;
+    activeLocalApi = candidate;
+    return true;
+  }
+
+  return false;
 }
 
 export async function extensionFetch<T>(url: string, init?: RequestInit) {
@@ -155,8 +188,32 @@ export async function extensionFetch<T>(url: string, init?: RequestInit) {
   return parseResponse<T>(response);
 }
 
+async function extensionFetchWithLocalFallback<T>(
+  path: string,
+  initFactory?: (localApi: string) => RequestInit | Promise<RequestInit> | undefined,
+) {
+  const candidates = activeLocalApi
+    ? [activeLocalApi, ...localApiCandidates.filter((candidate) => candidate !== activeLocalApi)]
+    : localApiCandidates;
+
+  let lastError: unknown = null;
+
+  for (const candidate of candidates) {
+    try {
+      const init = initFactory ? await initFactory(candidate) : undefined;
+      const result = await extensionFetch<T>(`${candidate}${path}`, init);
+      activeLocalApi = candidate;
+      return result;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("local api unavailable");
+}
+
 export async function analyzeElementText(text: string, language: string) {
-  return extensionFetch<{ blocks: OCRBlock[] }>(`${EXTENSION_LOCAL_API}/analyze`, {
+  return extensionFetchWithLocalFallback<{ blocks: OCRBlock[] }>("/analyze", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -165,11 +222,11 @@ export async function analyzeElementText(text: string, language: string) {
       blocks: [{ text }],
       language,
     }),
-  });
+  }));
 }
 
 export async function analyzeTextBlocks(blocks: string[], language: string) {
-  return extensionFetch<{ blocks: OCRBlock[] }>(`${EXTENSION_LOCAL_API}/analyze`, {
+  return extensionFetchWithLocalFallback<{ blocks: OCRBlock[] }>("/analyze", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -178,14 +235,14 @@ export async function analyzeTextBlocks(blocks: string[], language: string) {
       blocks: blocks.map((text) => ({ text })),
       language,
     }),
-  });
+  }));
 }
 
 export async function enrichBlocksWithIpa(
   blocks: OCRResponse["blocks"],
   language: string,
 ) {
-  return extensionFetch<{ blocks: OCRResponse["blocks"] }>(`${EXTENSION_LOCAL_API}/ipa`, {
+  return extensionFetchWithLocalFallback<{ blocks: OCRResponse["blocks"] }>("/ipa", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -194,13 +251,13 @@ export async function enrichBlocksWithIpa(
       blocks,
       language,
     }),
-  });
+  }));
 }
 
 export async function getInstalledLanguages() {
-  return extensionFetch<InstalledPack[]>(`${EXTENSION_LOCAL_API}/lang/installed`, {
+  return extensionFetchWithLocalFallback<InstalledPack[]>("/lang/installed", () => ({
     method: "GET",
-  });
+  }));
 }
 
 export async function lookupBatch(blocks: OCRBlock[], language: string) {
@@ -226,7 +283,7 @@ export async function lookupBatch(blocks: OCRBlock[], language: string) {
     return {} as Record<string, LemmaData>;
   }
 
-  return extensionFetch<Record<string, LemmaData>>(`${EXTENSION_LOCAL_API}/lookup_batch`, {
+  return extensionFetchWithLocalFallback<Record<string, LemmaData>>("/lookup_batch", async () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -236,11 +293,11 @@ export async function lookupBatch(blocks: OCRBlock[], language: string) {
       items,
       language,
     }),
-  });
+  }));
 }
 
 export async function lookupLemma(lemma: string, pos: string, language: string) {
-  return extensionFetch<LemmaData>(`${EXTENSION_LOCAL_API}/lookup`, {
+  return extensionFetchWithLocalFallback<LemmaData>("/lookup", async () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -251,7 +308,7 @@ export async function lookupLemma(lemma: string, pos: string, language: string) 
       pos,
       language,
     }),
-  });
+  }));
 }
 
 export async function saveAnalyzedPage(

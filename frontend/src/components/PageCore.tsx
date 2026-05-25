@@ -975,7 +975,7 @@ export default function PageCore({
                   relative z-1 flex w-full max-w-[48em] flex-wrap content-start justify-between
                   after:basis-0 after:flex-auto after:content-['']
                   transition-all duration-300 origin-left
-                  ${language === "ko" ? "leading-10" : ""}
+                  ${language === "ko" || language === "ja" ? "leading-10" : ""}
                   ${block.tokens?.length === 0 && 'h-[1.7em] shrink-0'}
                   ${visualState.blockMinHeightClass}
                   ${visualState.blockAlignClass}

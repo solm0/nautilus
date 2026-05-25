@@ -13,6 +13,7 @@ const BASE_STOP_POS = new Set([
 ]);
 
 const LANGUAGE_STOP_POS: Record<string, Set<string>> = {
+  ja: new Set([...BASE_STOP_POS, "AUX"]),
   ko: new Set([...BASE_STOP_POS, "AUX"]),
 };
 const DRILLDOWN_LANGUAGES = new Set(["ko", "ja", "tr"]);

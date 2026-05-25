@@ -408,6 +408,7 @@ export default function PageView() {
                 initialLemma={panel.data}
                 onToggleFavorite={onFavoriteClick}
                 language={panel.language ?? language}
+                lemmaInfo={lemmaInfo}
               />
             )}
 

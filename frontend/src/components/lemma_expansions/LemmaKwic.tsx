@@ -2,13 +2,16 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { TokenInLemmaExpansion } from "./TokenInLemmaExpansion";
-import type { KwicData } from "../pageTypes";
+import type { KwicData, LemmaData } from "../pageTypes";
 import { IconButton } from "../util/Button";
 import { AlignCenterVertical } from "lucide-react";
+import { lemmaLookup } from "../../api";
+import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 
 function highlightIntersect(
   surface: string,
@@ -78,6 +81,7 @@ interface KwicRowProps {
   lemma: string;
   language: string;
   onSelect: (tokenKey: string) => void;
+  lemmaInfo?: Record<string, LemmaData>;
   hovered: { pos: string | null; dep: string | null, x: number, y: number };
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; dep: string | null, x: number, y: number }>>
 }
@@ -90,7 +94,7 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, language, onSelect, hovered, setHovered },
+  { d, lemma, language, onSelect, lemmaInfo, hovered, setHovered },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -157,6 +161,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
           token={t}
           language={language}
           onSelect={onSelect}
+          canSelectKey={lemmaInfo ? (tokenKey) => lemmaInfo[tokenKey] != null : undefined}
         />
       </div>
     </div>
@@ -202,11 +207,13 @@ export default function LemmaKwic({
   onSelect,
   lemma,
   language,
+  lemmaInfo,
 }: {
   data: KwicData[];
   onSelect: (tokenKey: string) => void;
   lemma: string;
   language: string;
+  lemmaInfo?: Record<string, LemmaData>;
 }) {
   const [hovered, setHovered] = useState<{
     pos: string | null;
@@ -222,6 +229,114 @@ export default function LemmaKwic({
 
   const rowRefs = useRef<(KwicRowHandle | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const attemptedKeysRef = useRef(new Set<string>());
+  const inflightKeysRef = useRef(new Set<string>());
+  const [availableKeys, setAvailableKeys] = useState<Record<string, LemmaData>>(
+    () => lemmaInfo ?? {},
+  );
+  const [loadingLemma, setLoadingLemma] = useState(false);
+
+  useEffect(() => {
+    setAvailableKeys(lemmaInfo ?? {});
+  }, [lemmaInfo]);
+
+  useEffect(() => {
+    attemptedKeysRef.current.clear();
+    inflightKeysRef.current.clear();
+    setLoadingLemma(false);
+  }, [data, language, lemma]);
+
+  const lookupItems = useMemo(() => {
+    const seen = new Set<string>();
+    const items: Array<{ lemma: string; pos: string }> = [];
+
+    for (const row of data) {
+      for (const token of row.tokens) {
+        const tokenKey = getLookupKey(token, language);
+
+        if (tokenKey && !seen.has(tokenKey)) {
+          const parts = tokenKey.split("_");
+          const tokenPos = parts.pop();
+          const tokenLemma = parts.join("_");
+          if (tokenLemma && tokenPos) {
+            seen.add(tokenKey);
+            items.push({ lemma: tokenLemma, pos: tokenPos });
+          }
+        }
+
+        for (const morph of token.morphs ?? []) {
+          const morphKey = getLookupKeyForMorph(morph, language);
+
+          if (!morphKey || seen.has(morphKey)) {
+            continue;
+          }
+
+          const parts = morphKey.split("_");
+          const morphPos = parts.pop();
+          const morphLemma = parts.join("_");
+
+          if (!morphLemma || !morphPos) {
+            continue;
+          }
+
+          seen.add(morphKey);
+          items.push({ lemma: morphLemma, pos: morphPos });
+        }
+      }
+    }
+
+    return items.filter(({ lemma, pos }) => {
+      const key = `${lemma}_${pos}`;
+
+      if (availableKeys[key] != null) {
+        return false;
+      }
+
+      if (attemptedKeysRef.current.has(key)) {
+        return false;
+      }
+
+      if (inflightKeysRef.current.has(key)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [availableKeys, data, language]);
+
+  useEffect(() => {
+    if (lookupItems.length === 0) {
+      setLoadingLemma(false);
+      return;
+    }
+
+    let cancelled = false;
+    const pendingKeys = new Set(
+      lookupItems.map(({ lemma, pos }) => `${lemma}_${pos}`),
+    );
+
+    pendingKeys.forEach((key) => inflightKeysRef.current.add(key));
+    setLoadingLemma(true);
+
+    void lemmaLookup(lookupItems, language)
+      .then((lookupData) => {
+        if (cancelled) return;
+
+        pendingKeys.forEach((key) => attemptedKeysRef.current.add(key));
+        setAvailableKeys((prev) => ({ ...prev, ...lookupData }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (cancelled) return;
+
+        pendingKeys.forEach((key) => inflightKeysRef.current.delete(key));
+        setLoadingLemma(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lookupItems, language]);
 
   return (
     <div
@@ -247,11 +362,18 @@ export default function LemmaKwic({
             lemma={lemma}
             language={language}
             onSelect={onSelect}
+            lemmaInfo={availableKeys}
             hovered={hovered}
             setHovered={setHovered}
           />
         ))}
       </div>
+
+      {loadingLemma && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
+          Fetching lemmas...
+        </div>
+      )}
 
       {hovered.pos && (
         <div

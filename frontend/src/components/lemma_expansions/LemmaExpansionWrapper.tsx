@@ -16,6 +16,7 @@ export default function LemmaExpansionWrapper({
   onSelect,
   onToggleFavorite,
   language,
+  lemmaInfo,
 }: {
   activeNode: D3Node | null;
   lemmaDatas: LemmaData[] ;
@@ -27,6 +28,7 @@ export default function LemmaExpansionWrapper({
   onSelect: (tokenKey: string) => void;
   onToggleFavorite: (key: string, next:boolean) => Promise<void>;
   language: string;
+  lemmaInfo?: Record<string, LemmaData>;
 }) {
   const inflightRef = useRef(new Set<string>());
   const statusRef = useRef(new Map<string, "loading" | "success" | "error">());
@@ -81,6 +83,7 @@ export default function LemmaExpansionWrapper({
         onSelect={onSelect}
         onToggleFavorite={onToggleFavorite}
         language={language}
+        lemmaInfo={lemmaInfo}
       />
     );
   }

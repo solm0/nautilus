@@ -141,7 +141,7 @@ export default function PageContent({
   }
 
   function renderTokenSurface(token: Token) {
-    if (language !== "ko" || !token.morphs || token.morphs.length === 0) {
+    if ((language !== "ko" && language !== "ja") || !token.morphs || token.morphs.length === 0) {
       return token.surface;
     }
 
@@ -546,7 +546,7 @@ export default function PageContent({
             font-source px-1 transition-all text-[18px] md:text-[20px]
             ${
               info
-                ? `${language === 'ko' ? 'font-[480]' : 'font-[370]'}`
+                ? `${language === 'ko' || language === 'ja' ? 'font-[480]' : 'font-[370]'}`
                 : "font-[280]"
             }
             ${info && 'hover:font-[500]'}

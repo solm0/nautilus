@@ -8,10 +8,12 @@ export default function Desk({
   initialLemma,
   onToggleFavorite,
   language,
+  lemmaInfo,
 }: {
   initialLemma: LemmaData;
   onToggleFavorite: (key: string, next:boolean) => Promise<void>;
   language: string;
+  lemmaInfo?: Record<string, LemmaData>;
 }) {
   const breadcrumbRef = useRef<{ addNode: (parentLemma: string, newNode: TreeNode) => void }>(null);
   const [activeNode, setActiveNode] = useState<D3Node | null>(null);
@@ -96,6 +98,7 @@ export default function Desk({
         onSelect={handleTokenSelect}
         onToggleFavorite={onToggleFavorite}
         language={language}
+        lemmaInfo={lemmaInfo}
       />
     </div>
   )

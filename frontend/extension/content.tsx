@@ -48,6 +48,18 @@ type InstalledLanguageOption = {
   lang: string;
 };
 
+function isAuthTokenError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("invalid token") ||
+    message.includes("expired") ||
+    message.includes("401") ||
+    message === "unauthorized"
+  );
+}
+
 function normalizeTextPreservingBreaks(text: string) {
   return text
     .replace(/\r\n?/g, "\n")
@@ -725,6 +737,17 @@ function OverlayApp() {
       clearSelection();
       setSelectionMode(false);
     } catch (error) {
+      if (isAuthTokenError(error)) {
+        await logoutExtensionAuth();
+        setAuthed(false);
+        pendingAuthIntentRef.current = "save";
+        setAuthMode("login");
+        setAuthMessage("Your session expired. Please log in again.");
+        setAuthOpen(true);
+        setMessage("Your session expired. Please log in again.");
+        return;
+      }
+
       setMessage(error instanceof Error ? error.message : "Save failed");
     } finally {
       setSaveBusy(false);

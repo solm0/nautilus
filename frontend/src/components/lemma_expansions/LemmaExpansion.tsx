@@ -5,12 +5,13 @@ import type { LemmaData } from "../pageTypes";
 import { Star } from "lucide-react";
 
 export default function LemmaExpansion({
-  data, onSelect, onToggleFavorite, language
+  data, onSelect, onToggleFavorite, language, lemmaInfo
 }: {
   data: LemmaData;
   onSelect: (tokenKey: string) => void;
   onToggleFavorite: (key: string, next: boolean) => Promise<void>;
   language: string;
+  lemmaInfo?: Record<string, LemmaData>;
 }) {
   const [visible, setVisible] = useState(false);
   const [isFavoriteLocal, setIsFavoriteLocal] = useState(data.is_favorite);
@@ -65,6 +66,7 @@ export default function LemmaExpansion({
           onSelect={onSelect}
           lemma={data.key}
           language={language}
+          lemmaInfo={lemmaInfo}
         />
       </section>
     )
