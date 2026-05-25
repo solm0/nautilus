@@ -18,8 +18,8 @@ from packs import PACKS
 
 GITHUB_REPO = "solm0/nautilus"
 
-BASE_DIR = Path("./data/static")
-TMP_DIR = Path("./tmp_packs")
+BASE_DIR = Path("./nautilus/central/data/static")
+TMP_DIR = Path("./nautilus/central/tmp_packs")
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
