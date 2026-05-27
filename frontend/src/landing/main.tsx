@@ -3,20 +3,14 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "../index.css";
 import LandingApp from "./LandingApp";
-import {
-  applyTheme,
-  resolveInitialTheme,
-  ThemeProvider,
-} from "../components/useTheme";
+import { applyTheme } from "../components/useTheme";
 
-applyTheme(resolveInitialTheme());
+applyTheme("light");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider>
-      <BrowserRouter>
-        <LandingApp />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <LandingApp />
+    </BrowserRouter>
   </StrictMode>,
 );

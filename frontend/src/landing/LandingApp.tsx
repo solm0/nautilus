@@ -6,7 +6,6 @@ import PageContent from "../components/pageview/PageContent";
 import NgramToggleInput from "../components/pageview/NgramToggleInput";
 import Logotype from "../components/svgs/Logotype";
 import Button from "../components/util/Button";
-import ThemeToggle from "../components/util/ToggleButton";
 import { ArrowDown } from "lucide-react";
 
 type DemoPayload = {
@@ -84,7 +83,6 @@ function LandingApp() {
           <div className="w-46">
             <Logotype className="fill-nt-blue stroke-0"/>
           </div>
-          <ThemeToggle compact />
         </header>
 
         <div className="flex flex-col gap-21 h-auto overflow-y-scroll no-scrollbar pb-21">
