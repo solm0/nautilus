@@ -174,7 +174,7 @@ function LandingApp() {
                     </div>
                   </div>
 
-                  <div className="h-[640px] min-h-0">
+                  <div className="h-[640px] min-h-0 p-4">
                     {demo ? (
                       <PageContent
                         blocks={demo.result.blocks}
@@ -208,7 +208,7 @@ function LandingApp() {
                     </div>
                   </div>
 
-                  <div className="h-[640px] min-h-0">
+                  <div className="h-[640px] min-h-0 p-4">
                     {demo && selectedLemma ? (
                       <Desk
                         key={selectedLemma.key}
@@ -238,7 +238,7 @@ function LandingApp() {
                   </p>
                 </div>
 
-                <div className="mt-5 h-[360px]">
+                <div className="mt-5 h-[360px] p-4">
                   {demo ? (
                     <NgramToggleInput
                       value={composerValue}
