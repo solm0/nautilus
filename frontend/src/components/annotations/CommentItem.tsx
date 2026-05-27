@@ -93,20 +93,23 @@ export default function CommentItem({
   userId?: number;
   setCommentCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const content = c.content ?? "";
+  const relativeCreatedAt = formatRelative(c.created_at);
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(c.content);
+  const [value, setValue] = useState(content);
   const [openModal, setOpenModal] = useState(false);
   const [replyReset, setReplyReset] = useState(0);
-  const [canSave, setCanSave] = useState(c.content.trim().length > 0);
+  const [canSave, setCanSave] = useState(content.trim().length > 0);
   const inputRef = useRef<NgramToggleInputHandle>(null);
 
   useEffect(() => {
-    setCanSave(value.trim().length > 0);
+    setCanSave((value ?? "").trim().length > 0);
   }, [value]);
 
 
   const handleSave = async () => {
-    const nextValue = inputRef.current?.flushPendingInput() ?? value;
+    const nextValue = inputRef.current?.flushPendingInput() ?? value ?? "";
+    if (!nextValue.trim()) return;
     await updateComment(c.id, nextValue);
     setComments(prev =>
       prev.map(x => x.id === c.id ? { ...x, content: nextValue } : x)
@@ -158,7 +161,7 @@ export default function CommentItem({
           <span className="text-neutral-400">
             {c.deleted
               ? ''
-              : (formatRelative(c.created_at) ?? 'Unknown date')}
+              : (!relativeCreatedAt || relativeCreatedAt === "0s ago" ? "Now" : relativeCreatedAt)}
           </span>
         </div>
 
@@ -174,7 +177,7 @@ export default function CommentItem({
       <div className="pl-7 flex flex-col gap-3 pb-5">
         {!editing ? (
           <div className="pl-9 whitespace-pre-wrap text-sm">
-            {c.deleted ? "[deleted]" : c.content}
+            {c.deleted ? "[deleted]" : content}
           </div>
         ) : (
           <div className="flex flex-col gap-1">

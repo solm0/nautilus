@@ -308,10 +308,15 @@ export default function AnnotationCard({
           <CommentInput
             onSubmit={async (text) => {
               const newC = await createComment(item.id, { content: text });
+              const createdAt = newC.created_at ?? new Date().toISOString();
               setComments(prev => [
                 ...prev,
                 {
                   ...newC,
+                  content: newC.content ?? text,
+                  parent_id: newC.parent_id ?? null,
+                  deleted: newC.deleted ?? false,
+                  created_at: createdAt,
                   user: {
                     id: user?.id,
                     name: user?.name ?? "",
@@ -327,7 +332,7 @@ export default function AnnotationCard({
           <div className="flex flex-col-reverse gap-1">
             {buildTree(comments).map(c => (
               <CommentItem
-                key={c.id}
+                key={`${item.id}-${c.id}`}
                 c={c}
                 annotationId={item.id}
                 setComments={setComments}
