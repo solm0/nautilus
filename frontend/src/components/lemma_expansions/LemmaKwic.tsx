@@ -81,7 +81,7 @@ interface KwicRowProps {
   lemma: string;
   language: string;
   onSelect: (tokenKey: string) => void;
-  lemmaInfo?: Record<string, LemmaData>;
+  canSelectKey?: (tokenKey: string) => boolean;
   hovered: { pos: string | null; dep: string | null, x: number, y: number };
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; dep: string | null, x: number, y: number }>>
 }
@@ -94,7 +94,7 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, language, onSelect, lemmaInfo, hovered, setHovered },
+  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -161,7 +161,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
           token={t}
           language={language}
           onSelect={onSelect}
-          canSelectKey={lemmaInfo ? (tokenKey) => lemmaInfo[tokenKey] != null : undefined}
+          canSelectKey={canSelectKey}
         />
       </div>
     </div>
@@ -235,6 +235,14 @@ export default function LemmaKwic({
     () => lemmaInfo ?? {},
   );
   const [loadingLemma, setLoadingLemma] = useState(false);
+
+  const canSelectKey = (tokenKey: string) => {
+    if (availableKeys[tokenKey] != null) {
+      return true;
+    }
+
+    return !attemptedKeysRef.current.has(tokenKey);
+  };
 
   useEffect(() => {
     setAvailableKeys(lemmaInfo ?? {});
@@ -362,7 +370,7 @@ export default function LemmaKwic({
             lemma={lemma}
             language={language}
             onSelect={onSelect}
-            lemmaInfo={availableKeys}
+            canSelectKey={canSelectKey}
             hovered={hovered}
             setHovered={setHovered}
           />

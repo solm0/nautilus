@@ -239,19 +239,23 @@ class LanguagePackDB:
             fallback_query=fallback_query,
         )
 
-    def get_prefix_matches(self, prefix: str):
+    def get_prefix_matches(self, prefix: str, limit: int | None = None):
         if not prefix:
             return []
 
-        return self._fetch_pairs(
-            (
-                "SELECT token, freq "
-                "FROM prefix_index "
-                "WHERE prefix = ? "
-                "ORDER BY freq DESC"
-            ),
-            (prefix,),
+        query = (
+            "SELECT token, freq "
+            "FROM prefix_index "
+            "WHERE prefix = ? "
+            "ORDER BY freq DESC"
         )
+        params = (prefix,)
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params = (prefix, limit)
+
+        return self._fetch_pairs(query, params)
 
     def has_lemma_key(self, key: str) -> bool:
         try:

@@ -7,6 +7,7 @@ import NgramToggleInput from "../components/pageview/NgramToggleInput";
 import Logotype from "../components/svgs/Logotype";
 import Button from "../components/util/Button";
 import ThemeToggle from "../components/util/ToggleButton";
+import { ArrowDown } from "lucide-react";
 
 type DemoPayload = {
   language: string;
@@ -86,7 +87,7 @@ function LandingApp() {
           <ThemeToggle compact />
         </header>
 
-        <div className="flex flex-col gap-21 h-auto overflow-y-scroll no-scrollbar pb-7">
+        <div className="flex flex-col gap-21 h-auto overflow-y-scroll no-scrollbar pb-21">
 
           {/* 개요, 설치 */}
           <section className="min-h-180 pt-21 flex flex-col gap-14">
@@ -104,11 +105,11 @@ function LandingApp() {
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold">Download (준비 중입니다)</p>
+              <p className="text-lg font-semibold">Download (6월 중 배포 예정)</p>
               <div className="flex gap-4 items-center">
-                <Button text="Desktop App" onClick={()=>console.log('desktop')} black/>
-                <Button text="Android App" onClick={()=>console.log('android')} black/>
-                <Button text="Chrome Extension" onClick={()=>console.log('chrome')} black/>
+                <Button text="Desktop App" disabled onClick={()=>console.log('desktop')} black/>
+                <Button text="Android App" disabled onClick={()=>console.log('android')} black/>
+                <Button text="Chrome Extension" disabled onClick={()=>console.log('chrome')} black/>
               </div>
             </div>
           </section>
@@ -144,32 +145,35 @@ function LandingApp() {
               <div className="flex-1 flex flex-col gap-4">
                 <img src="/landing/landing_2.png" className="grayscale brightness-120" />
                 <p className="font-semibold">구조를 시각으로 보조</p>
-                <p>문장의 핵심 구성요소<span className="text-sm">(nsubj, root, obj)</span>를 하이라이트합니다.</p>
+                <p>문장의 핵심 구성요소<span className="text-sm">(주어, 목적어, 서술어)</span>를 하이라이트합니다.</p>
+                <ArrowDown size={15} />
                 <p>목표 언어의 문법에 노출된 기간이 짧은 독자의 인지 부하를 낮춥니다.</p>
               </div>
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_3.png" className="grayscale brightness-130"/>
                 <p className="font-semibold">의미를 맥락으로 보조</p>
                 <p>단어의 연관어 및 코퍼스 속에서 해당 단어가 등장한 부분을 재귀적으로 보여줍니다.</p>
+                <ArrowDown size={15} />
                 <p>풍부한 문맥 속에서 단어의 의미와 문장 내 역할을 추론하고 습득할 수 있도록 합니다.</p>
               </div>
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_1.png" className="grayscale brightness-120"/>
                 <p className="font-semibold">생성을 통계로 보조</p>
                 <p>n-gram 모델을 이용한 다음 단어 추천과 prefix 기반 검색을 제공합니다.</p>
+                <ArrowDown size={15} />
                 <p>목표 언어를 사용하여 새로운 문장을 생성하도록 하되 백지에서 시작하지 않도록 도와줍니다.</p>
               </div>
             </div>
 
             <div className="grid gap-6">
-              <div className="flex">
-                <div className="flex-1 shrink-0 border border-neutral-300">
+              <div className="flex w-full overflow-hidden">
+                <div className="flex-1 w-1/2 shrink-0 border border-neutral-300">
                   <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 md:flex-row md:items-end md:justify-between">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4">
                       <div className="flex flex-col gap-1.5">
                         <p className="text-xs text-neutral-500">구조를 시각으로 보조</p>
                         <h3 className="text-neutral-900">Reading Inferface</h3>
-                        <p className="text-sm">토큰을 클릭해 보세요.</p>
+                        <p className="text-sm">진하게 칠해진 단어를 클릭해 보세요.</p>
                       </div>
                     </div>
                   </div>
@@ -191,7 +195,7 @@ function LandingApp() {
                   </div>
                 </div>
 
-                <div className="flex-1 shrink-0 border border-neutral-300 border-l-0">
+                <div className="flex-1 w-1/2 shrink-0 border border-neutral-300 border-l-0">
                   <div className="border-b border-neutral-200 px-5 py-4 md:px-6">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4">
                       <div className="flex flex-col gap-1.5">
@@ -202,7 +206,7 @@ function LandingApp() {
                           Lemma Expansion
                         </h3>
                         <p className="text-sm text-neutral-600">
-                          선택한 단어의 연관어와 사용된 문장을 보여준다.
+                          주변 단어들을 클릭해 보세요.
                         </p>
                       </div>
                     </div>
@@ -215,6 +219,7 @@ function LandingApp() {
                         initialLemma={selectedLemma}
                         onToggleFavorite={async () => {}}
                         language={demo.language}
+                        lemmaInfo={demo.lemma_info}
                       />
                     ) : (
                       <DemoPlaceholder message={error ?? "Loading lemma demo..."} />
@@ -234,7 +239,7 @@ function LandingApp() {
                     </h3>
                   </div>
                   <p className="text-sm text-neutral-600">
-                    이전 단어와 입력 중인 단어를 기반으로 다음 단어를 추천해 준다.
+                    타이핑하거나 추천된 단어를 클릭하여 문장을 만들어 보세요.
                   </p>
                 </div>
 
@@ -261,20 +266,20 @@ function LandingApp() {
           {/* Objectives */}
           <section id="objectives" className="flex flex-col gap-7">
             <h2 className="font-source">2. Objectives</h2>
-            <h3>Nautilus를 이루는 핵심적인 아이디어</h3>
+            <h3>중심 목표</h3>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex gap-4 flex-col md:flex-row">
                 <div className="flex-1 flex flex-col gap-4">
-                  <p className="font-semibold">확장 가능한 시스템</p>
-                  <p>코퍼스와 구문 분석기만 있으면 거의 모든 언어로 큰 추가적 노력 없이 확장 가능한 시스템을 만든다. 특정 언어, 라이브러리, 코퍼스에 종속되지 않는다. 언어의 특성 Universal dependency를 이용한다.</p>
+                  <p className="font-semibold">언어의 보편적 특징을 이용</p>
+                  <p>세계 여러 언어의 Universal Dependency 구조를 활용해, 해당 언어의 코퍼스와 구문 분석기만 있다면 많은 추가 작업 없이 새로운 언어로 확장할 수 있는 시스템을 만든다. 또한 보편적 구조를 기반으로 하기 때문에 언어 간 비교 역시 가능하다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <p className="font-semibold">언어 a를 사용해 언어 a를 이해</p>
-                  <p>번역과 설명이라는 메타적인 레이어를 두는 대신, 코퍼스에서 찾을 수 있는 의미 있는 정보를 가능한 한 많이 찾아낸다.</p>
+                  <p>번역이나 별도의 설명 같은 메타적 레이어에 의존하기보다, 실제 코퍼스 안에서 발견할 수 있는 의미 있는 정보를 최대한 직접 탐색할 수 있도록 한다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <p className="font-semibold">검색의 병목 해소</p>
-                  <p>학습자가 기대하거나 이해에 도움이 될 만한 정보들을 빠르게, 한 번에 제공하고 위치/맥락 상 비슷한 정보의 재귀적 탐색을 통해 사전과 원문 사이의 불필요한 왕복 과정을 제거한다.</p>
+                  <p>학습자가 기대하거나 이해에 도움이 되는 정보들을 빠르게 한 번에 제공하고, 위치와 맥락이 유사한 표현들을 재귀적으로 탐색할 수 있도록 하여 사전과 원문 사이를 반복적으로 오가는 비효율을 줄인다.</p>
                 </div>
               </div>
             </div>
@@ -353,10 +358,15 @@ function LandingApp() {
           {/* contribute */}
           <section id="contribute" className="flex flex-col gap-7">
             <h2 className="font-source">5. Become a contributor!</h2>
-            <div className="flex gap-4 flex-col md:flex-row">
-              당신의 언어 또는 당신이 배우고 있는 언어를 추가하거나 발전시키는 것을 도와주세요.
+            <div className="flex gap-4 flex-col">
+              <p>당신의 언어 또는 당신이 배우고 있는 언어를 추가하거나 발전시키는 것을 도와주세요.</p>
+              <a href="mailto:solmi-@kookmin.ac.kr">solmi-@kookmin.ac.kr</a>
             </div>
+            
           </section>
+
+
+          <footer className="border-t border-neutral-300 h-56 text-sm text-neutral-400 pt-4"></footer>
         </div>
 
       </div>
