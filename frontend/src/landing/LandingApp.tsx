@@ -163,7 +163,7 @@ function LandingApp() {
 
             <div className="grid gap-6">
               <div className="flex">
-                <div className="flex-1 border border-neutral-300">
+                <div className="flex-1 shrink-0 border border-neutral-300">
                   <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 md:flex-row md:items-end md:justify-between">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4">
                       <div className="flex flex-col gap-1.5">
@@ -191,7 +191,7 @@ function LandingApp() {
                   </div>
                 </div>
 
-                <div className="flex-1 border border-neutral-300 border-l-0">
+                <div className="flex-1 shrink-0 border border-neutral-300 border-l-0">
                   <div className="border-b border-neutral-200 px-5 py-4 md:px-6">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4">
                       <div className="flex flex-col gap-1.5">
