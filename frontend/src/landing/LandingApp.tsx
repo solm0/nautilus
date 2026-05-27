@@ -95,11 +95,11 @@ function LandingApp() {
             </h1>
             <div className="max-w-3xl text-base md:text-lg leading-7 text-neutral-600 flex flex-col gap-[1em]">
               <p>
-                Nautilus<span className="text-sm font-medium">[노틸러스]</span>는 특정 외국어의 문자, 발성, 생성 규칙에 흥미를 느끼는 사용자가 복잡한 사전 지식 없이도 텍스트를 탐색할 수 있도록 하는 도구입니다.
-                사용자가 번역기에 의존하지 않고도 목표 언어의 텍스트를 독해하고 작성해볼 수 있도록 보조합니다.
+                Nautilus<span className="text-sm font-medium">[노틸러스]</span>는 외국어의 문자 체계, 발음, 생성 규칙에 흥미를 느끼는 사용자를 위한 읽기 도구입니다.
+                복잡한 사전 지식이 없어도 텍스트를 직접 탐색하고, 번역기에 덜 의존한 채 목표 언어를 읽고 써 볼 수 있도록 돕습니다.
               </p>
               <p>
-                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어, 알바니아어, 한국어, 일본어를 지원합니다.
+                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며, 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어, 알바니아어, 한국어, 일본어를 지원합니다.
               </p>
             </div>
             <div className="flex flex-col gap-2">
@@ -138,28 +138,28 @@ function LandingApp() {
 
           {/* Demos */}
           <section id="demos" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl!">1. Demos</h2>
+            <h2 className="font-serif text-4xl! pt-8">1. Demos</h2>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex-1 flex flex-col gap-4">
                 <img src="/landing/landing_2.png" className="grayscale brightness-120" />
                 <p className="font-semibold">구조를 시각으로 보조</p>
-                <p>문장의 핵심 구성요소<span className="text-sm">(주어, 목적어, 서술어)</span>를 하이라이트합니다.</p>
+                <p>문장의 핵심 구성요소<span className="text-sm">(주어, 목적어, 서술어)</span>를 시각적으로 강조합니다.</p>
                 <ArrowDown size={15} />
-                <p>목표 언어의 문법에 노출된 기간이 짧은 독자의 인지 부하를 낮춥니다.</p>
+                <p>목표 언어 문법에 아직 익숙하지 않은 독자의 인지 부하를 낮춥니다.</p>
               </div>
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_3.png" className="grayscale brightness-130"/>
                 <p className="font-semibold">의미를 맥락으로 보조</p>
-                <p>단어의 연관어 및 코퍼스 속에서 해당 단어가 등장한 부분을 재귀적으로 보여줍니다.</p>
+                <p>연관어와 코퍼스 예문을 따라가며 단어가 실제로 쓰이는 맥락을 보여줍니다.</p>
                 <ArrowDown size={15} />
-                <p>풍부한 문맥 속에서 단어의 의미와 문장 내 역할을 추론하고 습득할 수 있도록 합니다.</p>
+                <p>풍부한 문맥 속에서 단어의 의미와 문장 안에서의 역할을 스스로 추론할 수 있게 합니다.</p>
               </div>
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_1.png" className="grayscale brightness-120"/>
                 <p className="font-semibold">생성을 통계로 보조</p>
                 <p>n-gram 모델을 이용한 다음 단어 추천과 prefix 기반 검색을 제공합니다.</p>
                 <ArrowDown size={15} />
-                <p>백지에서부터 생성을 시작하는 부담을 줄여 주며, 완전하지 않은 어휘 지식<span className="text-xs">(예: 앞부분만 기억남, 어떤 굴절 어미를 선택할지 모름)</span>을 보정할 수 있습니다.</p>
+                <p>백지에서 문장을 시작하는 부담을 줄이고, 불완전한 어휘 지식<span className="text-xs">(예: 앞부분만 기억남, 굴절 어미가 헷갈림)</span>을 보완해 줍니다.</p>
               </div>
             </div>
 
@@ -170,8 +170,8 @@ function LandingApp() {
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4">
                       <div className="flex flex-col gap-1.5">
                         <p className="text-xs text-neutral-500">구조를 시각으로 보조</p>
-                        <h3 className="text-neutral-900">Reading Inferface</h3>
-                        <p className="text-sm">진하게 표시된 단어를 클릭해 보세요.</p>
+                        <h3 className="text-neutral-900">Reading Interface</h3>
+                        <p className="text-sm">강조된 단어를 클릭해 보세요.</p>
                       </div>
                     </div>
                   </div>
@@ -204,7 +204,7 @@ function LandingApp() {
                           Lemma Expansion
                         </h3>
                         <p className="text-sm text-neutral-600">
-                          주변 단어들을 클릭해 보세요.
+                          주변 단어를 따라가며 확장해 보세요.
                         </p>
                       </div>
                     </div>
@@ -237,7 +237,7 @@ function LandingApp() {
                     </h3>
                   </div>
                   <p className="text-sm text-neutral-600">
-                    타이핑하거나, 추천된 단어를 클릭하여 문장을 만들어 보세요.
+                    직접 타이핑하거나 추천 단어를 눌러 문장을 이어 보세요.
                   </p>
                 </div>
 
@@ -263,21 +263,21 @@ function LandingApp() {
 
           {/* Objectives */}
           <section id="objectives" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl!">2. Objectives</h2>
+            <h2 className="font-serif text-4xl! pt-8">2. Objectives</h2>
             <h3>중심 목표</h3>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex gap-4 flex-col md:flex-row">
                 <div className="flex-1 flex flex-col gap-4">
                   <p className="font-semibold">언어의 보편적 특징을 이용</p>
-                  <p>세계 여러 언어의 Universal Dependency 구조를 활용해, 해당 언어의 코퍼스와 구문 분석기만 있다면 많은 추가 작업 없이 새로운 언어로 확장할 수 있는 시스템을 목표로 합니다. 보편적 구조를 기반으로 하기 때문에 언어 간 비교 역시 가능합니다.</p>
+                  <p>Universal Dependency 구조를 활용해, 해당 언어의 코퍼스와 구문 분석기만 있다면 큰 구조 변경 없이 새로운 언어로 확장할 수 있는 시스템을 지향합니다. 같은 기반을 쓰기 때문에 언어 간 비교도 가능합니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <p className="font-semibold">언어 a를 사용해 언어 a를 이해</p>
-                  <p>번역이나 별도의 설명 같은 메타적 레이어에 의존하기보다, 실제 코퍼스 안에서 발견할 수 있는 의미 있는 정보를 최대한 직접 탐색할 수 있도록 합니다.</p>
+                  <p>번역이나 별도의 해설에 의존하기보다, 실제 코퍼스 안에서 발견되는 단서들을 직접 탐색하며 이해할 수 있도록 돕습니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <p className="font-semibold">기존 검색 경험의 병목 해소</p>
-                  <p>학습자가 기대하거나 이해에 도움이 되는 정보들을 빠르게 한 번에 제공하고, 위치와 맥락이 유사한 표현들을 재귀적으로 탐색할 수 있도록 하여 사전과 원문 사이를 반복적으로 오가는 비효율을 줄입니다.</p>
+                  <p>이해에 필요한 정보를 한 번에 모아 보여 주고, 비슷한 맥락의 표현을 연쇄적으로 탐색할 수 있게 하여 사전과 원문 사이를 반복해서 오가는 비효율을 줄입니다.</p>
                 </div>
               </div>
             </div>
@@ -293,8 +293,8 @@ function LandingApp() {
 
           {/* use */}
           <section id="use" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl!">3. How to use</h2>
-            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하기만 하면 됩니다. Nautilus가 라벨링 작업을 마친 '페이지'를 저장합니다. 페이지에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 등의 도구를 사용할 수 있습니다.</p>
+            <h2 className="font-serif text-4xl! pt-8">3. How to use</h2>
+            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 같은 도구를 바로 사용할 수 있습니다.</p>
 
             <h3>가능한 입력 경로</h3>
             <div className="flex gap-4 flex-col md:flex-row">
@@ -302,17 +302,17 @@ function LandingApp() {
                 <div className="flex-1 flex flex-col gap-4">
                   <img src="/landing/landing_4.png" />
                   <p className="font-semibold">직접 입력</p>
-                  <p>직접 타이핑/붙여넣기로 입력할 수 있습니다.</p>
+                  <p>텍스트를 직접 입력하거나 붙여넣어 바로 분석할 수 있습니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_5.png" />
                   <p className="font-semibold">음악 가사 입력</p>
-                  <p>맥/안드로이드의 유튜브 뮤직, 스포티파이 등 애플리케이션에서 음악 재생을 감지하면 자동으로 LRCLIB에서 가사를 가져와 바로 저장, 분석할 수 있습니다.</p>
+                  <p>맥과 안드로이드에서 유튜브 뮤직, 스포티파이 등의 재생을 감지하면 LRCLIB에서 가사를 불러와 바로 저장하고 분석할 수 있습니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_6.png" />
                   <p className="font-semibold">크롬 익스텐션을 사용해 입력</p>
-                  <p>웹 서핑 중 원하는 텍스트 영역을 선택해 바로 저장, 분석할 수 있습니다.</p>
+                  <p>웹에서 원하는 텍스트 영역을 선택해 바로 저장하고 분석할 수 있습니다.</p>
                 </div>
               </div>
             </div>
@@ -323,17 +323,17 @@ function LandingApp() {
                 <div className="flex-1 flex flex-col gap-4">
                   <img src="/landing/landing_7.png" />
                   <p className="font-semibold">Articulation - 조음 시각화</p>
-                  <p>선택한 영역의 ipa(발음 기호)와 조음 기관의 상태를 애니메이션으로 보여줍니다.</p>
+                  <p>선택한 구간의 IPA<span className="text-xs">(발음 기호)</span>와 조음 기관의 상태를 애니메이션으로 보여줍니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_8.png" />
                   <p className="font-semibold">Pattern - 패턴 기반 검색</p>
-                  <p>선택한 영역과 비슷한 패턴의 문장을 해당 언어 또는 다른 언어의 코퍼스 내에서 검색할 수 있습니다. 품사, 의존관계, 특정 표지어<span className="text-xs">(and, or, but, ...)</span> 기반으로 검색합니다.</p>
+                  <p>선택한 구간과 비슷한 패턴의 문장을 같은 언어 또는 다른 언어의 코퍼스에서 찾을 수 있습니다. 품사, 의존관계, 특정 표지어<span className="text-xs">(and, or, but, ...)</span>를 기준으로 검색합니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_9.png" />
                   <p className="font-semibold">Mutual</p>
-                  <p>Mutual 관계를 맺은 사용자와 주석을 공유하고 댓글을 주고받을 수 있습니다. 댓글 작성 시 또한 N-gram Editor의 도움을 받을 수 있습니다.</p>
+                  <p>Mutual 관계를 맺은 사용자와 주석을 공유하고 댓글을 주고받을 수 있습니다. 댓글을 쓸 때도 N-gram Editor를 사용할 수 있습니다.</p>
                 </div>
               </div>
             </div>
@@ -341,30 +341,30 @@ function LandingApp() {
 
           {/* works */}
           <section id="works" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl!">4. How it works</h2>
+            <h2 className="font-serif text-4xl! pt-8">4. How it works</h2>
             <h3 className="mt-7">언어 팩</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>Wortschatz Leipzig에서 관리하는 언어별 위키피디아, 웹 코퍼스를 사용합니다.</li>
-              <li>N-gram 모델, prefix 인덱스, lemma 사전을 포함한 언어별 데이터를 만듭니다. 이 데이터와 구문 분석 모델<span className="text-xs">(예: stanza, spacy, kiwi)</span> 파일이 하나의 언어 팩을 구성합니다.</li>
-              <li>데스크탑 사용자는 로컬에 언어 팩을 설치하여 오프라인으로 분석 서비스를 이용할 수 있습니다. 모바일 사용자는 서버를 이용합니다.</li>
+              <li>N-gram 모델, prefix 인덱스, lemma 사전 등 언어별 데이터를 만들고, 이를 구문 분석 모델<span className="text-xs">(예: stanza, spacy, kiwi)</span> 파일과 함께 하나의 언어 팩으로 묶습니다.</li>
+              <li>데스크탑에서는 언어 팩을 로컬에 설치해 오프라인으로 분석할 수 있고, 모바일에서는 서버를 통해 같은 기능을 사용합니다.</li>
             </ul>
             <img src="/landing/landing_10.png" className="max-w-[40em]" />
 
             <h3 className="mt-7">N-gram 학습과 prefix 인덱스 생성</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
-              <li>문장 코퍼스를 정규화하고 소문자화한 뒤 토큰으로 분리합니다. 언어별로 조금씩 다른 허용 문자, 하이픈 처리, 정규화 규칙을 적용합니다.</li>
-              <li>문장 양끝에는 <span>', '</span> 같은 경계 토큰을 붙여 unigram, bigram, trigram 빈도를 셉니다.</li>
-              <li>각 context마다 상위 후보만 남깁니다. raw count를 score로 정규화해 바로 추천에 쓸 수 있게 합니다.</li>
-              <li>prefix 인덱스는 단어의 앞부분을 최대 5글자 정도 잘라 만들고, prefix별 상위 빈도 후보만 저장합니다.</li>
-              <li>런타임 검색에서는 먼저 prefix 후보를 좁힌 뒤, 앞 문맥의 n-gram 점수와 섞어 추천 순서를 다시 정합니다.</li>
+              <li>문장 코퍼스를 정규화하고 소문자화한 뒤 토큰으로 분리합니다. 허용 문자, 하이픈 처리, 정규화 방식은 언어별 규칙을 따릅니다.</li>
+              <li>문장 양끝에 경계 토큰을 붙이고 unigram, bigram, trigram 빈도를 셉니다.</li>
+              <li>각 문맥<span className="text-xs">(context)</span>마다 상위 후보만 남기고, raw count를 score로 정규화해 추천에 바로 쓸 수 있게 합니다.</li>
+              <li>prefix 인덱스는 단어 앞부분을 최대 5글자 정도까지 잘라 만들고, prefix별 상위 빈도 후보만 저장합니다.</li>
+              <li>런타임에서는 먼저 prefix로 후보를 좁힌 뒤, 앞 문맥의 n-gram 점수와 결합해 추천 순서를 다시 정합니다.</li>
             </ul>
             <h3 className="mt-7">Lemma 사전 생성</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>문장 코퍼스를 형태소 분석해 각 토큰의 surface, lemma, 품사, 의존관계를 추출합니다.</li>
               <li>불용 품사와 지나치게 일반적인 lemma를 제거하고, `lemma + POS`를 하나의 key로 삼아 빈도와 등장 문장 id를 누적합니다.</li>
-              <li>문장 속 의존관계에서 서로 연결된 lemma들을 모아 co-occurrence graph를 만들고, 빈도 보정을 거쳐 관련 lemma 후보를 계산합니다.</li>
-              <li>각 lemma key에 대해 관련어 목록, 등장 빈도, 예문이 될 line id 집합을 저장합니다.</li>
-              <li>최종적으로 line store, lemma stats, lemma graph가 함께 SQLite 언어 팩에 들어가고, lookup 시에는 이 미리 계산된 자료를 조합해 빠르게 응답합니다.</li>
+              <li>문장 안에서 서로 연결된 lemma들을 모아 co-occurrence graph를 만들고, 빈도 보정을 거쳐 관련 lemma 후보를 계산합니다.</li>
+              <li>각 lemma key에 대해 관련어 목록, 등장 빈도, 예문으로 쓸 수 있는 line id 집합을 저장합니다.</li>
+              <li>최종적으로 line store, lemma stats, lemma graph가 함께 SQLite 언어 팩에 들어가며, lookup 시에는 이 미리 계산된 자료를 조합해 빠르게 응답합니다.</li>
             </ul>
             <h3 className="mt-7">분석 결과 예시</h3>
             <div className="flex flex-col gap-5 max-w-[48em]">
@@ -372,9 +372,9 @@ function LandingApp() {
                 <p className="font-semibold font-mono text-sm">POST /api/analyze</p>
                 <ul className="leading-[1.7em] pl-6 list-disc">
                   <li>입력: 텍스트 block 배열과 언어</li>
-                  <li>출력: 각 block에 token 배열을 붙인 결과</li>
+                  <li>출력: 각 block에 token 배열을 붙인 분석 결과</li>
                 </ul>
-                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2">{`{
+                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2 rounded-sm">{`{
   "blocks": [
     {
       "text": "Language opens a sentence.",
@@ -390,10 +390,10 @@ function LandingApp() {
               <div className="flex flex-col gap-2">
                 <p className="font-semibold font-mono text-sm">GET /api/predict, GET /api/search</p>
                 <ul className="leading-[1.7em] pl-6 list-disc">
-                  <li>predict: 현재 토큰 문맥에 맞는 다음 단어 후보 반환</li>
-                  <li>search: prefix와 문맥을 함께 써서 후보 반환</li>
+                  <li>predict: 현재 문맥에 맞는 다음 단어 후보를 반환합니다.</li>
+                  <li>search: prefix와 문맥을 함께 사용해 후보를 반환합니다.</li>
                 </ul>
-                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2">{`{
+                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2 rounded-sm">{`{
   "input": "language opens",
   "tokens": ["<s>", "language", "opens"],
   "predictions": [["a", 0.41], ["the", 0.18], ["new", 0.07]]
@@ -403,9 +403,9 @@ function LandingApp() {
               <div className="flex flex-col gap-2">
                 <p className="font-semibold font-mono text-sm">POST /api/lookup</p>
                 <ul className="leading-[1.7em] pl-6 list-disc">
-                  <li>하나의 lemma key에 대한 related, kwic, favorite 여부 반환</li>
+                  <li>하나의 lemma key에 대해 related, KWIC, favorite 여부를 반환합니다.</li>
                 </ul>
-                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2">{`{
+                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2 rounded-sm">{`{
   "key": "language_NOUN",
   "global_key": "language/NOUN/en",
   "related": ["word_NOUN", "meaning_NOUN", "sentence_NOUN"],
@@ -428,7 +428,7 @@ function LandingApp() {
                 <ul className="leading-[1.7em] pl-6 list-disc">
                   <li>여러 lemma key를 한 번에 요청하고, key별 결과를 map 형태로 받습니다.</li>
                 </ul>
-                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2">{`{
+                <pre className="text-sm whitespace-pre-wrap bg-neutral-200 p-2 rounded-sm">{`{
   "language_NOUN": {
     "key": "language_NOUN",
     "related": ["word_NOUN", "meaning_NOUN"],
@@ -442,9 +442,9 @@ function LandingApp() {
 
           {/* contribute */}
           <section id="contribute" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl!">5. Become a contributor!</h2>
+            <h2 className="font-serif text-4xl! pt-8">5. Become a contributor!</h2>
             <div className="flex gap-4 flex-col max-w-[40em]">
-              <p>당신의 언어 또는 당신이 배우고 있는 언어를 Nautilus에 추가하거나 발전시키는 것을 도와주세요. 해당 언어에 매력을 느꼈던 이유나 학습하며 느꼈던 불편함 등 주관적인 이야기도 환영합니다.</p>
+              <p>당신의 언어, 혹은 지금 배우고 있는 언어를 Nautilus에 추가하고 발전시키는 일을 함께해 주세요. 그 언어에 매력을 느낀 이유나 학습하면서 겪은 불편 등 주관적인 이야기 역시 큰 도움이 됩니다.</p>
               <a href="mailto:solmi-@kookmin.ac.kr">solmi-@kookmin.ac.kr</a>
             </div>
             
