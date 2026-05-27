@@ -100,11 +100,11 @@ function LandingApp() {
                 사용자가 번역기에 의존하지 않고도 목표 언어의 텍스트를 독해하고 작성해볼 수 있도록 보조합니다.
               </p>
               <p>
-                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어, 알바니아어, 한국어, 일본어를 지원합니다. <a href="#contribute" className="underline underline-offset-4 hover:opacity-50 text-sm">당신의 언어 또는 당신이 배우고 있는 언어를 추가하거나 발전시키는 것을 도와주세요.</a>
+                데스크탑 앱, 모바일 앱, 크롬 익스텐션으로 구성되어 있으며 현재 러시아어, 독일어, 영어, 세르비아어, 마케도니아어, 알바니아어, 한국어, 일본어를 지원합니다.
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold">Download</p>
+              <p className="text-lg font-semibold">Download (준비 중입니다)</p>
               <div className="flex gap-4 items-center">
                 <Button text="Desktop App" onClick={()=>console.log('desktop')} black/>
                 <Button text="Android App" onClick={()=>console.log('android')} black/>
@@ -354,7 +354,7 @@ function LandingApp() {
           <section id="contribute" className="flex flex-col gap-7">
             <h2 className="font-source">5. Become a contributor!</h2>
             <div className="flex gap-4 flex-col md:flex-row">
-
+              당신의 언어 또는 당신이 배우고 있는 언어를 추가하거나 발전시키는 것을 도와주세요.
             </div>
           </section>
         </div>

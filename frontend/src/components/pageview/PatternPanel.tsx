@@ -290,10 +290,6 @@ function PatternPanelSkeleton() {
           <Languages size={14} className="w-5" />
           <span>Match score</span>
         </div>
-        <label className="ml-auto flex items-center gap-1 text-xs text-neutral-500">
-          <span>Cross-language</span>
-          <input type="checkbox" disabled className="accent-neutral-300" />
-        </label>
         <label className="flex items-center gap-1 text-xs text-neutral-500">
           <span>Debug</span>
           <input type="checkbox" disabled className="accent-neutral-300" />
@@ -340,15 +336,27 @@ export default function PatternPanel({
   tokens: Token[];
   setPanelData?: (p: SidePanelState | null) => void;
 }) {
-  const [response, setResponse] = useState<PatternSearchResponse | null>(null);
+  const [responseCache, setResponseCache] = useState<Record<string, PatternSearchResponse>>({});
   const [loading, setLoading] = useState(false);
   const [lookupLoadingKey, setLookupLoadingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentLanguageOnly, setCurrentLanguageOnly] = useState(true);
   const [showDebug, setShowDebug] = useState(false);
   const [installedLanguages, setInstalledLanguages] = useState<string[]>([language]);
-  const languageLabel = LANG_MAP[language] ?? language;
+  const [selectedSearchLanguage, setSelectedSearchLanguage] = useState(language);
   const mobileApp = isCapacitorApp();
+  const selectionKey = `${language}:${tokens
+    .map((token, index) =>
+      [
+        index,
+        token.surface,
+        token.lemma ?? "",
+        token.pos ?? "",
+        token.dep ?? "",
+      ].join(":"),
+    )
+    .join("|")}`;
+  const cachedResponse = responseCache[selectedSearchLanguage];
+  const response = cachedResponse ?? null;
   const querySketch = response?.query?.sketch ?? null;
   const queryTokens = response?.query?.tokens ?? tokens;
   const hasPreviousResults = response !== null;
@@ -399,7 +407,8 @@ export default function PatternPanel({
           .filter((pack: { installed: boolean; lang: string }) => pack.installed)
           .map((pack: { lang: string }) => pack.lang);
 
-        setInstalledLanguages(nextLanguages.length > 0 ? nextLanguages : [language]);
+        const uniqueLanguages = Array.from(new Set([language, ...nextLanguages]));
+        setInstalledLanguages(uniqueLanguages.length > 0 ? uniqueLanguages : [language]);
       } catch {
         if (!cancelled) {
           setInstalledLanguages([language]);
@@ -415,21 +424,31 @@ export default function PatternPanel({
   }, [language, mobileApp]);
 
   useEffect(() => {
+    setResponseCache({});
+    setError(null);
+    setSelectedSearchLanguage(language);
+  }, [language, selectionKey]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
+      if (cachedResponse) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const searchLanguages = currentLanguageOnly
-          ? [language]
-          : Array.from(new Set([language, ...installedLanguages]));
-
-        const next = await searchPattern(language, searchLanguages, tokens);
+        const next = await searchPattern(language, [selectedSearchLanguage], tokens);
 
         if (!cancelled) {
-          setResponse(next);
+          setResponseCache((current) => ({
+            ...current,
+            [selectedSearchLanguage]: next,
+          }));
         }
       } catch (err) {
         if (!cancelled) {
@@ -447,7 +466,7 @@ export default function PatternPanel({
     return () => {
       cancelled = true;
     };
-  }, [currentLanguageOnly, installedLanguages, language, tokens]);
+  }, [cachedResponse, language, selectedSearchLanguage, selectionKey, tokens]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -472,28 +491,44 @@ export default function PatternPanel({
               {(response.message || response.status !== "ok") && (
                 <div className="px-3 py-2 text-sm text-neutral-700">
                   {response.status === "unsupported_language"
-                    ? `Pattern search is not available for ${languageLabel} yet.`
+                    ? `Pattern search is not available for ${LANG_MAP[selectedSearchLanguage] ?? selectedSearchLanguage} yet.`
                     : response.message}
                 </div>
               )}
               
-              <div className="p-3 pb-2 flex items-center w-full justify-between gap-4 border-b border-neutral-400">
+              <div className="p-3 pb-2 flex items-start w-full justify-between gap-4 border-b border-neutral-400">
+                <div className="flex min-w-0 flex-col gap-2">
+                  <p className="text-xs text-neutral-400 flex gap-3 items-center">
+                    <Languages size={14} className="w-5" />
+                    <span>Match score</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {installedLanguages.map((candidateLanguage) => {
+                      const selected = candidateLanguage === selectedSearchLanguage;
+                      const candidateLabel = LANG_MAP[candidateLanguage] ?? candidateLanguage;
 
-                <p className="text-xs text-neutral-400 flex gap-3 items-center">
-                  <Languages size={14} className="w-5" />
-                  <span>Match score</span>
-                </p>
+                      return (
+                        <button
+                          key={candidateLanguage}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSearchLanguage(candidateLanguage);
+                            setError(null);
+                          }}
+                          className={`rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.12em] transition-colors ${
+                            selected
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : "border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:text-neutral-800"
+                          }`}
+                        >
+                          {candidateLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                <label className="ml-auto flex items-center gap-1 text-xs text-neutral-600">
-                  <span>Cross-language</span>
-                  <input
-                    type="checkbox"
-                    checked={!currentLanguageOnly}
-                    onChange={(event) => setCurrentLanguageOnly(!event.target.checked)}
-                    className="accent-neutral-400"
-                  />
-                </label>
-                <label className="flex items-center gap-1 text-xs text-neutral-600">
+                <label className="shrink-0 flex items-center gap-1 text-xs text-neutral-600">
                   <span>Debug</span>
                   <input
                     type="checkbox"
