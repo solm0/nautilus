@@ -6,7 +6,6 @@ venv
 models
 .env*
 *.db
-*.woff2
 
 # Logs
 logs
