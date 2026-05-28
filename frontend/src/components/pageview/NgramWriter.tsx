@@ -14,6 +14,7 @@ type NgramWriterProps = {
   language: string;
   cut?: boolean;
   onHasTextChange?: (hasText: boolean) => void;
+  autofocus?: boolean;
 };
 
 const normalizePredictions = (v: any): Prediction[] => {
@@ -26,6 +27,7 @@ const NgramWriter = forwardRef<NgramWriterHandle, NgramWriterProps>(({
   language,
   cut = false,
   onHasTextChange,
+  autofocus = true
 }, ref) => {
   const [input, setInput] = useState("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -290,7 +292,7 @@ const NgramWriter = forwardRef<NgramWriterHandle, NgramWriterProps>(({
           setIsComposing(false);
           setInput(e.currentTarget.value);
         }}
-        autoFocus
+        autoFocus={autofocus}
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}

@@ -18,6 +18,7 @@ type NgramToggleInputProps = {
     lang: string;
   }[];
   onHasTextChange?: (hasText: boolean) => void;
+  autofocus?: boolean;
 };
 
 function textToTokens(text: string) {
@@ -59,6 +60,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   background = false,
   languageOptions,
   onHasTextChange,
+  autofocus = true
 }, ref) => {
   const [useNgram, setUseNgram] = useState(defaultOn);
   const [tokens, setTokens] = useState<string[]>([]);
@@ -164,6 +166,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           setTokens={setTokens}
           cut={cut}
           onHasTextChange={onHasTextChange}
+          autofocus={autofocus}
         />
       ) : (
         <textarea

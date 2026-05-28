@@ -250,6 +250,7 @@ function LandingApp() {
                       pageLanguage="en"
                       background={true}
                       languageOptions={fixedLanguageOptions}
+                      autofocus={false}
                     />
                   ) : (
                     <DemoPlaceholder message={error ?? "Loading n-gram demo..."} />
@@ -294,7 +295,7 @@ function LandingApp() {
           {/* use */}
           <section id="use" className="flex flex-col gap-7">
             <h2 className="font-serif text-4xl! pt-8">3. How to use</h2>
-            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 같은 도구를 바로 사용할 수 있습니다.</p>
+            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 같은 도구를 사용할 수 있습니다.</p>
 
             <h3>가능한 입력 경로</h3>
             <div className="flex gap-4 flex-col md:flex-row">
@@ -302,7 +303,7 @@ function LandingApp() {
                 <div className="flex-1 flex flex-col gap-4">
                   <img src="/landing/landing_4.png" />
                   <p className="font-semibold">직접 입력</p>
-                  <p>텍스트를 직접 입력하거나 붙여넣어 바로 분석할 수 있습니다.</p>
+                  <p>텍스트를 직접 입력하거나 붙여넣어 분석할 수 있습니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_5.png" />
@@ -354,7 +355,7 @@ function LandingApp() {
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>문장 코퍼스를 정규화하고 소문자화한 뒤 토큰으로 분리합니다. 허용 문자, 하이픈 처리, 정규화 방식은 언어별 규칙을 따릅니다.</li>
               <li>문장 양끝에 경계 토큰을 붙이고 unigram, bigram, trigram 빈도를 셉니다.</li>
-              <li>각 문맥<span className="text-xs">(context)</span>마다 상위 후보만 남기고, raw count를 score로 정규화해 추천에 바로 쓸 수 있게 합니다.</li>
+              <li>각 문맥<span className="text-xs">(context)</span>마다 상위 후보만 남기고, raw count를 score로 정규화해 추천에 쓸 수 있게 합니다.</li>
               <li>prefix 인덱스는 단어 앞부분을 최대 5글자 정도까지 잘라 만들고, prefix별 상위 빈도 후보만 저장합니다.</li>
               <li>런타임에서는 먼저 prefix로 후보를 좁힌 뒤, 앞 문맥의 n-gram 점수와 결합해 추천 순서를 다시 정합니다.</li>
             </ul>
