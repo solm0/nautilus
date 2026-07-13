@@ -3,7 +3,7 @@ import PageCore from "../PageCore";
 import { getNearestTokenIndex, getSentenceSelectionForRange, getTextForRange, getTokenRect, getTokensForRange } from "../pageUtils";
 import { IconButton } from "../util/Button";
 import { Check, Copy, Dna, Link, MessageSquareMore, Smile, Speech } from "lucide-react";
-import type { Annotation, EmojiAnnotation, LemmaData, OCRBlock } from "../pageTypes";
+import type { Annotation, EmojiAnnotation, LemmaData, TextBlock } from "../pageTypes";
 import { Gutter } from "./Gutter";
 import type { SidePanelState } from "./PageView";
 import EmojiPickerPopover from "./EmojiPickerPopover";
@@ -35,7 +35,7 @@ export default function PageContent({
   scrollRef,
   setAnnotations,
 }: {
-  blocks: OCRBlock[];
+  blocks: TextBlock[];
   lemmaInfo: Record<string, LemmaData>;
   onVisibleBlockRangeChange?: (range: { start: number; end: number }) => void;
   panelData: SidePanelState;

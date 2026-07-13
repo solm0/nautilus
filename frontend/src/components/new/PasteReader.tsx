@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FooterAction } from "./New";
-import type { OCRResponse } from "../pageTypes";
+import type { TextAnalysisResult } from "../pageTypes";
 import { analyzeBlocks } from "../../api";
 
 export default function PasteReader({
   language, setAnalyzing, setResult, setFooterAction
 }: {
   language: string
-  setResult: (r: OCRResponse | null) => void;
+  setResult: (r: TextAnalysisResult | null) => void;
   setAnalyzing: (a: boolean) => void;
   setFooterAction: (action: FooterAction | null) => void;
 }) {

@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PasteReader from "./PasteReader";
 import Button from "../util/Button";
 import { ResponsiveModal } from "../util/ResponsiveModal";
-import type { OCRResponse } from "../pageTypes";
-import { filterOCRResponseByRanges, type SelectionRange } from "../pageUtils";
+import type { TextAnalysisResult } from "../pageTypes";
+import { filterTextAnalysisByRanges, type SelectionRange } from "../pageUtils";
 import LanguageSelect from "../util/LanguageSelect";
 
 export type FooterAction = {
@@ -16,7 +16,7 @@ export type FooterAction = {
 };
 
 export default function New() {
-  const [result, setResult] = useState<OCRResponse | null>(null);
+  const [result, setResult] = useState<TextAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [footerAction, setFooterAction] = useState<FooterAction | null>(null);
   const [selectedRanges, setSelectedRanges] = useState<SelectionRange[]>([]);
@@ -66,7 +66,7 @@ export default function New() {
 
     const resultToSave =
       selectedRanges.length > 0
-        ? filterOCRResponseByRanges(result, selectedRanges)
+        ? filterTextAnalysisByRanges(result, selectedRanges)
         : result;
 
     try {

@@ -57,15 +57,15 @@ export type PatternSearchResponse = {
   }>;
 };
 
-export type OCRBlock = {
+export type TextBlock = {
   text: string;
   timestamp_ms?: number | null;
   tokens?: Token[];
 };
 
-export type OCRResponse = {
+export type TextAnalysisResult = {
   text: string;
-  blocks: OCRBlock[];
+  blocks: TextBlock[];
   track_ref?: TrackReference | null;
 };
 

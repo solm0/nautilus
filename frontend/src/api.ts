@@ -1,5 +1,5 @@
 import type { TimelineItem } from "./components/setting/Mutuals";
-import type { OCRResponse, PageSource, PatternSearchResponse, Token } from "./components/pageTypes"
+import type { PageSource, PatternSearchResponse, TextAnalysisResult, Token } from "./components/pageTypes"
 import type { User } from "./types";
 import { getAppPlatform, isCapacitorApp } from "./platform";
 import {
@@ -207,7 +207,7 @@ async function analyzeBlocksBatch(
   return res.json() as Promise<{
     blocks: Array<{
       text: string;
-      tokens?: OCRResponse["blocks"][number]["tokens"];
+      tokens?: TextAnalysisResult["blocks"][number]["tokens"];
     }>;
   }>;
 }
@@ -225,7 +225,7 @@ export async function analyzeBlocks(
 
   const analyzedBlocks: Array<{
     text: string;
-    tokens?: OCRResponse["blocks"][number]["tokens"];
+    tokens?: TextAnalysisResult["blocks"][number]["tokens"];
   }> = [];
 
   for (let start = 0; start < blocks.length; start += MOBILE_ANALYZE_BATCH_SIZE) {
@@ -240,7 +240,7 @@ export async function analyzeBlocks(
 }
 
 async function enrichBlocksWithIpa(
-  blocks: OCRResponse["blocks"],
+  blocks: TextAnalysisResult["blocks"],
   language: string,
 ) {
   const res = await fetch(`${LOCAL_API}/ipa`, {
@@ -260,14 +260,14 @@ async function enrichBlocksWithIpa(
   }
 
   return res.json() as Promise<{
-    blocks: OCRResponse["blocks"];
+    blocks: TextAnalysisResult["blocks"];
   }>;
 }
 
 // ----------- pages_router -------------
 
 export async function savePage(
-  result: OCRResponse,
+  result: TextAnalysisResult,
   name: string,
   notebookId: number | null,
   language: string,
@@ -282,7 +282,7 @@ export async function savePage(
   }
 
   const ipaData = await enrichBlocksWithIpa(result.blocks, language);
-  const resultWithIpa: OCRResponse = {
+  const resultWithIpa: TextAnalysisResult = {
     ...result,
     blocks: ipaData.blocks,
   };

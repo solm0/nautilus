@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
-import type { OCRBlock, OCRResponse } from "../src/components/pageTypes";
+import type { TextAnalysisResult, TextBlock } from "../src/components/pageTypes";
 import {
   analyzeTextBlocks,
   EXTENSION_DEEPLINK_BASE,
@@ -157,7 +157,7 @@ function getElementsBetween(anchor: HTMLElement, current: HTMLElement, host: HTM
   return selectable.slice(start, end + 1);
 }
 
-function makeResult(text: string, blocks: OCRBlock[]): OCRResponse {
+function makeResult(text: string, blocks: TextBlock[]): TextAnalysisResult {
   return { text, blocks };
 }
 

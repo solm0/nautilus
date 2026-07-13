@@ -1,4 +1,4 @@
-import type { OCRBlock } from "../pageTypes";
+import type { TextBlock } from "../pageTypes";
 
 export type SyncedLyricLine = {
   timestamp_ms: number;
@@ -60,7 +60,7 @@ export function getActiveLyricIndex(lines: SyncedLyricLine[], progressMs: number
 }
 
 export function getActiveTimedBlockIndex(
-  blocks: OCRBlock[],
+  blocks: TextBlock[],
   progressMs: number | null,
 ) {
   if (progressMs == null) return -1;

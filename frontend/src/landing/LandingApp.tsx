@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Annotation, LemmaData, OCRResponse } from "../components/pageTypes";
+import type { Annotation, LemmaData, TextAnalysisResult } from "../components/pageTypes";
 import type { SidePanelState } from "../components/pageview/PageView";
 import Desk from "../components/lemma_expansions/Desk";
 import PageContent from "../components/pageview/PageContent";
@@ -13,7 +13,7 @@ type DemoPayload = {
   title: string;
   description: string;
   sample_input: string;
-  result: OCRResponse;
+  result: TextAnalysisResult;
   lemma_info: Record<string, LemmaData>;
 };
 

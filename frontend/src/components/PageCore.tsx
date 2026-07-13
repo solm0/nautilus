@@ -12,7 +12,7 @@ import type {
   ReactNode,
   RefObject,
 } from "react";
-import type { Token, OCRBlock, LemmaData } from "./pageTypes";
+import type { Token, TextBlock, LemmaData } from "./pageTypes";
 import { useSettings, type AppSettings } from "./useSettings";
 import { Check, Ellipsis, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { MiniPopup } from "./util/MiniPopup";
@@ -293,7 +293,7 @@ function TokenHighlightOverlay({
 }: {
   pageId?: number;
   containerRef: RefObject<HTMLDivElement | null>;
-  blocks: OCRBlock[];
+  blocks: TextBlock[];
   activeLyricBlockIndex: number;
   syncPlaybackActive: boolean;
 }) {
@@ -642,7 +642,7 @@ export default function PageCore({
   onAddMetadata?: (value: string) => Promise<void>;
   onUpdateMetadata?: (index: number, value: string) => Promise<void>;
   onDeleteMetadata?: (index: number) => Promise<void>;
-  blocks: OCRBlock[];
+  blocks: TextBlock[];
   containerRef: RefObject<HTMLDivElement | null>;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   activeLyricBlockIndex?: number;

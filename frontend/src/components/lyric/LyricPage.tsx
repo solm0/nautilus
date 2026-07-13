@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import Button from "../util/Button";
 import LanguageSelect from "../util/LanguageSelect";
-import type { OCRBlock, OCRResponse } from "../pageTypes";
+import type { TextAnalysisResult, TextBlock } from "../pageTypes";
 import {
   analyzeBlocks,
   lemmaLookup,
@@ -132,11 +132,11 @@ function buildLyricsBlocks({
 }: {
   syncedLines: { timestamp_ms: number; text: string }[];
   plainLyrics: string | null | undefined;
-}): OCRBlock[] {
+}): TextBlock[] {
 
   if (syncedLines.length > 0) {
     return buildSyncedParagraphs(syncedLines).flatMap((paragraph, paragraphIndex, paragraphs) => {
-      const blocks: OCRBlock[] = paragraph.map((line) => ({
+      const blocks: TextBlock[] = paragraph.map((line) => ({
         text: line.text,
         timestamp_ms: line.timestamp_ms,
       }));
@@ -159,7 +159,7 @@ function buildLyricsBlocks({
     .map((text) => ({ text }));
 }
 
-async function analyzeLyricsBlocks(blocks: OCRBlock[], language: string) {
+async function analyzeLyricsBlocks(blocks: TextBlock[], language: string) {
   const analyzableBlocks = blocks
     .map((block, index) => ({ block, index }))
     .filter(({ block }) => block.text.trim().length > 0);
@@ -183,7 +183,7 @@ async function analyzeLyricsBlocks(blocks: OCRBlock[], language: string) {
       ...block,
       tokens: data.blocks?.[analyzedIndex]?.tokens ?? [],
     };
-  }) satisfies OCRBlock[];
+  }) satisfies TextBlock[];
 }
 
 function buildLyricsPageName(trackName: string | null | undefined, artists: string[]) {
@@ -271,7 +271,7 @@ export default function LyricPage() {
 
     try {
       const analyzedBlocks = await analyzeLyricsBlocks(blocks, language.lang);
-      const resultToSave: OCRResponse = {
+      const resultToSave: TextAnalysisResult = {
         text: analyzedBlocks.map((block) => block.text).join("\n"),
         blocks: analyzedBlocks,
         track_ref: buildTrackReference(track),

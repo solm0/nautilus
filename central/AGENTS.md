@@ -1,0 +1,31 @@
+# Central Guide
+
+## Purpose
+
+`central` is the shared FastAPI server for accounts, pages, comments, landing content, and mobile API endpoints.
+
+## Start here
+
+- `main.py`: app boot, model download, schema setup, router registration, landing mount
+- `routers/auth_router.py`: authentication flows
+- `routers/mobile_router.py`: mobile analyze, lookup, predict, search APIs
+- `routers/pages_router.py`, `comment_router.py`, `mutual_router.py`: shared content features
+- `db.py`, `models.py`: persistence layer
+
+## When to use this folder
+
+- Login, signup, password reset, account flows
+- Shared pages and comments
+- Mobile app calls that should hit the cloud API
+- Landing page hosting from `static/landing`
+
+## Important boundaries
+
+- Mobile uses `central` for account/content calls and `/api/mobile/*`
+- Desktop Electron should still use the local `backend` for local language analysis
+- If behavior should match both local and central servers, compare with `shared` before changing duplicated service code
+
+## Notes
+
+- `main.py` may download language models during startup
+- Schema bootstrap happens in app startup, so database-related changes can affect boot behavior

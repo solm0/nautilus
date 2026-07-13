@@ -1,4 +1,4 @@
-import type { OCRBlock, OCRResponse, Token } from "./pageTypes";
+import type { TextAnalysisResult, TextBlock, Token } from "./pageTypes";
 
 export type SelectionRange = {
   start: number;
@@ -105,7 +105,7 @@ export function updateSelectionRanges(
   return mergeOverlappingRanges([...ranges, normalizedTarget]);
 }
 
-export function flattenTokenEntries(blocks: OCRBlock[]): TokenEntry[] {
+export function flattenTokenEntries(blocks: TextBlock[]): TokenEntry[] {
   const entries: TokenEntry[] = [];
   let globalIndex = 0;
 
@@ -137,7 +137,7 @@ export type SentenceSelection = {
 };
 
 export function getSentenceSelectionForRange(
-  blocks: OCRBlock[],
+  blocks: TextBlock[],
   range: SelectionRange,
 ): SentenceSelection | null {
   const normalizedRange = normalizeRange(range);
@@ -169,7 +169,7 @@ export function getSentenceSelectionForRange(
   };
 }
 
-export function getTokensForRange(blocks: OCRBlock[], range: SelectionRange): Token[] {
+export function getTokensForRange(blocks: TextBlock[], range: SelectionRange): Token[] {
   const normalizedRange = normalizeRange(range);
   const tokens: Token[] = [];
   let globalIndex = 0;
@@ -209,7 +209,7 @@ export function getTokenRect(
   return element?.getBoundingClientRect() ?? null;
 }
 
-export function getTextForRange(blocks: OCRBlock[], range: SelectionRange): string {
+export function getTextForRange(blocks: TextBlock[], range: SelectionRange): string {
   const normalizedRange = normalizeRange(range);
   const surfaces: string[] = [];
   let globalIndex = 0;
@@ -233,10 +233,10 @@ export function isIndexInRanges(index: number, ranges: SelectionRange[]): boolea
   return ranges.some((range) => index >= range.start && index <= range.end);
 }
 
-export function filterOCRResponseByRanges(
-  result: OCRResponse,
+export function filterTextAnalysisByRanges(
+  result: TextAnalysisResult,
   ranges: SelectionRange[]
-): OCRResponse {
+): TextAnalysisResult {
   const mergedRanges = mergeOverlappingRanges(ranges);
 
   if (mergedRanges.length === 0) {
@@ -244,7 +244,7 @@ export function filterOCRResponseByRanges(
   }
 
   let globalIndex = 0;
-  const filteredBlocks: OCRBlock[] = [];
+  const filteredBlocks: TextBlock[] = [];
 
   for (const block of result.blocks) {
     if (!block.tokens) continue;

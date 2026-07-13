@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import PageCore from "../PageCore";
-import type { OCRBlock } from "../pageTypes";
+import type { TextBlock } from "../pageTypes";
 import {
   getNearestTokenIndex,
   isIndexInRanges,
@@ -18,7 +18,7 @@ export default function PagePreview({
   selectedRanges,
   onSelectedRangesChange,
 }: {
-  blocks: OCRBlock[];
+  blocks: TextBlock[];
   selectedRanges: SelectionRange[];
   onSelectedRangesChange: (ranges: SelectionRange[]) => void;
 }) {

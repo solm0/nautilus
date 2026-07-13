@@ -1,4 +1,4 @@
-import type { LemmaData, OCRBlock, OCRResponse } from "../src/components/pageTypes";
+import type { LemmaData, TextAnalysisResult, TextBlock } from "../src/components/pageTypes";
 
 const DEFAULT_INSTALL_URL = "https://nautilus.solmi.wiki";
 const DEFAULT_LOCAL_API = "http://localhost:8000/api";
@@ -213,7 +213,7 @@ async function extensionFetchWithLocalFallback<T>(
 }
 
 export async function analyzeElementText(text: string, language: string) {
-  return extensionFetchWithLocalFallback<{ blocks: OCRBlock[] }>("/analyze", () => ({
+  return extensionFetchWithLocalFallback<{ blocks: TextBlock[] }>("/analyze", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -226,7 +226,7 @@ export async function analyzeElementText(text: string, language: string) {
 }
 
 export async function analyzeTextBlocks(blocks: string[], language: string) {
-  return extensionFetchWithLocalFallback<{ blocks: OCRBlock[] }>("/analyze", () => ({
+  return extensionFetchWithLocalFallback<{ blocks: TextBlock[] }>("/analyze", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -239,10 +239,10 @@ export async function analyzeTextBlocks(blocks: string[], language: string) {
 }
 
 export async function enrichBlocksWithIpa(
-  blocks: OCRResponse["blocks"],
+  blocks: TextAnalysisResult["blocks"],
   language: string,
 ) {
-  return extensionFetchWithLocalFallback<{ blocks: OCRResponse["blocks"] }>("/ipa", () => ({
+  return extensionFetchWithLocalFallback<{ blocks: TextAnalysisResult["blocks"] }>("/ipa", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -260,7 +260,7 @@ export async function getInstalledLanguages() {
   }));
 }
 
-export async function lookupBatch(blocks: OCRBlock[], language: string) {
+export async function lookupBatch(blocks: TextBlock[], language: string) {
   const seen = new Set<string>();
   const items: Array<{ lemma: string; pos: string }> = [];
 
@@ -312,7 +312,7 @@ export async function lookupLemma(lemma: string, pos: string, language: string) 
 }
 
 export async function saveAnalyzedPage(
-  result: OCRResponse,
+  result: TextAnalysisResult,
   name: string,
   language: string,
   sourceUrl: string,

@@ -10,7 +10,7 @@ import {
   setFavorite,
   updatePageMetadata,
 } from "../../api";
-import type { Annotation, LemmaData, OCRResponse } from "../pageTypes";
+import type { Annotation, LemmaData, TextAnalysisResult } from "../pageTypes";
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk from "../lemma_expansions/Desk";
 import AnnotationView from "./AnnotationView";
@@ -40,7 +40,7 @@ export type SidePanelState =
       data: {
         start_index: number;
         end_index: number;
-        tokens: OCRResponse["blocks"][number]["tokens"];
+        tokens: TextAnalysisResult["blocks"][number]["tokens"];
       };
     }
   | {
@@ -48,7 +48,7 @@ export type SidePanelState =
       data: {
         start_index: number;
         end_index: number;
-        tokens: OCRResponse["blocks"][number]["tokens"];
+        tokens: TextAnalysisResult["blocks"][number]["tokens"];
       };
     }
   | null;
@@ -57,7 +57,7 @@ export default function PageView() {
   const mobileApp = isCapacitorApp();
   const { id } = useParams();
 
-  const [result, setResult] = useState<OCRResponse | null>(null);
+  const [result, setResult] = useState<TextAnalysisResult | null>(null);
   const [lemmaInfo, setLemmaInfo] = useState<Record<string, any>>({});
   const [visibleBlockRange, setVisibleBlockRange] = useState<{
     start: number;
@@ -154,7 +154,7 @@ export default function PageView() {
       }
 
       const data = await res.json();
-      const resultData: OCRResponse = data.result;
+      const resultData: TextAnalysisResult = data.result;
       const lang = data.language;
 
       setResult(resultData);
