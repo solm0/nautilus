@@ -327,11 +327,6 @@ function LandingApp() {
                   <p>선택한 구간의 IPA<span className="text-xs">(발음 기호)</span>와 조음 기관의 상태를 애니메이션으로 보여줍니다.</p>
                 </div>
                 <div className="flex-1 relative flex flex-col gap-4">
-                  <img src="/landing/landing_8.png" />
-                  <p className="font-semibold">Pattern - 패턴 기반 검색</p>
-                  <p>선택한 구간과 비슷한 패턴의 문장을 같은 언어 또는 다른 언어의 코퍼스에서 찾을 수 있습니다. 품사, 의존관계, 특정 표지어<span className="text-xs">(and, or, but, ...)</span>를 기준으로 검색합니다.</p>
-                </div>
-                <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_9.png" />
                   <p className="font-semibold">Mutual</p>
                   <p>Mutual 관계를 맺은 사용자와 주석을 공유하고 댓글을 주고받을 수 있습니다. 댓글을 쓸 때도 N-gram Editor를 사용할 수 있습니다.</p>

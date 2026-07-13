@@ -7,7 +7,6 @@ from fastapi.staticfiles import StaticFiles
 from routers.lemmas_router import router as lemmas_router
 from routers.lang_router import router as lang_router
 from routers.content_router import router as content_router
-from routers.pattern_router import router as pattern_router
 
 app = FastAPI()
 
@@ -30,4 +29,3 @@ app.add_middleware(
 app.include_router(content_router)
 app.include_router(lemmas_router)
 app.include_router(lang_router)
-app.include_router(pattern_router)

@@ -2,7 +2,6 @@ import json
 import logging
 import time
 import unicodedata
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -13,7 +12,7 @@ from language_config.sr import cyr_to_lat
 from models import User, UserLemma
 from routers.auth_router import get_current_user_optional
 from services.ipa_service import attach_token_ipa, describe_token_articulation
-from services import lemma_service, pattern_service
+from services import lemma_service
 from services.nlp_service import analyze_text
 from services.prediction_service import predict_next, search_prefix, tokenize
 
@@ -49,13 +48,6 @@ class IpaRequest(BaseModel):
 class ArticulationRequest(BaseModel):
     tokens: list[dict]
     language: str
-
-
-class PatternSearchRequest(BaseModel):
-    query_language: str
-    search_languages: list[str]
-    tokens: list[dict[str, Any]]
-    limit: int = 20
 
 
 def normalize_sr(text: str) -> str:
@@ -296,13 +288,3 @@ def articulation(req: ArticulationRequest):
     return {
         "items": items,
     }
-
-
-@router.post("/pattern/search")
-def search_pattern(req: PatternSearchRequest):
-    return pattern_service.search(
-        query_language=req.query_language,
-        search_languages=req.search_languages,
-        query_tokens=req.tokens,
-        limit=req.limit,
-    )

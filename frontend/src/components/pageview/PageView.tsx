@@ -16,7 +16,6 @@ import Desk from "../lemma_expansions/Desk";
 import AnnotationView from "./AnnotationView";
 import AnnotationNew from "./AnnotationNew";
 import ArticulationPanel from "./ArticulationPanel";
-import PatternPanel from "./PatternPanel";
 import { useLayout } from "../RootLayout";
 import { LANG_MAP, type Pack } from "../setting/PackTable";
 import Button from "../util/Button";
@@ -37,14 +36,6 @@ export type SidePanelState =
   | { type: "annotation:view"; data: Annotation }
   | {
       type: "articulation";
-      data: {
-        start_index: number;
-        end_index: number;
-        tokens: TextAnalysisResult["blocks"][number]["tokens"];
-      };
-    }
-  | {
-      type: "pattern";
       data: {
         start_index: number;
         end_index: number;
@@ -325,12 +316,10 @@ export default function PageView() {
       ? `lemma:${panel.data.key}`
       : panel?.type === "annotation:view"
         ? `annotation:view:${panel.data.id ?? "unknown"}`
-        : panel?.type === "annotation:new"
-          ? `annotation:new:${panel.data.type}:${panel.data.start_index}:${panel.data.end_index}`
-          : panel?.type === "articulation"
-            ? `articulation:${panel.data.start_index}:${panel.data.end_index}`
-            : panel?.type === "pattern"
-              ? `pattern:${panel.data.start_index}:${panel.data.end_index}`
+      : panel?.type === "annotation:new"
+        ? `annotation:new:${panel.data.type}:${panel.data.start_index}:${panel.data.end_index}`
+        : panel?.type === "articulation"
+          ? `articulation:${panel.data.start_index}:${panel.data.end_index}`
           : null;
 
   return (
@@ -434,14 +423,6 @@ export default function PageView() {
               <ArticulationPanel
                 language={language}
                 tokens={panel.data.tokens ?? []}
-              />
-            )}
-
-            {language && panel?.type === "pattern" && (
-              <PatternPanel
-                language={language}
-                tokens={panel.data.tokens ?? []}
-                setPanelData={setPanel}
               />
             )}
           </ResponsiveSideLayout>

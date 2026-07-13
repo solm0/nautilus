@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import PageCore from "../PageCore";
-import { getNearestTokenIndex, getSentenceSelectionForRange, getTextForRange, getTokenRect, getTokensForRange } from "../pageUtils";
+import { getNearestTokenIndex, getTextForRange, getTokenRect, getTokensForRange } from "../pageUtils";
 import { IconButton } from "../util/Button";
-import { Check, Copy, Dna, Link, MessageSquareMore, Smile, Speech } from "lucide-react";
+import { Check, Copy, Link, MessageSquareMore, Smile, Speech } from "lucide-react";
 import type { Annotation, EmojiAnnotation, LemmaData, TextBlock } from "../pageTypes";
 import { Gutter } from "./Gutter";
 import type { SidePanelState } from "./PageView";
@@ -105,10 +105,6 @@ export default function PageContent({
   
     annotation?: EmojiAnnotation;
   } | null>(null);
-  const selectedTokenCount = finalSelection
-    ? finalSelection.end - finalSelection.start + 1
-    : 0;
-
   // annotations 통해 왔을 경우 해당 토큰으로 스크롤
   function scrollToAnnotation(startIndex: number) {
     const el = containerRef.current?.querySelector(
@@ -515,8 +511,7 @@ export default function PageContent({
           (
             panelData?.type === 'annotation:view' ||
             panelData?.type === 'annotation:new' ||
-            panelData?.type === 'articulation' ||
-            panelData?.type === 'pattern'
+            panelData?.type === 'articulation'
           ) &&
           index >= panelData?.data.start_index &&
           index <= panelData?.data.end_index;
@@ -583,30 +578,6 @@ export default function PageContent({
               </div>
 
               <div className="w-auto h-7.5 p-1 bg-neutral-800 text-neutral-100 rounded-full flex items-center gap-1 drop-shadow-lg">
-                <IconButton
-                  icon={<Dna size={15} />}
-                  onClick={() => {
-                    if (!setPanelData || !finalSelection) return;
-
-                    const sentenceSelection = getSentenceSelectionForRange(blocks, finalSelection);
-                    if (!sentenceSelection) return;
-
-                    setPanelData({
-                      type: "pattern",
-                      data: {
-                        start_index: finalSelection.start,
-                        end_index: finalSelection.end,
-                        tokens: sentenceSelection.sentenceTokens.slice(
-                          sentenceSelection.selectionStartInSentence,
-                          sentenceSelection.selectionEndInSentence + 1,
-                        ),
-                      },
-                    });
-                    setMenu(null);
-                  }}
-                  disabled={selectedTokenCount < 2}
-                  title={selectedTokenCount < 2 ? "select at least two tokens" : "pattern"}
-                />
                 <IconButton
                   icon={<Speech size={15} />}
                   onClick={() => {

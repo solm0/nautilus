@@ -1,5 +1,5 @@
 import type { TimelineItem } from "./components/setting/Mutuals";
-import type { PageSource, PatternSearchResponse, TextAnalysisResult, Token } from "./components/pageTypes"
+import type { PageSource, TextAnalysisResult, Token } from "./components/pageTypes"
 import type { User } from "./types";
 import { getAppPlatform, isCapacitorApp } from "./platform";
 import {
@@ -517,33 +517,6 @@ export async function lemmaLookupOne(
 
   return res.json()
 }
-
-export async function searchPattern(
-  queryLanguage: string,
-  searchLanguages: string[],
-  tokens: Token[],
-  limit = 20,
-) {
-  const res = await fetch(`${LOCAL_API}/pattern/search`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query_language: queryLanguage,
-      search_languages: searchLanguages,
-      tokens,
-      limit,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error("pattern search failed");
-  }
-
-  return res.json() as Promise<PatternSearchResponse>;
-}
-
 
 export async function setFavorite(
   key: string,

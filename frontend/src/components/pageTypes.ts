@@ -14,49 +14,6 @@ export type Token = {
   morphs?: MorphToken[];
 };
 
-export type PatternSearchResponse = {
-  status:
-    | "ok"
-    | "unsupported_language"
-    | "insufficient_selection"
-    | "missing_pack";
-  message: string | null;
-  query: {
-    tokens: Token[];
-    sketch: {
-      fine: string[];
-      pos: string[];
-      coarse: string[];
-      deps: string[];
-      lemmas: string[];
-      anchors: string[];
-    };
-  } | null;
-  results: Array<{
-    language: string;
-    line_id: number;
-    score: number;
-    tokens: Token[];
-    match_start: number;
-    match_end: number;
-    match_sketch: {
-      fine: string[];
-      pos: string[];
-      coarse: string[];
-      deps: string[];
-      lemmas: string[];
-      anchors: string[];
-    };
-    anchor_score: number;
-    pos_score: number;
-    dep_score: number;
-    lemma_score: number;
-    structure_score: number;
-    boundary_score: number;
-    shared_anchor_count: number;
-  }>;
-};
-
 export type TextBlock = {
   text: string;
   timestamp_ms?: number | null;
