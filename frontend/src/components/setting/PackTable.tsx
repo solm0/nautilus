@@ -1,20 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Trash2 } from "lucide-react";
 import { getInstalled, getPacks, installPack, uninstallPack } from "../../api";
 import PackModal from "./PackModal";
 import type { InstalledPack } from "../util/LanguageSelect";
 import Button from "../util/Button";
 import { isCapacitorApp } from "../../platform";
+import { invalidateInstalledLanguagesCache } from "../util/LanguageSelect";
+
+export const TARGET_PACK_VERSION = "1.1.0";
 
 export type Pack = {
   lang: string;
   version: string;
-  filename: string;
+  lemma_filename: string;
+  ngram_filename: string;
   tag: string;
   corpus: {
     "Data source"?: string;
     "Corpora used"?: string;
   }[];
+};
+
+type SelectedInstall = {
+  lang: string;
+  version: string;
+  filename: string;
+  assetKind: "lemma" | "ngram";
 };
 
 export const LANG_MAP: Record<string, string> = {
@@ -31,22 +42,45 @@ export const LANG_MAP: Record<string, string> = {
   sq: "Albanian",
 };
 
+export function normalizePackForTargetRelease(pack: Pack): Pack {
+  return {
+    ...pack,
+    version: TARGET_PACK_VERSION,
+    tag: `v${TARGET_PACK_VERSION}`,
+    lemma_filename: `${pack.lang}-v${TARGET_PACK_VERSION}-lemma.zip`,
+    ngram_filename: `${pack.lang}-v${TARGET_PACK_VERSION}-ngram.zip`,
+  };
+}
+
+export function normalizePacksForTargetRelease(packs: Pack[]): Pack[] {
+  const latestByLang = new Map<string, Pack>();
+
+  for (const pack of packs) {
+    latestByLang.set(pack.lang, normalizePackForTargetRelease(pack));
+  }
+
+  return Array.from(latestByLang.values()).sort((a, b) =>
+    a.lang.localeCompare(b.lang, undefined, { sensitivity: "base" }),
+  );
+}
+
 export default function PackTable() {
   const mobileApp = isCapacitorApp();
   const [packs, setPacks] = useState<Pack[]>([]);
   const [installed, setInstalled] = useState<InstalledPack[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [selected, setSelected] = useState<Pack | null>(null);
+  const [selectedInstall, setSelectedInstall] = useState<SelectedInstall | null>(null);
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
 
   async function refreshInstalled() {
     const data = await getInstalled();
+    invalidateInstalledLanguagesCache();
     setInstalled(data);
   }
 
   async function refreshPacks() {
     const data = await getPacks();
-    setPacks(data);
+    setPacks(normalizePacksForTargetRelease(data));
   }
 
   useEffect(() => {
@@ -54,13 +88,72 @@ export default function PackTable() {
     refreshInstalled();
   }, []);
 
-  function isInstalled(pack: Pack) {
-    return installed.some(
-      (i) =>
-        i.lang === pack.lang &&
-        i.version === pack.version &&
-        i.installed
+  function getInstallState(pack: Pack) {
+    return (
+      installed.find(
+        (item) => item.lang === pack.lang && item.version === pack.version,
+      ) ?? {
+        lang: pack.lang,
+        version: pack.version,
+        installed: false,
+        lemma_installed: false,
+        ngram_installed: false,
+      }
     );
+  }
+
+  function renderDesktopStatus(state: InstalledPack) {
+    const chips: string[] = [];
+
+    if (state.lemma_installed) {
+      chips.push("Lemmas");
+    }
+
+    if (state.ngram_installed) {
+      chips.push("Writing assistant");
+    }
+
+    if (chips.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <div
+            key={chip}
+            className="bg-green-200 text-green-700/80 text-xs px-2 rounded-full"
+          >
+            {chip}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  async function handleActivate(pack: Pack) {
+    const key = `${pack.lang}-${pack.version}`;
+
+    try {
+      setErrorMap((prev) => ({
+        ...prev,
+        [key]: "",
+      }));
+
+      await installPack({
+        lang: pack.lang,
+        version: pack.version,
+        filename: pack.lemma_filename,
+        asset_kind: "lemma",
+      });
+
+      await refreshInstalled();
+    } catch {
+      setErrorMap((prev) => ({
+        ...prev,
+        [key]: "Failed to activate language.",
+      }));
+    }
   }
 
   async function handleUninstall(pack: Pack) {
@@ -78,7 +171,7 @@ export default function PackTable() {
       });
 
       await refreshInstalled();
-    } catch (err) {
+    } catch {
       setErrorMap((prev) => ({
         ...prev,
         [key]: mobileApp
@@ -104,7 +197,7 @@ export default function PackTable() {
         b.version.localeCompare(a.version, undefined, {
           numeric: true,
           sensitivity: "base",
-        })
+        }),
       );
     });
 
@@ -120,28 +213,13 @@ export default function PackTable() {
     ] as const);
   }, [grouped, mobileApp]);
 
-  async function handleActivate(pack: Pack) {
-    const key = `${pack.lang}-${pack.version}`;
-
-    try {
-      setErrorMap((prev) => ({
-        ...prev,
-        [key]: "",
-      }));
-
-      await installPack({
-        lang: pack.lang,
-        version: pack.version,
-        filename: pack.filename,
-      });
-
-      await refreshInstalled();
-    } catch {
-      setErrorMap((prev) => ({
-        ...prev,
-        [key]: "Failed to activate language.",
-      }));
-    }
+  function openInstall(pack: Pack, assetKind: "lemma" | "ngram") {
+    setSelectedInstall({
+      lang: pack.lang,
+      version: pack.version,
+      filename: assetKind === "lemma" ? pack.lemma_filename : pack.ngram_filename,
+      assetKind,
+    });
   }
 
   return (
@@ -150,11 +228,13 @@ export default function PackTable() {
         {groupsToRender.map(([lang, langPacks]) => {
           const open = expanded[lang];
           const label = LANG_MAP[lang] || lang;
+          const currentPack = langPacks[0];
+          const currentState = currentPack ? getInstallState(currentPack) : null;
 
           return (
             <div
               key={lang}
-              className='overflow-hidden border-t border-neutral-300 hover:bg-neutral-200 transition-colors'
+              className="overflow-hidden border-t border-neutral-300 hover:bg-neutral-200 transition-colors"
             >
               <button
                 onClick={() =>
@@ -168,10 +248,7 @@ export default function PackTable() {
                 <span className="font-medium">
                   {label} ({lang})
                 </span>
-                <div className="bg-green-200 text-green-700/80 text-xs px-2 rounded-full">
-                  {installed.find((item) => item.lang === lang)?.installed &&
-                    (mobileApp ? "Activated" : "Installed")}
-                </div>
+                {!mobileApp && currentState ? renderDesktopStatus(currentState) : null}
                 <div className="ml-auto">
                   {open ? (
                     <ChevronUpIcon size={18} />
@@ -182,9 +259,9 @@ export default function PackTable() {
               </button>
 
               {open && (
-                <div className="">
+                <div>
                   {langPacks.map((pack) => {
-                    const installed = isInstalled(pack);
+                    const state = getInstallState(pack);
                     const key = `${pack.lang}-${pack.version}`;
 
                     return (
@@ -197,34 +274,76 @@ export default function PackTable() {
                             {pack.lang} v{pack.version}
                           </div>
 
-                          <div className="text-sm flex-4 flex flex-col">
+                          <div className="text-sm flex-[2] flex flex-col">
                             <p>{pack.corpus[0]["Data source"]}</p>
                             <p>{pack.corpus[1]["Corpora used"]}</p>
                           </div>
 
                           <div className="flex-1">
-                            {installed ? (
-                              <Button
-                                onClick={() => handleUninstall(pack)}
-                                text={mobileApp ? "Deactivate" : "Uninstall"}
-                                black fit
-                              />
-                              
+                            {mobileApp ? (
+                              state.installed ? (
+                                <Button
+                                  onClick={() => handleUninstall(pack)}
+                                  text="Deactivate"
+                                  black
+                                  fit
+                                />
+                              ) : (
+                                <Button
+                                  onClick={() => handleActivate(pack)}
+                                  text="Activate"
+                                  fit
+                                />
+                              )
                             ) : (
-                              <Button
-                                onClick={() => mobileApp ? handleActivate(pack) : setSelected(pack)}
-                                text={mobileApp ? "Activate" : "Install"}
-                                fit
-                              />
+                              <div className="flex items-start justify-end gap-2">
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openInstall(pack, "lemma")}
+                                    disabled={state.lemma_installed}
+                                    className={`rounded-sm border px-3 py-2 text-xs font-semibold transition-colors ${
+                                      state.lemma_installed
+                                        ? "border-green-600 bg-green-600 text-white"
+                                        : "border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-900 hover:text-neutral-100"
+                                    }`}
+                                  >
+                                    {state.lemma_installed ? "Lemmas installed" : "Install lemmas"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openInstall(pack, "ngram")}
+                                    disabled={!state.lemma_installed || state.ngram_installed}
+                                    className={`rounded-sm border px-3 py-2 text-xs font-semibold transition-colors ${
+                                      state.ngram_installed
+                                        ? "border-green-600 bg-green-600 text-white"
+                                        : "border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-900 hover:text-neutral-100 disabled:opacity-40 disabled:pointer-events-none"
+                                    }`}
+                                  >
+                                    {state.ngram_installed
+                                      ? "Writing assistant installed"
+                                      : "Install writing assistant"}
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleUninstall(pack)}
+                                  className="rounded-sm border border-neutral-300 p-2 text-neutral-600 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
+                                  title="Remove lemmas and writing assistant"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
 
-                        {errorMap[key] && (
+                        {errorMap[key] ? (
                           <div className="text-red-500 text-xs mt-2">
                             {errorMap[key]}
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}
@@ -235,13 +354,16 @@ export default function PackTable() {
         })}
       </div>
 
-      {!mobileApp && selected && (
+      {!mobileApp && selectedInstall ? (
         <PackModal
-          pack={selected}
-          onClose={() => setSelected(null)}
+          lang={selectedInstall.lang}
+          version={selectedInstall.version}
+          filename={selectedInstall.filename}
+          assetKind={selectedInstall.assetKind}
+          onClose={() => setSelectedInstall(null)}
           onInstalled={refreshInstalled}
         />
-      )}
+      ) : null}
     </>
   );
 }

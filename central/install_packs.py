@@ -6,6 +6,13 @@ from pathlib import Path
 import requests
 from packaging.version import Version
 
+from language_config.sqlite_pack import (
+    LEMMA_TABLES,
+    NGRAM_TABLES,
+    find_lemma_db,
+    find_ngram_db,
+    has_required_tables,
+)
 from packs import PACKS
 
 # 1. GitHub Releases 조회
@@ -39,7 +46,7 @@ def get_latest_release_asset(lang: str):
     """
     Fetch latest release metadata for a language pack.
     Example tag:
-        ru-v1.0.0
+        ru-v1.1.0
     """
 
     releases_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
@@ -49,9 +56,8 @@ def get_latest_release_asset(lang: str):
 
     releases = res.json()
 
-    matched = []
-
     prefix = f"{lang}-v"
+    matched = []
 
     for release in releases:
         tag_name = release.get("tag_name", "")
@@ -66,27 +72,52 @@ def get_latest_release_asset(lang: str):
         except Exception:
             continue
 
-        matched.append((version, release))
+        assets = release.get("assets", [])
+        lemma_name = f"{lang}-v{version}-lemma.zip"
+        ngram_name = f"{lang}-v{version}-ngram.zip"
+        assets_by_name = {asset["name"]: asset for asset in assets}
+
+        if lemma_name not in assets_by_name or ngram_name not in assets_by_name:
+            continue
+
+        matched.append((version, assets_by_name))
 
     if not matched:
         return None
 
     matched.sort(key=lambda x: x[0], reverse=True)
 
-    latest_version, latest_release = matched[0]
-
-    assets = latest_release.get("assets", [])
-
-    if not assets:
-        raise RuntimeError(f"No assets found for {lang}")
-
-    asset = assets[0]
+    latest_version, assets_by_name = matched[0]
+    lemma_name = f"{lang}-v{latest_version}-lemma.zip"
+    ngram_name = f"{lang}-v{latest_version}-ngram.zip"
 
     return {
         "version": str(latest_version),
-        "download_url": asset["browser_download_url"],
-        "filename": asset["name"],
+        "assets": {
+            "lemma": {
+                "download_url": assets_by_name[lemma_name]["browser_download_url"],
+                "filename": lemma_name,
+            },
+            "ngram": {
+                "download_url": assets_by_name[ngram_name]["browser_download_url"],
+                "filename": ngram_name,
+            },
+        },
     }
+
+
+def is_version_fully_installed(lang: str, version: str) -> bool:
+    version_dir = BASE_DIR / lang / version
+    lemma_db_path = find_lemma_db(version_dir)
+    ngram_db_path = find_ngram_db(version_dir)
+
+    if lemma_db_path is None or ngram_db_path is None:
+        return False
+
+    return (
+        has_required_tables(lemma_db_path, LEMMA_TABLES)
+        and has_required_tables(ngram_db_path, NGRAM_TABLES)
+    )
 
 
 def get_installed_versions(lang: str):
@@ -135,13 +166,20 @@ def download_file(url: str, target: Path):
 def install_pack(lang: str, version: str, zip_path: Path):
     target_dir = BASE_DIR / lang / version
 
-    if target_dir.exists():
-        shutil.rmtree(target_dir)
-
     target_dir.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(target_dir)
+        for member in zip_ref.infolist():
+            if member.is_dir():
+                continue
+
+            target_path = target_dir / member.filename
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            if target_path.exists():
+                target_path.unlink()
+
+            with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
+                shutil.copyfileobj(src, dst)
 
     print(f"Installed {lang} v{version}")
 
@@ -162,22 +200,39 @@ def process_language(lang: str):
     if installed_versions:
         installed_latest = installed_versions[0]
 
-        if installed_latest >= latest_version:
+        if installed_latest > latest_version:
+            print(f"{lang} already up to date ({installed_latest})")
+            return
+
+        if (
+            installed_latest == latest_version
+            and is_version_fully_installed(lang, str(latest_version))
+        ):
             print(f"{lang} already up to date ({installed_latest})")
             return
 
     remove_old_versions(lang, str(latest_version))
 
+    target_dir = BASE_DIR / lang / str(latest_version)
+
+    if target_dir.exists():
+        print(f"Refreshing install directory: {target_dir}")
+        shutil.rmtree(target_dir, ignore_errors=True)
+
     TMP_DIR.mkdir(parents=True, exist_ok=True)
 
-    zip_path = TMP_DIR / latest["filename"]
+    for asset_kind, asset in latest["assets"].items():
+        zip_path = TMP_DIR / asset["filename"]
 
-    print(f"Downloading: {latest['download_url']}")
-    download_file(latest["download_url"], zip_path)
+        print(f"Downloading {asset_kind}: {asset['download_url']}")
+        download_file(asset["download_url"], zip_path)
+        install_pack(lang, str(latest_version), zip_path)
+        zip_path.unlink(missing_ok=True)
 
-    install_pack(lang, str(latest_version), zip_path)
-
-    zip_path.unlink(missing_ok=True)
+    if not is_version_fully_installed(lang, str(latest_version)):
+        raise RuntimeError(
+            f"{lang} {latest_version} install is incomplete after downloading split assets"
+        )
 
 
 def main():

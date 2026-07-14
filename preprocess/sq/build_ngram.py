@@ -4,33 +4,34 @@ import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from tqdm import tqdm
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from sqlite_pack_writer import (
-    DB_FILENAME,
+    NGRAM_DB_FILENAME,
     connect_db,
+    package_release_artifact,
     replace_ngram_tables,
     write_manifest,
 )
+from build_config import get_release_dir, get_version
+from progress import ProgressLogger
 
 # =====================
 # CONFIG
 # =====================
 
 LANG = "sq"
-VERSION = "1.0.0"
+VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
 
-RELEASE_DIR = BASE_DIR / "../../releases/sq/sq-v1.0.0"
+RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 
 INPUT_FILE = BASE_DIR / "sqi_news_2020_1M-sentences.txt"
 
-OUTPUT_DB = RELEASE_DIR / DB_FILENAME
+OUTPUT_DB = RELEASE_DIR / NGRAM_DB_FILENAME
 
 NGRAM_K = 50
 UNIGRAM_K = 20
@@ -57,9 +58,10 @@ def tokenize(text):
 trigram = defaultdict(Counter)
 bigram = defaultdict(Counter)
 unigram = Counter()
+line_progress = ProgressLogger("ngram input", every=50000, unit="lines")
 
 with open(INPUT_FILE, encoding="utf-8") as f:
-    for line in tqdm(f):
+    for line_count, line in enumerate(f, start=1):
         parts = line.strip().split("\t")
 
         if len(parts) < 2:
@@ -148,6 +150,17 @@ write_manifest(
     RELEASE_DIR,
     LANG,
     VERSION,
+    db_name=NGRAM_DB_FILENAME,
+    manifest_name="ngram_manifest.json",
+    pack_kind="ngram",
+)
+package_release_artifact(
+    RELEASE_DIR,
+    LANG,
+    VERSION,
+    "ngram",
+    NGRAM_DB_FILENAME,
+    "ngram_manifest.json",
 )
 
 print(f"Saved {OUTPUT_DB.name}")

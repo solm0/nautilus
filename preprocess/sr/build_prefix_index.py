@@ -9,26 +9,29 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from sqlite_pack_writer import (
-    DB_FILENAME,
+    NGRAM_DB_FILENAME,
     connect_db,
+    package_release_artifact,
     replace_prefix_index,
     write_manifest,
 )
+from build_config import get_release_dir, get_version
+from progress import ProgressLogger
 
 # =====================
 # CONFIG
 # =====================
 
 LANG = "sr"
-VERSION = "1.0.0"
+VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
 
-RELEASE_DIR = BASE_DIR / "../../releases/sr/sr-v1.0.0"
+RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 
 INPUT_FILE = BASE_DIR / "srp-rs_web_2016_1M-words.txt"
 
-OUTPUT_DB = RELEASE_DIR / DB_FILENAME
+OUTPUT_DB = RELEASE_DIR / NGRAM_DB_FILENAME
 
 MAX_PREFIX_LEN = 5
 
@@ -74,10 +77,11 @@ def normalize(word):
 # =====================
 
 prefix_index = defaultdict(dict)
+line_progress = ProgressLogger("prefix input", every=50000, unit="lines")
 
 with open(INPUT_FILE, encoding="utf-8") as f:
 
-    for line in f:
+    for line_count, line in enumerate(f, start=1):
 
         parts = line.strip().split("\t")
 
@@ -108,11 +112,12 @@ with open(INPUT_FILE, encoding="utf-8") as f:
         for i in range(1, max_len + 1):
 
             prefix = word[:i]
-
             prev = prefix_index[prefix].get(word)
 
             if prev is None or freq > prev:
                 prefix_index[prefix][word] = freq
+
+        line_progress.update(line_count, extra=f"prefixes={len(prefix_index):,}")
 
 # =====================
 # BUILD ROWS
@@ -131,6 +136,12 @@ for prefix, items in prefix_index.items():
         (prefix, word, freq)
         for word, freq in top_items
     )
+
+line_progress.update(
+    line_count if "line_count" in locals() else 0,
+    extra=f"final_prefixes={len(prefix_index):,} final_rows={len(rows):,}",
+    force=True,
+)
 
 # =====================
 # SQLITE
@@ -152,6 +163,17 @@ write_manifest(
     RELEASE_DIR,
     LANG,
     VERSION,
+    db_name=NGRAM_DB_FILENAME,
+    manifest_name="ngram_manifest.json",
+    pack_kind="ngram",
+)
+package_release_artifact(
+    RELEASE_DIR,
+    LANG,
+    VERSION,
+    "ngram",
+    NGRAM_DB_FILENAME,
+    "ngram_manifest.json",
 )
 
 print(f"Saved {OUTPUT_DB.name}")

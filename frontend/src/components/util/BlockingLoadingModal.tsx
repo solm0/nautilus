@@ -4,11 +4,13 @@ import { createPortal } from "react-dom";
 type BlockingLoadingModalProps = {
   open: boolean;
   message: string;
+  usePortal?: boolean;
 };
 
 export default function BlockingLoadingModal({
   open,
   message,
+  usePortal = true,
 }: BlockingLoadingModalProps) {
   const [mounted, setMounted] = useState(open);
 
@@ -35,8 +37,8 @@ export default function BlockingLoadingModal({
 
   if (!mounted) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-80">
+  const modalContent = (
+    <div className={`${usePortal ? "fixed" : "absolute"} inset-0 z-80`}>
       <div
         className="absolute inset-0 bg-neutral-700 transition-opacity duration-200"
         style={{ opacity: open ? 0.4 : 0 }}
@@ -57,7 +59,12 @@ export default function BlockingLoadingModal({
           <p className="text-neutral-700 font-source">{message}</p>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+
+  if (!usePortal) {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 }

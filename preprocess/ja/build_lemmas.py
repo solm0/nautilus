@@ -13,20 +13,23 @@ if str(PREPROCESS_DIR) not in sys.path:
     sys.path.append(str(PREPROCESS_DIR))
 
 from sqlite_pack_writer import (
-    DB_FILENAME,
+    LEMMA_DB_FILENAME,
     connect_db,
+    package_release_artifact,
     replace_lemma_tables,
     write_manifest,
 )
+from build_config import get_release_dir, get_version
+from progress import ProgressLogger, log
 
 
 LANG = "ja"
-VERSION = "1.0.0"
+VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
-RELEASE_DIR = BASE_DIR / "../../releases/ja/ja-v1.0.0"
+RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 INPUT_FILE = BASE_DIR / "jpn_wikipedia_2021_300K-sentences.txt"
-OUTPUT_DB = RELEASE_DIR / DB_FILENAME
+OUTPUT_DB = RELEASE_DIR / LEMMA_DB_FILENAME
 MODEL_DIR = BASE_DIR / "../../backend/models"
 
 MAX_LINES = None
@@ -188,7 +191,7 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
         if MAX_LINES and len(lines_raw) >= MAX_LINES:
             break
 
-print("loaded:", len(lines_raw))
+log(f"loaded: {len(lines_raw):,} raw lines")
 
 lines_out = []
 lemma_freq = Counter()
@@ -196,6 +199,7 @@ lemma_lines = defaultdict(set)
 contexts = defaultdict(Counter)
 line_id = 0
 
+batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
 for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     batch = lines_raw[batch_start: batch_start + BATCH_SIZE]
     analyzed_batch = analyze_batch(batch)
@@ -237,9 +241,9 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
         })
         line_id += 1
 
-    print("processed:", min(batch_start + BATCH_SIZE, len(lines_raw)))
+    batch_progress.update(min(batch_start + BATCH_SIZE, len(lines_raw)), extra=f"sentences={line_id:,}")
 
-print("lines:", len(lines_out))
+log(f"lines: {len(lines_out):,}")
 
 valid_lemmas = set()
 
@@ -252,7 +256,7 @@ for lemma, freq in lemma_freq.items():
     elif freq >= GENERAL_MIN_FREQ:
         valid_lemmas.add(lemma)
 
-print("valid lemmas:", len(valid_lemmas))
+log(f"valid lemmas: {len(valid_lemmas):,}")
 
 graph = {}
 
@@ -299,7 +303,22 @@ try:
 finally:
     conn.close()
 
-write_manifest(RELEASE_DIR, LANG, VERSION)
+write_manifest(
+    RELEASE_DIR,
+    LANG,
+    VERSION,
+    db_name=LEMMA_DB_FILENAME,
+    manifest_name="lemma_manifest.json",
+    pack_kind="lemma",
+)
+package_release_artifact(
+    RELEASE_DIR,
+    LANG,
+    VERSION,
+    "lemma",
+    LEMMA_DB_FILENAME,
+    "lemma_manifest.json",
+)
 
 print("DONE")
 print(f"Saved {OUTPUT_DB.name}")

@@ -5,20 +5,47 @@ from pathlib import Path
 from typing import Iterable
 
 
-PACK_TABLES = {
+LEMMA_TABLES = {
     "lines",
     "lemma_graph",
     "lemma_stats",
+}
+
+NGRAM_TABLES = {
     "ngram_bi",
     "ngram_tri",
     "ngram_uni",
     "prefix_index",
 }
 
+PACK_TABLES = LEMMA_TABLES | NGRAM_TABLES
+
 PACK_DB_SUFFIXES = (".sqlite3", ".sqlite", ".db")
 
+LEGACY_DB_NAMES = (
+    "language_pack.sqlite3",
+    "language_pack.sqlite",
+    "language_pack.db",
+    "pack.sqlite3",
+    "pack.sqlite",
+    "pack.db",
+)
 
-def find_pack_db(version_path: Path) -> Path | None:
+LEMMA_DB_NAMES = (
+    "lemma_pack.sqlite3",
+    "lemma_pack.sqlite",
+    "lemma_pack.db",
+    *LEGACY_DB_NAMES,
+)
+
+NGRAM_DB_NAMES = (
+    "ngram_pack.sqlite3",
+    "ngram_pack.sqlite",
+    "ngram_pack.db",
+)
+
+
+def _find_named_db(version_path: Path, preferred_names: tuple[str, ...]) -> Path | None:
     if not version_path.exists() or not version_path.is_dir():
         return None
 
@@ -31,23 +58,42 @@ def find_pack_db(version_path: Path) -> Path | None:
     if not candidates:
         return None
 
-    preferred_names = {
-        "language_pack.sqlite3",
-        "language_pack.sqlite",
-        "language_pack.db",
-        "pack.sqlite3",
-        "pack.sqlite",
-        "pack.db",
-    }
+    preferred_order = {name: index for index, name in enumerate(preferred_names)}
+    matching = [path for path in candidates if path.name in preferred_order]
 
-    candidates.sort(
+    if not matching:
+        return None
+
+    matching.sort(
         key=lambda path: (
-            path.name not in preferred_names,
+            preferred_order[path.name],
             len(path.name),
             path.name,
         )
     )
-    return candidates[0]
+    return matching[0]
+
+
+def find_lemma_db(version_path: Path) -> Path | None:
+    return _find_named_db(version_path, LEMMA_DB_NAMES)
+
+
+def find_ngram_db(version_path: Path) -> Path | None:
+    db_path = _find_named_db(version_path, NGRAM_DB_NAMES)
+
+    if db_path is not None:
+        return db_path
+
+    legacy_path = _find_named_db(version_path, LEGACY_DB_NAMES)
+
+    if legacy_path is not None and has_required_tables(legacy_path, NGRAM_TABLES):
+        return legacy_path
+
+    return None
+
+
+def find_pack_db(version_path: Path) -> Path | None:
+    return find_lemma_db(version_path)
 
 
 def has_required_tables(
@@ -72,21 +118,49 @@ def has_required_tables(
 class LanguagePackDB:
     def __init__(self, db_path: Path):
         self.db_path = Path(db_path)
+        self.lemma_db_path, self.ngram_db_path = self._resolve_db_paths(self.db_path)
         self._local = threading.local()
 
-    def _get_conn(self) -> sqlite3.Connection:
-        conn = getattr(self._local, "conn", None)
+    def _resolve_db_paths(self, path: Path) -> tuple[Path, Path]:
+        if path.is_dir():
+            lemma_db_path = find_lemma_db(path)
+            ngram_db_path = find_ngram_db(path)
+        else:
+            lemma_db_path = path
+            ngram_db_path = None
+
+            if path.name in LEGACY_DB_NAMES:
+                ngram_db_path = path
+            else:
+                for candidate_name in NGRAM_DB_NAMES:
+                    candidate = path.with_name(candidate_name)
+                    if candidate.exists():
+                        ngram_db_path = candidate
+                        break
+
+        if lemma_db_path is None:
+            raise ValueError(f"No lemma db found for {path}")
+
+        if ngram_db_path is None:
+            ngram_db_path = lemma_db_path
+
+        return Path(lemma_db_path), Path(ngram_db_path)
+
+    def _get_conn(self, kind: str = "lemma") -> sqlite3.Connection:
+        attr = f"{kind}_conn"
+        conn = getattr(self._local, attr, None)
 
         if conn is None:
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            db_path = self.ngram_db_path if kind == "ngram" else self.lemma_db_path
+            conn = sqlite3.connect(db_path, check_same_thread=False)
             conn.row_factory = sqlite3.Row
-            self._local.conn = conn
+            setattr(self._local, attr, conn)
 
         return conn
 
-    def _fetch_pairs(self, query: str, params=()):
+    def _fetch_pairs(self, query: str, params=(), kind: str = "lemma"):
         try:
-            rows = self._get_conn().execute(query, params).fetchall()
+            rows = self._get_conn(kind).execute(query, params).fetchall()
         except sqlite3.Error:
             return []
 
@@ -97,20 +171,21 @@ class LanguagePackDB:
         query: str,
         params=(),
         fallback_query: str | None = None,
+        kind: str = "lemma",
     ):
         try:
-            rows = self._get_conn().execute(query, params).fetchall()
+            rows = self._get_conn(kind).execute(query, params).fetchall()
         except sqlite3.Error:
             if fallback_query is None:
                 return []
 
-            return self._fetch_pairs(fallback_query, params)
+            return self._fetch_pairs(fallback_query, params, kind=kind)
 
         return [(row[0], row[1]) for row in rows]
 
     def _fetch_json_payload(self, table: str, key_column: str, key: str):
         try:
-            row = self._get_conn().execute(
+            row = self._get_conn("lemma").execute(
                 f"SELECT payload FROM {table} WHERE {key_column} = ?",
                 (key,),
             ).fetchone()
@@ -137,7 +212,7 @@ class LanguagePackDB:
             placeholders = ",".join("?" for _ in chunk)
 
             try:
-                rows = self._get_conn().execute(
+                rows = self._get_conn("lemma").execute(
                     (
                         f"SELECT {key_column} AS key, payload "
                         f"FROM {table} "
@@ -167,9 +242,14 @@ class LanguagePackDB:
                 query,
                 (limit,),
                 fallback_query=fallback_query,
+                kind="ngram",
             )
 
-        return self._fetch_pairs_with_fallback(query, fallback_query=fallback_query)
+        return self._fetch_pairs_with_fallback(
+            query,
+            fallback_query=fallback_query,
+            kind="ngram",
+        )
 
     def get_bigram(self, context: tuple[str], limit: int | None = None):
         if not context:
@@ -199,6 +279,7 @@ class LanguagePackDB:
             query,
             params,
             fallback_query=fallback_query,
+            kind="ngram",
         )
 
     def get_trigram(self, context: tuple[str, str], limit: int | None = None):
@@ -229,6 +310,7 @@ class LanguagePackDB:
             query,
             params,
             fallback_query=fallback_query,
+            kind="ngram",
         )
 
     def get_prefix_matches(self, prefix: str, limit: int | None = None):
@@ -247,11 +329,11 @@ class LanguagePackDB:
             query += " LIMIT ?"
             params = (prefix, limit)
 
-        return self._fetch_pairs(query, params)
+        return self._fetch_pairs(query, params, kind="ngram")
 
     def has_lemma_key(self, key: str) -> bool:
         try:
-            row = self._get_conn().execute(
+            row = self._get_conn("lemma").execute(
                 "SELECT 1 FROM lemma_stats WHERE lemma_key = ? LIMIT 1",
                 (key,),
             ).fetchone()
@@ -303,7 +385,7 @@ class LanguagePackDB:
         params.append(limit)
 
         try:
-            rows = self._get_conn().execute(
+            rows = self._get_conn("lemma").execute(
                 (
                     "SELECT line_id "
                     "FROM lines "

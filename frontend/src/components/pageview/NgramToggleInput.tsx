@@ -154,6 +154,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           setLanguage={(l)=>setLanguage(l)}
           background={background}
           options={languageOptions}
+          requireNgram
         />
       </div>
 

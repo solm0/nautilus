@@ -174,7 +174,7 @@ export default function PageView() {
       const installed = await getInstalled();
       const pack = installed.find((l: Pack) => l.lang === lang);
 
-      if (!pack?.installed) {
+      if (!pack?.lemma_installed) {
         setNoPack(true);
       }
     };
@@ -327,16 +327,22 @@ export default function PageView() {
       <BlockingLoadingModal
         open={loadingMessage !== null}
         message={loadingMessage ?? ""}
+        usePortal={false}
       />
 
       {noPack && (
-        <div className="absolute z-80 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-10 bg-neutral-50 rounded-xl shadow-lg flex flex-col gap-7">
-          <p>
-            {mobileApp ? "Activate " : "Install "}
-            {language ? LANG_MAP[language] ?? language : null}
-            {mobileApp ? " to continue." : " pack to continue."}
-          </p>
-          <Button text="Go to settings" onClick={()=>navigate('/setting')} fit black />
+        <div className="absolute inset-0 z-80">
+          <div className="absolute inset-0 bg-neutral-700/40" />
+          <div className="absolute inset-0 flex items-center justify-center p-5">
+            <div className="w-full max-w-sm rounded-sm bg-neutral-50 px-7 py-6 shadow-lg flex flex-col gap-7">
+              <p>
+                {mobileApp ? "Activate " : "Install "}
+                {language ? LANG_MAP[language] ?? language : null}
+                {mobileApp ? " to continue." : " pack to continue."}
+              </p>
+              <Button text="Go to settings" onClick={() => navigate('/setting')} fit black />
+            </div>
+          </div>
         </div>
       )}
 

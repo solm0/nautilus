@@ -5,7 +5,13 @@ import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 import shutil
-from language_config.sqlite_pack import find_pack_db, has_required_tables
+from language_config.sqlite_pack import (
+    LEMMA_TABLES,
+    NGRAM_TABLES,
+    find_lemma_db,
+    find_ngram_db,
+    has_required_tables,
+)
 
 load_dotenv()
 
@@ -17,8 +23,44 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 progress_map = {}
 
 
-def install_pack(lang: str, version: str, filename: str | None, task_id: str):
+def get_install_state(lang: str, version: str):
+    path = DATA_DIR / lang / version
+    lemma_db_path = find_lemma_db(path)
+    ngram_db_path = find_ngram_db(path)
+
+    lemma_installed = (
+        lemma_db_path is not None
+        and has_required_tables(lemma_db_path, LEMMA_TABLES)
+    )
+    ngram_installed = (
+        ngram_db_path is not None
+        and has_required_tables(ngram_db_path, NGRAM_TABLES)
+    )
+
+    return {
+        "lemma_installed": lemma_installed,
+        "ngram_installed": ngram_installed,
+        "installed": lemma_installed,
+    }
+
+
+def install_pack(
+    lang: str,
+    version: str,
+    filename: str | None,
+    asset_kind: str,
+    task_id: str,
+):
     os.makedirs(DATA_DIR, exist_ok=True)
+
+    if asset_kind not in {"lemma", "ngram"}:
+        raise Exception(f"invalid asset_kind: {asset_kind}")
+
+    if not filename:
+        raise Exception("filename is required for split pack install")
+
+    if asset_kind == "ngram" and not get_install_state(lang, version)["lemma_installed"]:
+        raise Exception("lemma pack must be installed first")
 
     api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{lang}-v{version}"
 
@@ -42,22 +84,10 @@ def install_pack(lang: str, version: str, filename: str | None, task_id: str):
 
         release = res.json()
 
-        asset = None
-
-        if filename:
-            asset = next((a for a in release["assets"] if a["name"] == filename), None)
-
-        if asset is None:
-            asset = next(
-                (
-                    a for a in release["assets"]
-                    if a["name"].lower().endswith(".zip")
-                ),
-                None,
-            )
+        asset = next((a for a in release["assets"] if a["name"] == filename), None)
 
         if not asset:
-            raise Exception("asset not found")
+            raise Exception(f"asset not found: {filename}")
 
         # 2. download
         download_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/assets/{asset['id']}"
@@ -82,15 +112,22 @@ def install_pack(lang: str, version: str, filename: str | None, task_id: str):
                         "progress": downloaded / total,
                         "status": "downloading"
                     }
+                else:
+                    current_progress = progress_map[task_id]["progress"]
+                    progress_map[task_id] = {
+                        "progress": min(0.9, current_progress + 0.01),
+                        "status": "downloading",
+                    }
 
         tmp_zip.close()
 
+        progress_map[task_id] = {
+            "progress": max(progress_map[task_id]["progress"], 0.92),
+            "status": "extracting",
+        }
+
         # 3. unzip
         extract_path = DATA_DIR / lang / version
-
-        if extract_path.exists():
-            shutil.rmtree(extract_path, ignore_errors=True)
-
         os.makedirs(extract_path, exist_ok=True)
 
         with zipfile.ZipFile(tmp_zip.name, "r") as zip_ref:
@@ -112,8 +149,13 @@ def install_pack(lang: str, version: str, filename: str | None, task_id: str):
                 if ".." in new_name:
                     continue
 
-                member.filename = new_name
-                zip_ref.extract(member, extract_path)
+                target_path = extract_path / new_name
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                if target_path.exists():
+                    target_path.unlink()
+
+                with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
 
         progress_map[task_id] = {
             "progress": 1.0,
@@ -123,7 +165,7 @@ def install_pack(lang: str, version: str, filename: str | None, task_id: str):
         # tmp 파일 삭제
         os.remove(tmp_zip.name)
 
-        if not verify_install(lang, version):
+        if not verify_install(lang, version, asset_kind):
             raise Exception("install corrupted")
 
         return str(extract_path)
@@ -157,14 +199,23 @@ def remove_stanza(lang: str):
         shutil.rmtree(path, ignore_errors=True)
 
 def is_installed(lang: str, version: str):
-    return verify_install(lang, version)
+    return get_install_state(lang, version)["installed"]
 
 
-def verify_install(lang: str, version: str):
+def verify_install(lang: str, version: str, asset_kind: str = "lemma"):
     path = DATA_DIR / lang / version
-    db_path = find_pack_db(path)
 
-    if db_path is None:
+    if asset_kind == "ngram":
+        lemma_db_path = find_lemma_db(path)
+        ngram_db_path = find_ngram_db(path)
+        if lemma_db_path is None or ngram_db_path is None:
+            return False
+        return (
+            has_required_tables(lemma_db_path, LEMMA_TABLES)
+            and has_required_tables(ngram_db_path, NGRAM_TABLES)
+        )
+
+    lemma_db_path = find_lemma_db(path)
+    if lemma_db_path is None:
         return False
-
-    return has_required_tables(db_path)
+    return has_required_tables(lemma_db_path, LEMMA_TABLES)

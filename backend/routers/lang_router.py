@@ -4,11 +4,17 @@ import httpx
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from services.installer import install_pack, uninstall_pack, progress_map, is_installed
+from services.installer import (
+    get_install_state,
+    install_pack,
+    uninstall_pack,
+    progress_map,
+)
 
 router = APIRouter(prefix="/api/lang", tags=["lang"])
 
 CENTRAL_API = os.getenv("CENTRAL_API")
+TARGET_PACK_VERSION = "1.1.0"
 
 
 # -----------------------------
@@ -19,7 +25,21 @@ def fetch_packs():
     with httpx.Client(http2=False, timeout=10.0) as client:
         res = client.get(f"{CENTRAL_API}/lang/packs")
         res.raise_for_status()
-        return res.json()
+        packs = res.json()
+
+    result = []
+
+    for pack in packs:
+        normalized = {
+            **pack,
+            "version": TARGET_PACK_VERSION,
+            "tag": f"v{TARGET_PACK_VERSION}",
+            "lemma_filename": f"{pack['lang']}-v{TARGET_PACK_VERSION}-lemma.zip",
+            "ngram_filename": f"{pack['lang']}-v{TARGET_PACK_VERSION}-ngram.zip",
+        }
+        result.append(normalized)
+
+    return result
 
 # -----------------------------
 # INSTALLED STATUS
@@ -31,12 +51,12 @@ def get_installed():
     result = []
 
     for p in packs:
-        installed = is_installed(p["lang"], p["version"])
+        state = get_install_state(p["lang"], p["version"])
 
         result.append({
             "lang": p["lang"],
             "version": p["version"],
-            "installed": installed,
+            **state,
         })
 
     return result
@@ -54,6 +74,7 @@ def install(data: dict, bg: BackgroundTasks):
             data["lang"],
             data["version"],
             data.get("filename"),
+            data.get("asset_kind", "lemma"),
             task_id
         )
 
