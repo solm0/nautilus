@@ -1,5 +1,13 @@
 declare namespace chrome {
   namespace runtime {
+    type Port = {
+      name?: string;
+      onDisconnect: {
+        addListener(callback: () => void): void;
+      };
+    };
+
+    function connect(connectInfo?: { name?: string }): Port;
     function sendMessage(message: unknown): Promise<unknown>;
 
     const onMessage: {
@@ -10,6 +18,10 @@ declare namespace chrome {
           sendResponse: (response?: unknown) => void,
         ) => boolean | void,
       ): void;
+    };
+
+    const onConnect: {
+      addListener(callback: (port: Port) => void): void;
     };
   }
 

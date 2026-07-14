@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import type { TextAnalysisResult, TextBlock } from "../src/components/pageTypes";
 import {
   analyzeTextBlocks,
@@ -19,6 +19,7 @@ import {
 } from "./api";
 
 const PANEL_HOST_ID = "nautilus-extension-host";
+const PANEL_DISPOSE_EVENT = "nautilus-extension:dispose";
 
 type SelectedEntry = {
   id: string;
@@ -28,6 +29,7 @@ type SelectedEntry = {
 type SelectionDragState = {
   anchor: HTMLElement;
   current: HTMLElement;
+  orderedElements: HTMLElement[];
   pointerMoved: boolean;
 };
 
@@ -85,16 +87,34 @@ function previewText(text: string) {
   return firstLine.length > 72 ? `${firstLine.slice(0, 72)}...` : firstLine;
 }
 
+function canContainSelectableText(element: HTMLElement) {
+  const tagName = element.tagName;
+  return tagName !== "SCRIPT" && tagName !== "STYLE" && tagName !== "NOSCRIPT";
+}
+
+function hasHeadingSelfOrAncestor(element: HTMLElement) {
+  let node: HTMLElement | null = element;
+
+  while (node) {
+    if (/^H[1-6]$/.test(node.tagName)) {
+      return true;
+    }
+
+    node = node.parentElement;
+  }
+
+  return false;
+}
+
 function isSelectableTextElement(element: HTMLElement) {
-  const text = extractElementText(element).trim();
+  if (!canContainSelectableText(element)) return false;
+
+  const text = normalizeTextPreservingBreaks(element.textContent ?? "").trim();
+  if (text.length < 12 || text.length > 12000) return false;
+
   const rect = element.getBoundingClientRect();
 
-  return (
-    text.length >= 12 &&
-    text.length <= 12000 &&
-    rect.width >= 24 &&
-    rect.height >= 18
-  );
+  return rect.width >= 24 && rect.height >= 18;
 }
 
 function findTextElement(target: EventTarget | null, host: HTMLElement | null) {
@@ -115,25 +135,60 @@ function findTextElement(target: EventTarget | null, host: HTMLElement | null) {
 }
 
 function collectSelectableLeafElements(root: ParentNode, host: HTMLElement | null) {
-  const all = Array.from(root.querySelectorAll<HTMLElement>("body *"));
+  const results: HTMLElement[] = [];
+  const start = root instanceof Document ? root.body : root;
 
-  return all.filter((element) => {
-    if (host?.contains(element)) return false;
-    if (!isSelectableTextElement(element)) return false;
+  if (!(start instanceof HTMLElement)) {
+    return results;
+  }
 
-    return !Array.from(element.children).some((child) => {
-      return child instanceof HTMLElement && isSelectableTextElement(child);
-    });
-  });
+  const visit = (element: HTMLElement): boolean => {
+    if (host?.contains(element) || !canContainSelectableText(element)) {
+      return false;
+    }
+
+    let childHasSelectableLeaf = false;
+    for (const child of element.children) {
+      if (!(child instanceof HTMLElement)) continue;
+      if (visit(child)) {
+        childHasSelectableLeaf = true;
+      }
+    }
+
+    if (isSelectableTextElement(element) && !childHasSelectableLeaf) {
+      results.push(element);
+      return true;
+    }
+
+    return childHasSelectableLeaf;
+  };
+
+  for (const child of start.children) {
+    if (child instanceof HTMLElement) {
+      visit(child);
+    }
+  }
+
+  return results;
 }
 
 function findLeafTextElement(target: EventTarget | null, host: HTMLElement | null) {
-  const targetNode = target instanceof Node ? target : null;
-  if (!targetNode) return null;
+  let node =
+    target instanceof HTMLElement
+      ? target
+      : target instanceof Node
+        ? target.parentElement
+        : null;
 
-  const selectableLeaves = collectSelectableLeafElements(document, host);
-  const leaf = selectableLeaves.find((element) => element.contains(targetNode));
-  if (leaf) return leaf;
+  while (node) {
+    if (host?.contains(node)) return null;
+
+    if (isSelectableTextElement(node)) {
+      return node;
+    }
+
+    node = node.parentElement;
+  }
 
   return findTextElement(target, host);
 }
@@ -143,8 +198,7 @@ function findLeafTextElementFromPoint(clientX: number, clientY: number, host: HT
   return findLeafTextElement(pointTarget, host);
 }
 
-function getElementsBetween(anchor: HTMLElement, current: HTMLElement, host: HTMLElement | null) {
-  const selectable = collectSelectableLeafElements(document, host);
+function getElementsBetween(anchor: HTMLElement, current: HTMLElement, selectable: HTMLElement[]) {
   const anchorIndex = selectable.indexOf(anchor);
   const currentIndex = selectable.indexOf(current);
 
@@ -345,7 +399,7 @@ function OverlayApp() {
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragPreviewIds, setDragPreviewIds] = useState<string[]>([]);
+  const [dragPreviewElements, setDragPreviewElements] = useState<HTMLElement[]>([]);
 
   const getElementId = (element: HTMLElement) => {
     const existing = elementIdsRef.current.get(element);
@@ -461,7 +515,7 @@ function OverlayApp() {
     if (!selectionMode) {
       setHoveredElement(null);
       pageDragRef.current = null;
-      setDragPreviewIds([]);
+      setDragPreviewElements([]);
       return;
     }
 
@@ -474,8 +528,7 @@ function OverlayApp() {
 
       dragState.pointerMoved = true;
       dragState.current = next;
-      const range = getElementsBetween(dragState.anchor, next, hostRef.current);
-      setDragPreviewIds(range.map((element) => getElementId(element)));
+      setDragPreviewElements(getElementsBetween(dragState.anchor, next, dragState.orderedElements));
     };
 
     const handleMouseDown = (event: MouseEvent) => {
@@ -491,6 +544,7 @@ function OverlayApp() {
       pageDragRef.current = {
         anchor: element,
         current: element,
+        orderedElements: collectSelectableLeafElements(document, hostRef.current),
         pointerMoved: false,
       };
     };
@@ -524,7 +578,7 @@ function OverlayApp() {
       window.getSelection()?.removeAllRanges();
 
       if (!dragState.pointerMoved || !element) {
-        setDragPreviewIds([]);
+        setDragPreviewElements([]);
         return;
       }
 
@@ -532,10 +586,10 @@ function OverlayApp() {
       event.stopPropagation();
       event.stopImmediatePropagation();
 
-      const range = getElementsBetween(dragState.anchor, element, hostRef.current);
+      const range = getElementsBetween(dragState.anchor, element, dragState.orderedElements);
       appendSelectionElements(range);
       setMessage(null);
-      setDragPreviewIds([]);
+      setDragPreviewElements([]);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -543,7 +597,7 @@ function OverlayApp() {
         setSelectionMode(false);
         setHoveredElement(null);
         pageDragRef.current = null;
-        setDragPreviewIds([]);
+        setDragPreviewElements([]);
         window.getSelection()?.removeAllRanges();
       }
     };
@@ -582,6 +636,7 @@ function OverlayApp() {
           id: entry.id,
           element: entry.element,
           text,
+          formattedText: hasHeadingSelfOrAncestor(entry.element) ? `\n${text}` : text,
           preview: previewText(text),
         };
       })
@@ -595,15 +650,10 @@ function OverlayApp() {
   }, [selectedBlocks, layoutTick]);
 
   const dragPreviewRects = useMemo(() => {
-    if (dragPreviewIds.length === 0) return [];
-
-    const selectable = collectSelectableLeafElements(document, hostRef.current);
-    const previewSet = new Set(dragPreviewIds);
-
-    return selectable
+    return dragPreviewElements
       .map((element) => ({ id: getElementId(element), rect: element.getBoundingClientRect() }))
-      .filter(({ id, rect }) => previewSet.has(id) && rect.width > 0 && rect.height > 0);
-  }, [dragPreviewIds, getElementId, layoutTick]);
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0);
+  }, [dragPreviewElements, getElementId, layoutTick]);
 
   const hoveredRect = useMemo(() => {
     if (!selectionMode || !hoveredElement || !document.contains(hoveredElement)) return null;
@@ -616,7 +666,7 @@ function OverlayApp() {
   }, [hoveredElement, layoutTick, selectedEntries, selectionMode]);
 
   const combinedText = useMemo(
-    () => selectedBlocks.map((entry) => entry.text).join("\n\n"),
+    () => selectedBlocks.map((entry) => entry.formattedText).join("\n\n"),
     [selectedBlocks],
   );
 
@@ -717,7 +767,7 @@ function OverlayApp() {
       setMessage("Analyzing selected text...");
       const language = selectedLanguage;
       const analyzed = await analyzeTextBlocks(
-        selectedBlocks.map((entry) => entry.text),
+        selectedBlocks.map((entry) => entry.formattedText),
         language,
       );
 
@@ -1424,4 +1474,26 @@ function mountPanel() {
   return createRoot(mount);
 }
 
-mountPanel().render(<OverlayApp />);
+function cleanupMountedPanel(root: Root) {
+  root.unmount();
+  document.getElementById(PANEL_HOST_ID)?.remove();
+}
+
+function registerMountedPanel(root: Root) {
+  const dispose = () => {
+    window.removeEventListener(PANEL_DISPOSE_EVENT, dispose);
+    cleanupMountedPanel(root);
+  };
+
+  window.addEventListener(PANEL_DISPOSE_EVENT, dispose);
+}
+
+function bootstrapPanel() {
+  window.dispatchEvent(new Event(PANEL_DISPOSE_EVENT));
+  document.getElementById(PANEL_HOST_ID)?.remove();
+  const root = mountPanel();
+  registerMountedPanel(root);
+  root.render(<OverlayApp />);
+}
+
+bootstrapPanel();

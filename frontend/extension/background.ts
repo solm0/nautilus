@@ -47,6 +47,10 @@ async function probeLocal(localApi: string) {
   }
 }
 
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "nautilus-lifecycle") return;
+});
+
 chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   const message = rawMessage as ExtensionMessage;
 

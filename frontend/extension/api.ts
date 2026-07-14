@@ -66,8 +66,20 @@ export type InstalledPack = {
 
 let activeLocalApi: string | null = null;
 
+function isExtensionContextInvalidatedError(error: unknown) {
+  return error instanceof Error && error.message.includes("Extension context invalidated");
+}
+
 async function sendMessage<T>(message: unknown) {
-  return chrome.runtime.sendMessage(message) as Promise<T>;
+  try {
+    return await chrome.runtime.sendMessage(message) as T;
+  } catch (error) {
+    if (isExtensionContextInvalidatedError(error)) {
+      throw error;
+    }
+
+    throw error;
+  }
 }
 
 async function probeSpecificLocalApi(localApi: string) {
@@ -94,9 +106,17 @@ async function parseResponse<T>(response: ExtensionResponse) {
 }
 
 async function getToken() {
-  const result = await chrome.storage.local.get(TOKEN_STORAGE_KEY);
-  const token = result[TOKEN_STORAGE_KEY];
-  return typeof token === "string" && token.length > 0 ? token : null;
+  try {
+    const result = await chrome.storage.local.get(TOKEN_STORAGE_KEY);
+    const token = result[TOKEN_STORAGE_KEY];
+    return typeof token === "string" && token.length > 0 ? token : null;
+  } catch (error) {
+    if (isExtensionContextInvalidatedError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 async function authHeaders() {
@@ -131,9 +151,15 @@ export async function loginWithPassword(email: string, password: string) {
     throw new Error(message || "login failed");
   }
 
-  await chrome.storage.local.set({
-    [TOKEN_STORAGE_KEY]: response.access_token,
-  });
+  try {
+    await chrome.storage.local.set({
+      [TOKEN_STORAGE_KEY]: response.access_token,
+    });
+  } catch (error) {
+    if (!isExtensionContextInvalidatedError(error)) {
+      throw error;
+    }
+  }
 
   return response.access_token;
 }
@@ -161,7 +187,13 @@ export async function signupWithPassword(name: string, email: string, password: 
 }
 
 export async function logoutExtensionAuth() {
-  await chrome.storage.local.remove(TOKEN_STORAGE_KEY);
+  try {
+    await chrome.storage.local.remove(TOKEN_STORAGE_KEY);
+  } catch (error) {
+    if (!isExtensionContextInvalidatedError(error)) {
+      throw error;
+    }
+  }
 }
 
 export async function probeLocalApi() {
