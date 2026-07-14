@@ -1,4 +1,10 @@
 declare namespace chrome {
+  namespace action {
+    const onClicked: {
+      addListener(callback: (tab: tabs.Tab) => void): void;
+    };
+  }
+
   namespace runtime {
     type Port = {
       name?: string;
@@ -19,14 +25,22 @@ declare namespace chrome {
         ) => boolean | void,
       ): void;
     };
-
-    const onConnect: {
-      addListener(callback: (port: Port) => void): void;
-    };
   }
 
   namespace tabs {
+    type Tab = {
+      id?: number;
+      url?: string;
+    };
+
     function create(createProperties: { url: string }): Promise<unknown>;
+  }
+
+  namespace scripting {
+    function executeScript(injection: {
+      target: { tabId: number };
+      files: string[];
+    }): Promise<unknown>;
   }
 
   namespace storage {

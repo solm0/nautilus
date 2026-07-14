@@ -5,7 +5,9 @@
   "description": "Analyze page text in place with Nautilus.",
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "http://localhost:8010/*",
@@ -18,11 +20,5 @@
     "service_worker": "assets/background.js",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["assets/content.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  "action": {}
 }

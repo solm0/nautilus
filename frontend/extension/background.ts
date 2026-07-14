@@ -47,9 +47,17 @@ async function probeLocal(localApi: string) {
   }
 }
 
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== "nautilus-lifecycle") return;
-});
+if (chrome.action?.onClicked) {
+  chrome.action.onClicked.addListener((tab) => {
+    if (typeof tab.id !== "number") return;
+    if (!tab.url || !/^https?:/i.test(tab.url)) return;
+
+    void chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["assets/content.js"],
+    });
+  });
+}
 
 chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   const message = rawMessage as ExtensionMessage;
