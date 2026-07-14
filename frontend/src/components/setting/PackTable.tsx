@@ -131,6 +131,22 @@ export default function PackTable() {
     );
   }
 
+  function renderHeaderStatus(state: InstalledPack) {
+    if (mobileApp) {
+      if (!state.installed) {
+        return null;
+      }
+
+      return (
+        <div className="bg-green-200 text-green-700/80 text-xs px-2 rounded-full">
+          Activated
+        </div>
+      );
+    }
+
+    return renderDesktopStatus(state);
+  }
+
   async function handleActivate(pack: Pack) {
     const key = `${pack.lang}-${pack.version}`;
 
@@ -248,7 +264,7 @@ export default function PackTable() {
                 <span className="font-medium">
                   {label} ({lang})
                 </span>
-                {!mobileApp && currentState ? renderDesktopStatus(currentState) : null}
+                {currentState ? renderHeaderStatus(currentState) : null}
                 <div className="ml-auto">
                   {open ? (
                     <ChevronUpIcon size={18} />
