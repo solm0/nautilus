@@ -98,6 +98,7 @@ export default function PackTable() {
         installed: false,
         lemma_installed: false,
         ngram_installed: false,
+        model_installed: false,
       }
     );
   }
@@ -377,7 +378,10 @@ export default function PackTable() {
           filename={selectedInstall.filename}
           assetKind={selectedInstall.assetKind}
           onClose={() => setSelectedInstall(null)}
-          onInstalled={refreshInstalled}
+          onInstalled={async () => {
+            await refreshInstalled();
+            await refreshPacks();
+          }}
         />
       ) : null}
     </>

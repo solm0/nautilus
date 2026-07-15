@@ -1,6 +1,7 @@
 import unicodedata
 
 from pathlib import Path
+from .model_store import get_model_dir
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
 
@@ -43,8 +44,6 @@ def _representative_morph(morphs: list[dict]):
 
 _nlp = None
 _tokenizer = None
-BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_DIR = BASE_DIR / "models"
 
 
 def get_nlp():
@@ -57,7 +56,7 @@ def get_nlp():
             lang="ja",
             processors="tokenize,pos,lemma,depparse",
             use_gpu=False,
-            dir=str(MODEL_DIR),
+            dir=str(get_model_dir("ja")),
             download_method=None,
         )
 
@@ -74,7 +73,7 @@ def get_tokenizer():
             lang="ja",
             processors="tokenize",
             use_gpu=False,
-            dir=str(MODEL_DIR),
+            dir=str(get_model_dir("ja")),
             download_method=None,
         )
 

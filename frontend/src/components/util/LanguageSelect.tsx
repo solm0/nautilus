@@ -14,6 +14,7 @@ export type InstalledPack = {
   installed: boolean;
   lemma_installed: boolean;
   ngram_installed: boolean;
+  model_installed?: boolean;
 };
 
 export type LanguageOption = {

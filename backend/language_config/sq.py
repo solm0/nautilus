@@ -2,6 +2,7 @@ import re
 import unicodedata
 
 from pathlib import Path
+from .model_store import ensure_model_installed
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
 
@@ -26,10 +27,12 @@ def get_nlp():
     if _nlp is None:
         import stanza
 
+        model_dir = ensure_model_installed("sq")
         _nlp = stanza.Pipeline(
             lang="sq",
             processors="tokenize,pos,lemma,depparse",
             use_gpu=False,
+            dir=str(model_dir),
             download_method=None,
         )
 
@@ -51,3 +54,9 @@ def get_config(base_dir: Path):
         "pack_db": LanguagePackDB(db_path) if db_path else None,
         "db_path": db_path,
     }
+
+
+def unload():
+    global _nlp
+
+    _nlp = None

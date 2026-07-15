@@ -23,7 +23,25 @@ type Props = {
   filename: string;
   assetKind: "lemma" | "ngram";
   onClose: () => void;
-  onInstalled: () => Promise<void>;
+  onInstalled: () => Promise<void> | void;
+};
+
+type InstallStatus =
+  | "starting"
+  | "downloading_pack"
+  | "extracting_pack"
+  | "installing_model"
+  | "verifying_install"
+  | "done"
+  | "error";
+
+type ProgressPayload = {
+  progress?: number;
+  status?: string;
+  error?: string;
+  detail?: string;
+  bytes?: string;
+  model_percent?: number;
 };
 
 export default function PackModal({
@@ -37,7 +55,10 @@ export default function PackModal({
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState<"starting" | "downloading" | "extracting" | "done" | "error">("starting");
+  const [status, setStatus] = useState<InstallStatus>("starting");
+  const [statusText, setStatusText] = useState("Preparing installation...");
+  const [statusDetail, setStatusDetail] = useState("");
+  const [modelPercent, setModelPercent] = useState<number | null>(null);
 
   const intervalRef = useRef<number | null>(null);
   const installedRef = useRef(false);
@@ -74,23 +95,51 @@ export default function PackModal({
       stopPolling();
       intervalRef.current = window.setInterval(async () => {
         try {
-          const p = await getProgress(res.task_id);
+          const p = await getProgress(res.task_id) as ProgressPayload;
 
-          setStatus(p.status || "downloading");
-          setProgress((prev) => Math.max(prev, p.progress || 0));
+          const nextStatus = (p.status || "downloading_pack") as InstallStatus;
+          setStatus(nextStatus);
+          setProgress(Math.max(0, Math.min(1, p.progress || 0)));
+          setStatusDetail(p.detail || "");
+          setModelPercent(
+            typeof p.model_percent === "number"
+              ? Math.max(0, Math.min(100, p.model_percent))
+              : null,
+          );
 
-          if (p.status === "done") {
-            stopPolling();
-            setStatus("done");
-            setProgress(1);
-            setDone(true);
-            await onInstalled();
+          if (nextStatus === "downloading_pack") {
+            setStatusText("Downloading language pack...");
+          } else if (nextStatus === "extracting_pack") {
+            setStatusText("Extracting language pack...");
+          } else if (nextStatus === "installing_model") {
+            if (typeof p.model_percent === "number") {
+              setStatusText(`Installing analysis model... ${p.model_percent}%`);
+            } else {
+              setStatusText("Installing analysis model...");
+            }
+          } else if (nextStatus === "verifying_install") {
+            setStatusText("Finalizing installation...");
+          } else if (nextStatus === "done") {
+            setStatusText("Installation complete.");
+          } else if (nextStatus === "error") {
+            setStatusText("Installation failed.");
           }
 
-          if (p.status === "error") {
+          if (nextStatus === "done") {
             stopPolling();
-            setStatus("error");
-            setError("Installation failed.");
+            setProgress(1);
+            setDone(true);
+
+            try {
+              await onInstalled();
+            } catch {
+              setError("Installed, but failed to refresh the language list.");
+            }
+          }
+
+          if (nextStatus === "error") {
+            stopPolling();
+            setError(p.error || "Installation failed.");
           }
         } catch {
           stopPolling();
@@ -109,6 +158,11 @@ export default function PackModal({
     return () => stopPolling();
   }, []);
 
+  const displayedPercent =
+    status === "installing_model" && modelPercent !== null
+      ? modelPercent
+      : Math.round(progress * 100);
+
   return (
     <ResponsiveModal open={true} onClose={handleClose}>
       <div className="flex flex-col gap-6 min-w-[320px]">
@@ -124,10 +178,10 @@ export default function PackModal({
 
         <div className="flex flex-col gap-2">
           <div className="w-full h-3 rounded-full bg-neutral-200 overflow-hidden">
-            {progress > 0 ? (
+            {displayedPercent > 0 ? (
               <div
                 className="h-full bg-black transition-all duration-300"
-                style={{ width: `${Math.round(progress * 100)}%` }}
+                style={{ width: `${displayedPercent}%` }}
               />
             ) : (
               <div className="h-full w-1/3 animate-pulse bg-neutral-500" />
@@ -135,14 +189,14 @@ export default function PackModal({
           </div>
 
           <div className="text-sm text-neutral-500">
-            {status === "extracting"
-              ? "Extracting files..."
-              : status === "done"
-                ? "100%"
-                : progress > 0
-                  ? `${Math.round(progress * 100)}%`
-                  : "Downloading..."}
+            {statusText}
           </div>
+
+          {statusDetail ? (
+            <div className="text-xs text-neutral-400 break-all">
+              {statusDetail}
+            </div>
+          ) : null}
         </div>
 
         {done && (

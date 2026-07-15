@@ -1,6 +1,7 @@
 import unicodedata
 
 from pathlib import Path
+from .model_store import ensure_model_installed
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
 
@@ -43,20 +44,10 @@ def _representative_morph(morphs: list[dict]):
 
 _nlp = None
 _tokenizer = None
-BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_DIR = BASE_DIR / "models"
 
 
 def ensure_model():
-    import stanza
-
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-
-    if not (MODEL_DIR / "ja").exists():
-        stanza.download(
-            lang="ja",
-            model_dir=str(MODEL_DIR),
-        )
+    return ensure_model_installed("ja")
 
 
 def get_nlp():
@@ -64,13 +55,13 @@ def get_nlp():
 
     if _nlp is None:
         import stanza
-        ensure_model()
+        model_dir = ensure_model()
 
         _nlp = stanza.Pipeline(
             lang="ja",
             processors="tokenize,pos,lemma,depparse",
             use_gpu=False,
-            dir=str(MODEL_DIR),
+            dir=str(model_dir),
             download_method=None,
         )
 
@@ -82,13 +73,13 @@ def get_tokenizer():
 
     if _tokenizer is None:
         import stanza
-        ensure_model()
+        model_dir = ensure_model()
 
         _tokenizer = stanza.Pipeline(
             lang="ja",
             processors="tokenize",
             use_gpu=False,
-            dir=str(MODEL_DIR),
+            dir=str(model_dir),
             download_method=None,
         )
 
@@ -161,3 +152,10 @@ def get_config(base_dir: Path):
         "pack_db": pack_db,
         "db_path": db_path,
     }
+
+
+def unload():
+    global _nlp, _tokenizer
+
+    _nlp = None
+    _tokenizer = None

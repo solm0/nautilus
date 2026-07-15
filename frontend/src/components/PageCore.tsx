@@ -747,6 +747,7 @@ export default function PageCore({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
+        <div className={`flex w-full flex-col items-center ${pageId ? "pb-[5rem]" : ""}`}>
         {pageId ? (
           <div
             data-page-header="true"
@@ -965,6 +966,8 @@ export default function PageCore({
               pageSource !== "lrclib" &&
               blockIndex > 0 &&
               previousBlockHasTokens;
+            const isActiveLine =
+              blockIndex === activeLyricBlockIndex;
 
             return (
               <div
@@ -1016,7 +1019,9 @@ export default function PageCore({
                       className={[
                         "relative z-10 flex flex-col px-1",
                         settings.lemma_info && pageId
-                          ? "min-h-[4em] h-auto gap-1"
+                          ? isActiveLine
+                            ? "min-h-[4em] h-auto gap-2"
+                            : "min-h-[4em] h-auto gap-1"
                           : isLyricPage
                             ? "h-auto min-h-[1.6em] gap-0 justify-center"
                           : pageId
@@ -1080,6 +1085,7 @@ export default function PageCore({
             );
           })()
         ))}
+        </div>
 
         <TokenHighlightOverlay
           key={pageId}

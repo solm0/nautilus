@@ -2,9 +2,14 @@ import os
 import requests
 import zipfile
 import tempfile
+import io
+import re
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from dotenv import load_dotenv
 import shutil
+from language_config.model_store import ensure_model_installed, model_installed, remove_models
+from language_config.registry import invalidate_language as invalidate_nlp_language
 from language_config.sqlite_pack import (
     LEMMA_TABLES,
     NGRAM_TABLES,
@@ -12,6 +17,7 @@ from language_config.sqlite_pack import (
     find_ngram_db,
     has_required_tables,
 )
+from shared.services.lemma_service import invalidate_language as invalidate_lemma_language
 
 load_dotenv()
 
@@ -21,12 +27,17 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 progress_map = {}
+TQDM_PERCENT_RE = re.compile(r"(?P<percent>\d{1,3})%\|")
+TQDM_BYTES_RE = re.compile(
+    r"(?P<current>\d+(?:\.\d+)?[KMG]?)/(?P<total>\d+(?:\.\d+)?[KMG]?)"
+)
 
 
 def get_install_state(lang: str, version: str):
     path = DATA_DIR / lang / version
     lemma_db_path = find_lemma_db(path)
     ngram_db_path = find_ngram_db(path)
+    model_ready = model_installed(lang)
 
     lemma_installed = (
         lemma_db_path is not None
@@ -40,8 +51,134 @@ def get_install_state(lang: str, version: str):
     return {
         "lemma_installed": lemma_installed,
         "ngram_installed": ngram_installed,
-        "installed": lemma_installed,
+        "model_installed": model_ready,
+        "installed": lemma_installed and model_ready,
     }
+
+
+def invalidate_runtime(lang: str):
+    invalidate_nlp_language(lang)
+    invalidate_lemma_language(lang)
+
+
+def set_progress(task_id: str, progress: float, status: str, **extra):
+    payload = {
+        "progress": max(0.0, min(progress, 1.0)),
+        "status": status,
+    }
+    payload.update(extra)
+    progress_map[task_id] = payload
+
+
+def parse_model_download_output(text: str):
+    line = text.strip()
+
+    if not line:
+        return None
+
+    normalized = " ".join(line.split())
+    percent_match = TQDM_PERCENT_RE.search(normalized)
+    bytes_match = TQDM_BYTES_RE.search(normalized)
+
+    if not percent_match and not bytes_match:
+        return {
+            "detail": normalized,
+        }
+
+    parsed = {
+        "detail": normalized,
+    }
+
+    if percent_match:
+        parsed["percent"] = max(
+            0,
+            min(100, int(percent_match.group("percent"))),
+        )
+
+    if bytes_match:
+        parsed["bytes"] = f"{bytes_match.group('current')}/{bytes_match.group('total')}"
+
+    return parsed
+
+
+class ProgressCaptureStream(io.TextIOBase):
+    def __init__(self, task_id: str):
+        self.task_id = task_id
+        self._buffer = ""
+
+    def writable(self):
+        return True
+
+    def write(self, text):
+        if not text:
+            return 0
+
+        self._buffer += text
+        self._flush_complete_segments()
+        return len(text)
+
+    def flush(self):
+        self._flush_buffer(force=True)
+
+    def _flush_complete_segments(self):
+        segments = re.split(r"[\r\n]", self._buffer)
+
+        if len(segments) <= 1:
+            return
+
+        for segment in segments[:-1]:
+            self._publish(segment)
+
+        self._buffer = segments[-1]
+
+    def _flush_buffer(self, force=False):
+        if force and self._buffer:
+            self._publish(self._buffer)
+            self._buffer = ""
+
+    def _publish(self, raw_text: str):
+        parsed = parse_model_download_output(raw_text)
+
+        if not parsed:
+            return
+
+        detail = parsed.get("detail")
+        percent = parsed.get("percent")
+        bytes_text = parsed.get("bytes")
+
+        if percent is None:
+            set_progress(
+                self.task_id,
+                progress_map[self.task_id]["progress"],
+                "installing_model",
+                phase="model",
+                detail=detail,
+                bytes=bytes_text,
+            )
+            return
+
+        base_progress = 0.94
+        span = 0.05
+        model_progress = base_progress + span * (percent / 100)
+
+        set_progress(
+            self.task_id,
+            model_progress,
+            "installing_model",
+            phase="model",
+            detail=detail,
+            bytes=bytes_text,
+            model_percent=percent,
+        )
+
+
+def install_model_with_progress(lang: str, task_id: str):
+    capture = ProgressCaptureStream(task_id)
+
+    with redirect_stderr(capture), redirect_stdout(capture):
+        ensure_model_installed(lang)
+
+    capture.flush()
 
 
 def install_pack(
@@ -52,6 +189,7 @@ def install_pack(
     task_id: str,
 ):
     os.makedirs(DATA_DIR, exist_ok=True)
+    invalidate_runtime(lang)
 
     if asset_kind not in {"lemma", "ngram"}:
         raise Exception(f"invalid asset_kind: {asset_kind}")
@@ -73,7 +211,7 @@ def install_pack(
         "Accept": "application/octet-stream"
     }
 
-    progress_map[task_id] = {"progress": 0.0, "status": "downloading"}
+    set_progress(task_id, 0.0, "downloading_pack", phase="pack")
 
     try:
         # 1. release 조회
@@ -108,23 +246,29 @@ def install_pack(
                 downloaded += len(chunk)
 
                 if total:
-                    progress_map[task_id] = {
-                        "progress": downloaded / total,
-                        "status": "downloading"
-                    }
+                    set_progress(
+                        task_id,
+                        downloaded / total,
+                        "downloading_pack",
+                        phase="pack",
+                    )
                 else:
                     current_progress = progress_map[task_id]["progress"]
-                    progress_map[task_id] = {
-                        "progress": min(0.9, current_progress + 0.01),
-                        "status": "downloading",
-                    }
+                    set_progress(
+                        task_id,
+                        min(0.9, current_progress + 0.01),
+                        "downloading_pack",
+                        phase="pack",
+                    )
 
         tmp_zip.close()
 
-        progress_map[task_id] = {
-            "progress": max(progress_map[task_id]["progress"], 0.92),
-            "status": "extracting",
-        }
+        set_progress(
+            task_id,
+            max(progress_map[task_id]["progress"], 0.92),
+            "extracting_pack",
+            phase="pack",
+        )
 
         # 3. unzip
         extract_path = DATA_DIR / lang / version
@@ -157,46 +301,36 @@ def install_pack(
                 with zip_ref.open(member, "r") as src, open(target_path, "wb") as dst:
                     shutil.copyfileobj(src, dst)
 
-        progress_map[task_id] = {
-            "progress": 1.0,
-            "status": "done"
-        }
-
         # tmp 파일 삭제
         os.remove(tmp_zip.name)
 
         if not verify_install(lang, version, asset_kind):
             raise Exception("install corrupted")
 
+        if asset_kind == "lemma":
+            set_progress(task_id, 0.94, "installing_model", phase="model")
+            install_model_with_progress(lang, task_id)
+            set_progress(task_id, 0.99, "verifying_install", phase="finalizing")
+
+        set_progress(task_id, 1.0, "done", phase="done")
+
+        invalidate_runtime(lang)
+
         return str(extract_path)
 
     except Exception as e:
-        progress_map[task_id] = {
-            "progress": 0,
-            "status": "error",
-            "error": str(e)
-        }
+        set_progress(task_id, 0.0, "error", error=str(e))
         raise e
 
 
 def uninstall_pack(lang: str, version: str):
+    invalidate_runtime(lang)
     path = DATA_DIR / lang / version
 
     if path.exists():
         shutil.rmtree(path, ignore_errors=True)
 
-    # stanza 캐시 삭제
-    remove_stanza(lang)
-
-
-def remove_stanza(lang: str):
-    """
-    ~/.stanza_resources/{lang} 삭제
-    """
-    path = Path.home() / "stanza_resources" / lang
-
-    if path.exists():
-        shutil.rmtree(path, ignore_errors=True)
+    remove_models(lang)
 
 def is_installed(lang: str, version: str):
     return get_install_state(lang, version)["installed"]

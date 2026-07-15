@@ -28,6 +28,18 @@ def _load_language(lang: str):
     return data
 
 
+def invalidate_language(lang: str):
+    data = _registry.pop(lang, None)
+
+    if not data:
+        return
+
+    pack_db = data.get("pack_db")
+
+    if hasattr(pack_db, "close"):
+        pack_db.close()
+
+
 # ---- helpers ----
 
 def has_key(key: str, lang: str):

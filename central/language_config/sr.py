@@ -2,6 +2,7 @@ import re
 import unicodedata
 from pathlib import Path
 
+from .model_store import get_model_dir
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
 
@@ -39,8 +40,6 @@ def tokenize(text: str):
 
 
 _nlp = None
-BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_DIR = BASE_DIR / "classla_models"
 
 
 def get_nlp():
@@ -53,7 +52,7 @@ def get_nlp():
             lang="sr",
             processors="tokenize,pos,lemma,depparse",
             use_gpu=False,
-            dir=str(MODEL_DIR),
+            dir=str(get_model_dir("sr")),
             download_method=None,
         )
 

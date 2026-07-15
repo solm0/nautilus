@@ -158,6 +158,22 @@ class LanguagePackDB:
 
         return conn
 
+    def _close_conn(self, kind: str):
+        attr = f"{kind}_conn"
+        conn = getattr(self._local, attr, None)
+
+        if conn is None:
+            return
+
+        try:
+            conn.close()
+        finally:
+            setattr(self._local, attr, None)
+
+    def close(self):
+        self._close_conn("lemma")
+        self._close_conn("ngram")
+
     def _fetch_pairs(self, query: str, params=(), kind: str = "lemma"):
         try:
             rows = self._get_conn(kind).execute(query, params).fetchall()
