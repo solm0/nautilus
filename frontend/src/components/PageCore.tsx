@@ -244,8 +244,7 @@ function mergeHighlights(highlights: HighlightBlob[]) {
 function getLyricLineVisualState(
   blockIndex: number,
   activeLyricBlockIndex: number,
-  syncPlaybackActive: boolean,
-  lemmaInfoOpen: boolean
+  syncPlaybackActive: boolean
 ) {
   if (!syncPlaybackActive || activeLyricBlockIndex < 0) {
     return {
@@ -264,10 +263,10 @@ function getLyricLineVisualState(
   if (isActiveLine) {
     return {
       blockOpacity: 1,
-      blockMinHeightClass: lemmaInfoOpen ? "min-h-[7.5em]" : "min-h-[5.8em]",
-      blockAlignClass: "items-center content-center",
-      blockPaddingClass: lemmaInfoOpen ? "py-28" : "py-18",
-      tokenSizeClass: "!text-[24px] md:!text-[28px]",
+      blockMinHeightClass: "",
+      blockAlignClass: "",
+      blockPaddingClass: "",
+      tokenSizeClass: "",
       tokenPaddingClass: "",
       highlightOpacity: 1,
     };
@@ -356,8 +355,7 @@ function TokenHighlightOverlay({
           const visualState = getLyricLineVisualState(
             blockIndex,
             activeLyricBlockIndex,
-            syncPlaybackActive,
-            settings.lemma_info
+            syncPlaybackActive
           );
 
           return [
@@ -954,8 +952,7 @@ export default function PageCore({
             const visualState = getLyricLineVisualState(
               blockIndex,
               activeLyricBlockIndex,
-              syncPlaybackActive,
-              settings.lemma_info
+              syncPlaybackActive
             );
             const previousBlock = blockIndex > 0
               ? blocks[blockIndex - 1]

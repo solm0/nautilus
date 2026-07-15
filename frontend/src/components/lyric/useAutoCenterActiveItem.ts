@@ -153,22 +153,23 @@ export function useAutoCenterActiveItem({
     const container = containerRef.current;
     if (!container || !enabled || !autoFollow || activeIndex < 0) return;
 
-    const activeElement = getElementForIndex(activeIndex, container);
-    if (!activeElement) return;
+  const activeElement = getElementForIndex(activeIndex, container);
+  if (!activeElement) return;
 
-    const didIndexChange = previousActiveIndexRef.current !== activeIndex;
-    previousActiveIndexRef.current = activeIndex;
+  const didIndexChange = previousActiveIndexRef.current !== activeIndex;
+  const isFirstAutoCenter = previousActiveIndexRef.current < 0;
+  previousActiveIndexRef.current = activeIndex;
 
-    if (!didIndexChange && isNearCenter(container, activeElement)) {
-      return;
-    }
+  if (!didIndexChange && isNearCenter(container, activeElement)) {
+    return;
+  }
 
-    scrollElementToCenter(
-      container,
-      activeElement,
-      didIndexChange ? "auto" : "smooth",
-    );
-  }, [activeIndex, autoFollow, containerRef, enabled, getElementForIndex]);
+  scrollElementToCenter(
+    container,
+    activeElement,
+    isFirstAutoCenter ? "auto" : "smooth",
+  );
+}, [activeIndex, autoFollow, containerRef, enabled, getElementForIndex]);
 
   return {
     autoFollow,
