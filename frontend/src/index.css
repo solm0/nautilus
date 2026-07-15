@@ -39,6 +39,26 @@
   --app-neutral-900: #24211e;
   --app-neutral-950: #191715;
   --app-neutral-transparent: #fbfaf8bb;
+  --app-green-50: #effaf2;
+  --app-green-100: #daf4e0;
+  --app-green-200: #b7e7c3;
+  --app-green-300: #8fd7a2;
+  --app-green-400: #61c181;
+  --app-green-500: #38a966;
+  --app-green-600: #258750;
+  --app-green-700: #1f6c42;
+  --app-green-800: #1c5635;
+  --app-green-900: #18462c;
+  --app-red-50: #fff1f0;
+  --app-red-100: #ffdeda;
+  --app-red-200: #ffc0b8;
+  --app-red-300: #ff9a8e;
+  --app-red-400: #f66f61;
+  --app-red-500: #e24d3c;
+  --app-red-600: #bf382a;
+  --app-red-700: #9b2f24;
+  --app-red-800: #7b271e;
+  --app-red-900: #652119;
   font: 16px/145% 'Pretendard';
   color-scheme: light;
   color: var(--app-text);
@@ -73,6 +93,26 @@
   --app-neutral-900: #f6f2ed;
   --app-neutral-950: #fcf9f5;
   --app-neutral-transparent: #282523cc;
+  --app-green-50: #112118;
+  --app-green-100: #163022;
+  --app-green-200: #1d4330;
+  --app-green-300: #25563f;
+  --app-green-400: #2f7051;
+  --app-green-500: #3f8d67;
+  --app-green-600: #72c596;
+  --app-green-700: #9de0b8;
+  --app-green-800: #c2edcf;
+  --app-green-900: #e0f6e6;
+  --app-red-50: #261513;
+  --app-red-100: #381c1a;
+  --app-red-200: #512522;
+  --app-red-300: #6d2c28;
+  --app-red-400: #8b3530;
+  --app-red-500: #ab433d;
+  --app-red-600: #de756c;
+  --app-red-700: #f1a29b;
+  --app-red-800: #f8c3bd;
+  --app-red-900: #fde0dc;
   color-scheme: dark;
 }
 
@@ -100,13 +140,14 @@ p {
 
 h2 {
   font-size: var(--text-2xl);
+  font-weight: var(--font-weight-medium);
   line-height: var(--tw-leading, var(--text-2xl--line-height));
   z-index: 50
 }
 
 h3 {
   font-size: var(--text-lg);
-  font-weight: var(--font-weight-semibold)
+  font-weight: var(--font-weight-medium)
 }
 
 @theme inline {
@@ -124,6 +165,26 @@ h3 {
   --color-neutral-800: var(--app-neutral-800);
   --color-neutral-900: var(--app-neutral-900);
   --color-neutral-950: var(--app-neutral-950);
+  --color-green-50: var(--app-green-50);
+  --color-green-100: var(--app-green-100);
+  --color-green-200: var(--app-green-200);
+  --color-green-300: var(--app-green-300);
+  --color-green-400: var(--app-green-400);
+  --color-green-500: var(--app-green-500);
+  --color-green-600: var(--app-green-600);
+  --color-green-700: var(--app-green-700);
+  --color-green-800: var(--app-green-800);
+  --color-green-900: var(--app-green-900);
+  --color-red-50: var(--app-red-50);
+  --color-red-100: var(--app-red-100);
+  --color-red-200: var(--app-red-200);
+  --color-red-300: var(--app-red-300);
+  --color-red-400: var(--app-red-400);
+  --color-red-500: var(--app-red-500);
+  --color-red-600: var(--app-red-600);
+  --color-red-700: var(--app-red-700);
+  --color-red-800: var(--app-red-800);
+  --color-red-900: var(--app-red-900);
 
   --color-nt-blue: #2e3aff;
   --color-nt-blue-rgb: 46 58 255;

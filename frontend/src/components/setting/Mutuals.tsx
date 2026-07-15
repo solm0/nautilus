@@ -101,7 +101,7 @@ export default function Mutuals() {
           )}
 
           {mutuals.map(u => (
-            <div key={u.id} className="flex gap-3 border-b border-neutral-300 p-2 items-start">
+            <div key={u.id} className="flex gap-3 border-b border-neutral-200 p-2 items-start">
               <UserIcon user={u} />
               <div key={u.id} className="">
                 <p>{u.name || "Unnamed"}</p>

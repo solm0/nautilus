@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   deleteAccount,
+  getLatestVersionInfo,
+  isNewerVersion,
+  type LatestVersionInfo,
   updateName,
   verifyToken,
 } from "../../api";
@@ -21,6 +24,87 @@ import {
   openAppNotificationSettings,
   type AppNotificationPermissionStatus,
 } from "../../notificationPreferences";
+
+const APP_VERSION = __APP_VERSION__;
+
+function AppVersionSection() {
+  const [latestVersionInfo, setLatestVersionInfo] =
+    useState<LatestVersionInfo | null>(null);
+  const [latestVersionError, setLatestVersionError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLatestVersion = async () => {
+      try {
+        const next = await getLatestVersionInfo();
+        if (!cancelled) {
+          setLatestVersionInfo(next);
+          setLatestVersionError("");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLatestVersionError(
+            error instanceof Error ? error.message : "Could not load latest version.",
+          );
+        }
+      }
+    };
+
+    void loadLatestVersion();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const latestVersion = latestVersionInfo?.version;
+  const hasNewVersion =
+    latestVersion != null && isNewerVersion(latestVersion, APP_VERSION);
+
+  function openDownloadPage() {
+    const target = latestVersionInfo?.download_url ?? "https://nautilus.solmi.wiki/#download";
+    window.open(target, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <section className="w-full flex flex-col gap-4 pt-8 md:pt-12">
+      <h2>App version</h2>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="font-medium">{APP_VERSION}</span>
+        {!hasNewVersion && latestVersionInfo && (
+          <span className="rounded-full border border-green-200 bg-green-200/60 px-2 py-0.5 text-xs text-green-700">
+            Latest
+          </span>
+        )}
+      </div>
+
+      {hasNewVersion && latestVersionInfo && (
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-neutral-300 bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium">
+              새 버전 {latestVersionInfo.version}이 있습니다.
+            </p>
+            {latestVersionInfo.notes.length > 0 && (
+              <ul className="list-disc pl-5 text-sm text-neutral-600">
+                {latestVersionInfo.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Button text="다운로드하러 가기" onClick={openDownloadPage} black />
+        </div>
+      )}
+
+      {latestVersionError && (
+        <p className="text-xs text-neutral-500">
+          {latestVersionError}
+        </p>
+      )}
+    </section>
+  );
+}
 
 export function UserIcon({user}: {user?: User | null}) {
   let hash = 0;
@@ -74,6 +158,7 @@ export function UserProfile() {
   const [editing, setEditing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [value, setValue] = useState("");
+  const [openLogoutModal, setOpenLogoutModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -121,39 +206,42 @@ export function UserProfile() {
   return (
     <>
       <div className="flex flex-col gap-2 mb-14 items-start">
-        <div className="w-full flex items-center gap-3">
+        <div className="flex flex-col gap-2 items-start mb-7">
+          <div className="w-full flex items-center gap-3">
 
-          <UserIcon user={user} />
+            <UserIcon user={user} />
 
-          {/* name */}
-          {editing ? (
-            <input
-              className="border-b border-neutral-400 focus:outline-none"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              autoFocus
-            />
-          ) : (
-            <div>{user?.name}</div>
-          )}
+            {/* name */}
+            {editing ? (
+              <input
+                className="border-b border-neutral-400 focus:outline-none"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                autoFocus
+              />
+            ) : (
+              <div>{user?.name}</div>
+            )}
 
-          {/* button */}
-          {editing ? (
-            <IconButtonEvent
-              icon={<Check size={14} />}
-              onClick={handleSave}
-            />
-          ) : (
-            <IconButtonEvent
-              icon={<Pencil size={13} />}
-              onClick={()=>setEditing(true)}
-            />
-          )}
+            {/* button */}
+            {editing ? (
+              <IconButtonEvent
+                icon={<Check size={14} />}
+                onClick={handleSave}
+              />
+            ) : (
+              <IconButtonEvent
+                icon={<Pencil size={13} />}
+                onClick={()=>setEditing(true)}
+              />
+            )}
+          </div>
+
+          <p className="text-sm pt-1 pb-2">E-mail: {user?.email}</p>
+          <MyCommentsModal />
+          <Button onClick={() => setOpenLogoutModal(true)} text="Logout" />
         </div>
 
-        <p>E-mail: {user?.email}</p>
-        <MyCommentsModal />
-        <Button onClick={logout} text="Logout" black />
         <Button
           onClick={() => {
             setDeleteError("");
@@ -161,9 +249,21 @@ export function UserProfile() {
           }}
           text="Delete account"
           disabled={deleting}
-          black
+          red
         />
       </div>
+
+      <ResponsiveModal open={openLogoutModal} onClose={() => setOpenLogoutModal(false)}>
+        <div className="flex flex-col gap-5 md:pb-3">
+          <h2>Log out?</h2>
+          <Button
+            text="Yes"
+            onClick={logout}
+            fit
+            black
+          />
+        </div>
+      </ResponsiveModal>
 
       <ResponsiveModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
         <div className="flex flex-col gap-5 md:pb-3">
@@ -179,7 +279,7 @@ export function UserProfile() {
             onClick={handleDeleteAccount}
             disabled={deleting}
             fit
-            black
+            red
           />
         </div>
       </ResponsiveModal>
@@ -251,6 +351,7 @@ export default function Setting() {
   return (
     <>
       <div className="w-full h-full overflow-y-scroll overflow-x-hidden flex flex-col gap-7 pr-3 z-30 pl-3 md:pl-6 bg-neutral-50 pb-7">
+        <AppVersionSection />
         <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Preferences</h2>
         <section className="w-full h-auto mb-14 flex flex-col gap-7">
         <div className="flex flex-col gap-4">
@@ -339,7 +440,7 @@ export default function Setting() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
           <h3>Theme</h3>
           <div>
             <ThemeToggle />
@@ -351,7 +452,7 @@ export default function Setting() {
         </div>
         </section>
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Language Packs</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Language packs</h2>
         <p className="text-sm">
           {mobileApp
             ? "Activate only the languages you want to use on this device."

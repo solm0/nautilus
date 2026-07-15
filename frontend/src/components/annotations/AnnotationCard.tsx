@@ -288,7 +288,7 @@ export default function AnnotationCard({
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7 md:pb-3">
           <h2>Delete this annotation?</h2>
-          <Button text="Delete" onClick={handleDelete} fit black/>
+          <Button text="Delete" onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>
 

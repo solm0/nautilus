@@ -2,23 +2,24 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 export default function Button({
-  text, onClick, disabled = false, fit = false, black = false
+  text, onClick, disabled = false, fit = false, black = false, red = false,
 }: {
   text: string;
   onClick: () => void;
   disabled?: boolean;
   fit?: boolean;
   black?: boolean;
+  red?: boolean;
 }) {
   return (
     <button
       disabled={disabled}
       className={`
-         rounded-sm text-sm cursor-pointer transition-colors font-semibold
+         rounded-sm text-sm cursor-pointer transition-colors font-medium
         ${fit ? 'px-6 py-3 w-full' : 'px-6 py-1.5 w-auto'}
         ${disabled ? 'opacity-30 pointer-events-none' : 'opacity-100 pointer-events-auto'}
         ${black ? 'text-neutral-200 bg-neutral-900 hover:bg-neutral-200 hover:text-neutral-900 border border-transparent hover:border-neutral-300' : 'text-neutral-800 bg-neutral-100 hover:bg-neutral-800 hover:text-neutral-100 border border-neutral-300 hover:border-transparent'}
-        ${text.toLowerCase().includes('delete') && 'bg-red-600'}
+        ${red && 'bg-red-200 hover:bg-red-300 border-0 text-red-800 hover:text-red-800'}
       `}
       onClick={() => onClick()}
     >

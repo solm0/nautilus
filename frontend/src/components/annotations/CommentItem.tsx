@@ -234,7 +234,7 @@ export default function CommentItem({
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-5 md:pb-3">
           <h2>Delete this comment?</h2>
-          <Button text="Delete" onClick={handleDelete} fit black/>
+          <Button text="Delete" onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>
     </div>

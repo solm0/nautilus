@@ -24,6 +24,7 @@ from routers.comment_router import router as comment_router
 from routers.internal_router import router as internal_router
 from routers.mobile_router import router as mobile_router
 from routers.demo_router import router as demo_router
+from routers.version_router import router as version_router
 
 BASE_DIR = Path(__file__).resolve().parent
 LANDING_DIR = BASE_DIR / "static" / "landing"
@@ -85,6 +86,7 @@ app.include_router(comment_router)
 app.include_router(internal_router)
 app.include_router(mobile_router)
 app.include_router(demo_router)
+app.include_router(version_router)
 
 Base.metadata.create_all(bind=engine)
 

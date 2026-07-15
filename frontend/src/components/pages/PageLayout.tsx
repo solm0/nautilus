@@ -1242,7 +1242,7 @@ export default function PageLayout() {
             <p>Deleting a folder will also delete the pages inside it.</p>
           ) : null}
 
-          <Button text="Delete" onClick={handleDelete} fit black />
+          <Button text="Delete" onClick={handleDelete} fit red />
         </div>
       </ResponsiveModal>
     </>

@@ -26,7 +26,7 @@ export default function ThemeToggle({
       className={
         compact
           ? "group inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          : "group relative inline-flex h-7 w-12 items-center rounded-full bg-neutral-200 p-0.5 transition-colors hover:bg-neutral-300 dark:bg-neutral-400 dark:hover:bg-neutral-500"
+          : "group relative inline-flex h-7 w-12 items-center rounded-full p-0.5 bg-neutral-300 transition-colors hover:bg-neutral-400"
       }
     >
       {compact ? (
@@ -44,23 +44,23 @@ export default function ThemeToggle({
       ) : (
         <>
           <div
-            className={`flex h-5 w-5 items-center justify-center rounded-full bg-neutral-50 text-neutral-700 shadow-sm transition-transform duration-200 ${
+            className={`flex h-5 w-5 items-center justify-center rounded-full bg-neutral-50 transition-transform duration-200 ${
               isDark ? "translate-x-5.5" : "translate-x-0.5"
             }`}
           />
           <SunMedium
             size={14}
-            className={`pointer-events-none absolute ml-1 transition-opacity duration-200 ${
+            className={`pointer-events-none absolute left-1.75 text-neutral-400 transition-opacity duration-200 ${
               isDark
                 ? "opacity-0"
-                : "opacity-70 text-neutral-600"
+                : "opacity-100"
             }`}
           />
           <MoonStar
             size={14}
-            className={`pointer-events-none absolute right-1.5 transition-opacity duration-200 ${
+            className={`pointer-events-none absolute right-1.75 text-neutral-400 transition-opacity duration-200 ${
               isDark
-                ? "opacity-80 text-sky-200"
+                ? "opacity-100"
                 : "opacity-0"
             }`}
           />
@@ -93,17 +93,12 @@ export function SettingToggle({
       title={settingKey}
       className={`
         relative inline-flex h-5 w-9 items-center rounded-full
-        p-0.5 transition-colors
-        ${
-          value
-            ? "bg-neutral-700"
-            : "bg-neutral-300"
-        }
+        p-0.5 transition-colors bg-neutral-300 hover:bg-neutral-400
       `}
     >
       <div
         className={`
-          h-4 w-4 rounded-full bg-white shadow-sm
+          h-4 w-4 rounded-full bg-neutral-50
           transition-transform duration-200
           ${
             value

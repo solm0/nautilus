@@ -38,7 +38,7 @@ export default function MyCommentsModal() {
 
   return (
     <>
-      <Button text="My Comments" onClick={() => setOpen(true)} />
+      <Button text="My comments" onClick={() => setOpen(true)} />
 
       <ResponsiveModal open={open} onClose={() => setOpen(false)} big>
         <div className="flex flex-col gap-7 overflow-hidden">
@@ -48,7 +48,7 @@ export default function MyCommentsModal() {
             {dedupedItems.map(c => (
               <div
                 key={`${c.id}-${c.annotation_id}`}
-                className="min-h-12 flex items-center p-4 cursor-pointer border-b border-neutral-300 hover:bg-neutral-100 transition-colors group"
+                className="min-h-12 flex items-center p-4 cursor-pointer border-b border-neutral-200 hover:bg-neutral-100 transition-colors group"
                 onClick={() => {
                   navigate(`/annotations?id=${c.annotation_id}`);
                   setOpen(false);

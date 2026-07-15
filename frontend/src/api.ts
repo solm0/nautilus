@@ -93,6 +93,26 @@ function compareVersionsDesc(a: string, b: string) {
   });
 }
 
+export function isNewerVersion(latest: string, current: string) {
+  return compareVersionsDesc(latest, current) < 0;
+}
+
+export type LatestVersionInfo = {
+  version: string;
+  download_url: string;
+  notes: string[];
+};
+
+export async function getLatestVersionInfo() {
+  const res = await fetch(`${CENTRAL_API}/latest-version`);
+
+  if (!res.ok) {
+    throw new Error(`latest version fetch failed (${res.status})`);
+  }
+
+  return res.json() as Promise<LatestVersionInfo>;
+}
+
 export async function signup(email: string, password: string, name: string) {
   const res = await fetch(CENTRAL_API+"/signup", {
     method: "POST",
