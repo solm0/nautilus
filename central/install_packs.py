@@ -25,8 +25,9 @@ from packs import PACKS
 
 GITHUB_REPO = "solm0/nautilus"
 
-BASE_DIR = Path("./nautilus/central/data/static")
-TMP_DIR = Path("./nautilus/central/tmp_packs")
+CENTRAL_DIR = Path(__file__).resolve().parent
+BASE_DIR = CENTRAL_DIR / "data" / "static"
+TMP_DIR = CENTRAL_DIR / "tmp_packs"
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
