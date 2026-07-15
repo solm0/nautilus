@@ -734,7 +734,7 @@ export default function PageCore({
       <div
         ref={containerRef}
         className={`relative flex min-h-full w-full flex-col isolate items-center ${
-          pageId ? "px-4 md:px-6 pt-20 md:pt-40" : 'p-3'
+          pageId ? "px-4 md:px-6 pt-24 md:pt-40" : 'p-3'
         } ${settings.lemma_info ? `${syncPlaybackActive ? 'gap-y-28':'gap-y-5'}` : `${syncPlaybackActive ? 'gap-y-5':''}`}`}
         style={{
           userSelect: "none",
@@ -756,7 +756,7 @@ export default function PageCore({
             style={{ userSelect: "text", WebkitUserSelect: "text" }}
           >
 
-            <h1 className="w-full text-4xl select-text">
+            <h1 className="w-full text-4xl select-text leading-[1.3em]">
               {pageName?.trim() || "Untitled page"}
             </h1>
 
