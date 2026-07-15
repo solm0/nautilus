@@ -86,6 +86,7 @@ for entry in "${OPTIONAL_DATA_DIRS[@]}"; do
 done
 
 echo "[1/3] Building frontend web app"
+node "$ROOT_DIR/scripts/sync-app-version.mjs"
 (cd "$ROOT_DIR/frontend" && npm run build)
 
 echo "[2/3] Packaging backend into backend-dist"

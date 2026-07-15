@@ -28,7 +28,9 @@
       {
         "from": "../backend-dist",
         "to": "backend",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -46,7 +48,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerLanguages": ["ko_KR", "en_US"],
+      "installerLanguages": [
+        "ko_KR",
+        "en_US"
+      ],
       "language": "1042"
     }
   },

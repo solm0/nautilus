@@ -861,7 +861,7 @@ export default function PageLayout() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search pages and folders"
-          className="min-w-0 flex-1 bg-transparent text-sm text-neutral-700 placeholder:text-neutral-400 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-xs text-neutral-700 placeholder:text-neutral-400 focus:outline-none"
         />
         <button
           type="button"

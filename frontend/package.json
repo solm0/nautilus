@@ -1,9 +1,10 @@
 {
   "name": "nautilus",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "sync:version": "node ../scripts/sync-app-version.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:extension": "tsc -p tsconfig.extension.json --noEmit && vite build -c vite.extension.config.ts",

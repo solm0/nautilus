@@ -65,7 +65,7 @@ export default function PackModal({
   const installedRef = useRef(false);
 
   const langName = LANG_MAP[lang] || lang;
-  const assetLabel = assetKind === "lemma" ? "lemmas" : "Writing Assistant";
+  const assetLabel = assetKind === "lemma" ? "Core" : "Writing Assistant";
 
   const stopPolling = () => {
     if (intervalRef.current !== null) {

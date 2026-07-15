@@ -68,22 +68,22 @@ function AppVersionSection() {
   }
 
   return (
-    <section className="w-full flex flex-col gap-4 pt-8 md:pt-12">
+    <section className="w-full flex flex-col gap-4 pt-8 md:pt-12 items-start">
       <h2>App version</h2>
       <div className="flex items-center gap-2 text-sm">
-        <span className="font-medium">{APP_VERSION}</span>
+        <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
-          <span className="rounded-full border border-green-200 bg-green-200/60 px-2 py-0.5 text-xs text-green-700">
+          <span className="rounded-full bg-green-200/60 px-2 py-0.5 text-xs text-green-700">
             Latest
           </span>
         )}
       </div>
 
       {hasNewVersion && latestVersionInfo && (
-        <div className="flex flex-col items-start gap-3 rounded-lg border border-neutral-300 bg-white p-4">
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-neutral-300 p-4">
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">
-              새 버전 {latestVersionInfo.version}이 있습니다.
+              A new version({latestVersionInfo.version}) is available.
             </p>
             {latestVersionInfo.notes.length > 0 && (
               <ul className="list-disc pl-5 text-sm text-neutral-600">
@@ -93,7 +93,7 @@ function AppVersionSection() {
               </ul>
             )}
           </div>
-          <Button text="다운로드하러 가기" onClick={openDownloadPage} black />
+          <Button text="Download now" onClick={openDownloadPage} black />
         </div>
       )}
 

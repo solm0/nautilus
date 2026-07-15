@@ -194,7 +194,7 @@ export default function LanguageSelect({
             <Link to="/setting" className="px-2 text-sm text-neutral-500 border border-neutral-300 hover:bg-neutral-200 transition-colors">
               {mobileApp
                 ? "Activate a language to continue."
-                : "Install lemmas to continue."}
+                : "Install languages to continue."}
             </Link>
           )}
 

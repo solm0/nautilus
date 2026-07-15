@@ -108,7 +108,7 @@ export default function PackTable() {
     const chips: string[] = [];
 
     if (state.lemma_installed) {
-      chips.push("L");
+      chips.push("C");
     }
 
     if (state.ngram_installed) {
@@ -382,7 +382,7 @@ export default function PackTable() {
                                         : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
-                                    {state.lemma_installed ? "Lemmas installed" : "Install lemmas"}
+                                    {state.lemma_installed ? "Core installed" : "Install Core"}
                                   </button>
                                   <button
                                     type="button"
@@ -405,7 +405,7 @@ export default function PackTable() {
                                   onClick={() => handleUninstall(pack)}
                                   disabled={shouldDisableRemove}
                                   className="rounded-sm p-2 text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-transparent disabled:hover:text-neutral-600"
-                                  title="Remove Lemmas and Writing Assistant"
+                                  title="Remove Core and Writing Assistant"
                                 >
                                   <Trash2 size={14} />
                                 </button>
