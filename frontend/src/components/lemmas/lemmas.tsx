@@ -5,6 +5,7 @@ import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk from "../lemma_expansions/Desk";
 import type { LemmaData } from "../pageTypes";
 import { useLayout } from "../RootLayout";
+import { useI18n } from "../../i18n";
 
 function groupLemmas(favorites: Set<string>) {
   const groups: Record<string, string[]> = {}
@@ -26,6 +27,7 @@ function groupLemmas(favorites: Set<string>) {
 }
 
 export default function Lemmas(){
+  const { t } = useI18n();
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [lemmaData, setLemmaData] = useState<LemmaData | null>(null);
   const [currentLang, setCurrentLang] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export default function Lemmas(){
     <div className="w-full h-full flex pl-3 md:pl-6 bg-neutral-50">
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
 
-        <h2 className="top-0 pt-8 md:pt-12 z-30">My Lemmas</h2>
+        <h2 className="top-0 pt-8 md:pt-12 z-30">{t("My Lemmas")}</h2>
         
         <div className="overflow-y-scroll flex flex-wrap content-start gap-x-1 gap-y-7 pb-18 pt-7">
           {grouped.map(([letter, items]) => (

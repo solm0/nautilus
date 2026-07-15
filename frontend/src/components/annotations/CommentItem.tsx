@@ -7,6 +7,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { formatRelative } from "../util/time";
 import { UserIcon } from "../setting/Setting";
+import { useI18n } from "../../i18n";
 
 export function CommentInput({
   onSubmit,resetSignal,
@@ -14,6 +15,7 @@ export function CommentInput({
   onSubmit: (text: string) => void;
   resetSignal?: number;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [resetKey, setResetKey] = useState(0);
@@ -34,14 +36,14 @@ export function CommentInput({
         className="w-full py-2 px-3 bg-neutral-100 rounded-full border border-neutral-300 text-neutral-400 z-20 hover:bg-neutral-200 transition-colors text-sm"
         onClick={()=>setOpen(!open)}
       >
-        Add a comment
+        {t("Add a comment")}
       </div>
     )
   } else {
     return (
       <div className="flex flex-col gap-1">
 
-        <p className="text-xs pl-9 text-neutral-400">You're adding a comment</p>
+        <p className="text-xs pl-9 text-neutral-400">{t("You're adding a comment")}</p>
         <div className="relative flex flex-col gap-7 items-end bg-neutral-50 border-y border-neutral-300 p-2">
         
           <div className="min-h-80 h-auto w-full">
@@ -57,12 +59,12 @@ export function CommentInput({
 
           <div className="w-full gap-2 flex">
             <Button
-              text="Cancel"
+              text={t("Cancel")}
               onClick={()=>setOpen(false)}
               black fit
             />
             <Button
-              text="Post"
+              text={t("Post")}
               onClick={async () => {
                 const nextValue = inputRef.current?.flushPendingInput() ?? value;
                 if (!nextValue.trim()) return;
@@ -93,8 +95,9 @@ export default function CommentItem({
   userId?: number;
   setCommentCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const { locale, t } = useI18n();
   const content = c.content ?? "";
-  const relativeCreatedAt = formatRelative(c.created_at);
+  const relativeCreatedAt = formatRelative(c.created_at, locale);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(content);
   const [openModal, setOpenModal] = useState(false);
@@ -153,15 +156,15 @@ export default function CommentItem({
         <div className="flex gap-2">
           <span>
             {c.deleted
-              ? 'Unknown user'
+              ? t('Unknown user')
               : c.user?.id === userId
-                ? 'Me'
-                : (c.user?.name ?? 'Unknown user')}
+                ? t('Me')
+                : (c.user?.name ?? t('Unknown user'))}
           </span>
           <span className="text-neutral-400">
             {c.deleted
               ? ''
-              : (!relativeCreatedAt || relativeCreatedAt === "0s ago" ? "Now" : relativeCreatedAt)}
+              : (!relativeCreatedAt || relativeCreatedAt === (locale === "ko" ? "0초 전" : "0s ago") ? t("Now") : relativeCreatedAt)}
           </span>
         </div>
 
@@ -181,7 +184,7 @@ export default function CommentItem({
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <p className="text-xs pl-9 text-neutral-400">You're editing a comment</p>
+            <p className="text-xs pl-9 text-neutral-400">{t("You're editing a comment")}</p>
             <div className="relative flex flex-col gap-7 items-end bg-neutral-50 border-y border-neutral-300 p-2">
               <div className="min-h-80 h-auto w-full">
                 <NgramToggleInput
@@ -195,12 +198,12 @@ export default function CommentItem({
 
               <div className="w-full gap-2 flex">
                 <Button
-                  text="Cancel"
+                  text={t("Cancel")}
                   onClick={()=>setEditing(false)}
                   black fit
                 />
                 <Button
-                  text="Save changes"
+                  text={t("Save changes")}
                   onClick={handleSave}
                   disabled={!canSave}
                   black fit
@@ -233,8 +236,8 @@ export default function CommentItem({
 
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-5 md:pb-3">
-          <h2>Delete this comment?</h2>
-          <Button text="Delete" onClick={handleDelete} fit red/>
+          <h2>{t("Delete this comment?")}</h2>
+          <Button text={t("Delete")} onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>
     </div>

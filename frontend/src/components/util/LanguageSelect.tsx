@@ -7,6 +7,7 @@ import {
   type Pack,
 } from "../setting/PackTable";
 import PackModal from "../setting/PackModal";
+import { useI18n } from "../../i18n";
 
 export type InstalledPack = {
   lang: string;
@@ -80,6 +81,7 @@ export default function LanguageSelect({
   onNgramInstalled?: (lang: string) => void;
 }) {
   const mobileApp = isCapacitorApp();
+  const { t } = useI18n();
   const [languages, setLanguages] = useState<NormalizedLanguageOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [installedPacks, setInstalledPacks] = useState<InstalledPack[]>([]);
@@ -188,13 +190,13 @@ export default function LanguageSelect({
     <>
       <div className="flex flex-col gap-2 items-start">
         <div className={`shrink-0 flex gap-1 w-auto min-w-12 h-10 p-1 rounded-sm items-center ${background ? "bg-neutral-200/80" : "bg-neutral-50/80"}`}>
-          {loading && <p className="px-2 text-sm text-neutral-400">Loading...</p>}
+          {loading && <p className="px-2 text-sm text-neutral-400">{t("Loading...")}</p>}
 
           {!loading && languages.length === 0 && (
             <Link to="/setting" className="px-2 text-sm text-neutral-500 border border-neutral-300 hover:bg-neutral-200 transition-colors">
               {mobileApp
-                ? "Activate a language to continue."
-                : "Install languages to continue."}
+                ? t("Activate a language to continue.")
+                : t("Install languages to continue.")}
             </Link>
           )}
 
@@ -220,7 +222,7 @@ export default function LanguageSelect({
             onClick={() => setInstallingPack(selectedPack)}
             className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300"
           >
-            Install Writing Assistant for {selectedPack.lang}
+            {t("Install Writing Assistant")} {selectedPack.lang}
           </button>
         ) : null}
       </div>

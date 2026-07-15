@@ -16,6 +16,7 @@ import type { Notebook, Page } from "./PageLayout";
 import { MiniPopup } from "../util/MiniPopup";
 import { IconButtonEvent } from "../util/Button";
 import { CENTRAL_API, authHeaders } from "../../api";
+import { useI18n } from "../../i18n";
 
 const LONG_PRESS_MS = 420;
 const MOVE_CANCEL_DISTANCE = 10;
@@ -101,6 +102,7 @@ export default function PageCard({
   setOpenPopupId: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -138,7 +140,7 @@ export default function PageCard({
             className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
           >
             <Type size={15} />
-            Paste text
+            {t("Paste text")}
           </Link>
         ) : null}
       </>
@@ -265,7 +267,7 @@ export default function PageCard({
       {isMobileLike && notebook ? (
         <ActionButton
           icon={<FilePlus2 size={13} />}
-          label="Create page"
+          label={t("Create page")}
           onClick={() => {
             navigate("/new?mode=paste", { state: { notebookId: notebook.id } });
             setOpenPopupId(null);
@@ -285,7 +287,7 @@ export default function PageCard({
       {page && onMove ? (
         <ActionButton
           icon={<Folder size={13} />}
-          label="Move"
+          label={t("Move")}
           onClick={() => {
             onMove();
             setOpenPopupId(null);
@@ -296,7 +298,7 @@ export default function PageCard({
       {page && onTogglePinned ? (
         <ActionButton
           icon={<Pin size={13} fill={isPinned ? "currentColor" : "transparent"} />}
-          label={isPinned ? "Unpin" : "Pin"}
+          label={isPinned ? t("Unpin") : "Pin"}
           onClick={() => {
             onTogglePinned();
             setOpenPopupId(null);
@@ -306,7 +308,7 @@ export default function PageCard({
 
       <ActionButton
         icon={<Trash2 size={13} />}
-        label="Delete"
+        label={t("Delete")}
         danger
         onClick={() => {
           onDelete();
@@ -394,7 +396,7 @@ export default function PageCard({
                 event.stopPropagation();
                 void handleRename();
               }}
-              title="Save"
+              title={t("Save")}
             />
           ) : null}
 
@@ -408,7 +410,7 @@ export default function PageCard({
                     current === createPopupId ? null : createPopupId
                   );
                 }}
-                title="Create Page"
+                title={t("Create Page")}
               />
               <MiniPopup
                 open={createPageOpen}
@@ -429,7 +431,7 @@ export default function PageCard({
                     current === menuPopupId ? null : menuPopupId
                   );
                 }}
-                title="More"
+                title={t("more")}
               />
               <MiniPopup open={menuOpen} onClose={() => setOpenPopupId(null)}>
                 {menuContent}

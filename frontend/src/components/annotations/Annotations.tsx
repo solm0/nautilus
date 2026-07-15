@@ -7,8 +7,10 @@ import { AnnotationToolbar } from "./AnnotationToolbar";
 import { fetchAnnotationById } from "../../api";
 import type { TimelineItem } from "../setting/Mutuals";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
+import { useI18n } from "../../i18n";
 
 export default function Annotations() {
+  const { t } = useI18n();
   const [params, setParams] = useSearchParams()
   const tab = params.get("tab") ?? "my"
   
@@ -99,7 +101,7 @@ export default function Annotations() {
             setParams(next);
           }}
         >
-          My
+          {t("My")}
         </span>
         <span
           className={tab === "mutuals" ? "" : "text-neutral-400 hover:text-neutral-500 cursor-pointer transition-colors"}
@@ -128,7 +130,7 @@ export default function Annotations() {
         <div ref={sentinelRef} className="h-10" />
 
         <BlockingLoadingModal open={loading} message="Loading annotations..." />
-        {!hasMore && <p className="text-center opacity-50 pb-18 text-sm">End of the list</p>}
+        {/* {!hasMore && <p className="text-center opacity-50 pb-18 text-sm">{t("End of the list")}</p>} */}
       </div>
     </div>
   );

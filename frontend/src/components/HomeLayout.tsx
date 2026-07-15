@@ -7,6 +7,7 @@ import { IconButton } from "./util/Button";
 import { MiniPopup } from "./util/MiniPopup";
 import { SettingToggle } from "./util/ToggleButton";
 import { useSettings } from "./useSettings";
+import { useI18n } from "../i18n";
 
 const LAST_PAGE_PATH_STORAGE_KEY = "last-page-path";
 
@@ -20,6 +21,7 @@ export function Side() {
       settings,
       toggleSetting,
     } = useSettings();
+  const { t } = useI18n();
 
   useEffect(() => {
     const check = () => {
@@ -33,9 +35,9 @@ export function Side() {
   }, []);
 
   const normalMenus = [
-    { label: <File size={isMobile ? 20 : 16} />, path: "/", title: 'pages' },
-    { label: <MessageSquareMore size={isMobile ? 20 : 16} />, path: "/annotations", title: 'annotations' },
-    { label: <Star size={isMobile ? 20 : 16} />, path: "/lemmas", title: 'lemmas' },
+    { label: <File size={isMobile ? 20 : 16} />, path: "/", title: t("pages") },
+    { label: <MessageSquareMore size={isMobile ? 20 : 16} />, path: "/annotations", title: t("Annotations") },
+    { label: <Star size={isMobile ? 20 : 16} />, path: "/lemmas", title: t("My Lemmas") },
   ];
 
   const handleMenuClick = (path: string) => {
@@ -63,7 +65,7 @@ export function Side() {
   const settingsButtons = isMobile ? (
     <IconButton
       icon={<Settings2 size={20} />}
-      title="settings"
+      title={t("settings")}
       onClick={() => navigate("/setting")}
       active={location.pathname === "/setting" || openSettings === true}
     />
@@ -74,7 +76,7 @@ export function Side() {
     >
       <IconButton
         icon={<Settings2 size={16} />}
-        title="settings"
+        title={t("settings")}
         active={
           location.pathname === "/setting" || openSettings
         }
@@ -88,7 +90,7 @@ export function Side() {
       >
         <div className="flex flex-col gap-3 min-w-[180px] p-2">
           <div className="flex items-center gap-2">
-            <span>lemma info</span>
+            <span>{t("lemma info")}</span>
             <SettingToggle
               settingKey="lemma_info"
               value={settings.lemma_info}
@@ -144,6 +146,7 @@ export default function HomeLayout() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  useI18n();
 
   useEffect(() => {
     if (matchPath("/page/:id", location.pathname)) {

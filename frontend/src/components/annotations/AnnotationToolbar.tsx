@@ -3,8 +3,10 @@ import { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
 import { useEffect, useState } from "react";
 import { fetchNotifications, fetchUnreadFlag, readNotification } from "../../api";
+import { useI18n } from "../../i18n";
 
 export function AnnotationToolbar() {
+  const { t } = useI18n();
   const [openPopup, setOpenPopup] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
@@ -20,9 +22,9 @@ export function AnnotationToolbar() {
   }, [openPopup]);
 
   const notificationList = (
-    <div className="flex flex-col gap-2 w-full p-2">
+      <div className="flex flex-col gap-2 w-full p-2">
       {notifications.length === 0 && (
-        <div>you have no notifications</div>
+        <div>{t("You have no notifications")}</div>
       )}
 
       {notifications.map(n => (
@@ -41,8 +43,8 @@ export function AnnotationToolbar() {
           <div className="text-sm">
             {n.actor.name}{" "}
             {n.type === "reply"
-              ? "replied to your comment"
-              : "commented on your annotation"}
+              ? t("replied to your comment")
+              : t("commented on your annotation")}
           </div>
 
           <div className="text-xs opacity-50">

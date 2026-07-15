@@ -1,5 +1,6 @@
 import Button from "../util/Button";
 import { ResponsiveModal } from "../util/ResponsiveModal";
+import { useI18n } from "../../i18n";
 
 type Props = {
   open: boolean;
@@ -16,15 +17,16 @@ export default function NotificationPermissionModal({
   title = "Allow notifications?",
   body = "To show now playing alerts on this device, allow notifications for Nautilus in Android settings.",
 }: Props) {
+  const { t } = useI18n();
   return (
     <ResponsiveModal open={open} onClose={onClose}>
       <div className="flex flex-col gap-5 md:pb-3">
-        <h2>{title}</h2>
+        <h2>{t(title)}</h2>
         <p className="pr-8 text-sm text-neutral-500">
-          {body}
+          {t(body)}
         </p>
         <Button
-          text="Open notification settings"
+          text={t("Open notification settings")}
           onClick={onOpenSettings}
           fit
           black

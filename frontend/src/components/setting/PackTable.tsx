@@ -6,6 +6,7 @@ import type { InstalledPack } from "../util/LanguageSelect";
 import Button from "../util/Button";
 import { isCapacitorApp } from "../../platform";
 import { invalidateInstalledLanguagesCache } from "../util/LanguageSelect";
+import { useI18n } from "../../i18n";
 
 export const HIDDEN_PACK_VERSIONS = new Set(["1.0.0"]);
 
@@ -61,6 +62,7 @@ export function normalizePacksForTargetRelease(packs: Pack[]): Pack[] {
 }
 
 export default function PackTable() {
+  const { t } = useI18n();
   const mobileApp = isCapacitorApp();
   const [packs, setPacks] = useState<Pack[]>([]);
   const [installed, setInstalled] = useState<InstalledPack[]>([]);
@@ -120,11 +122,11 @@ export default function PackTable() {
     }
 
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1">
         {chips.map((chip) => (
           <div
             key={chip}
-            className="bg-green-200 text-green-700/80 text-xs px-1.5 rounded-full"
+            className={`text-xs px-1.5 rounded-full ${chip === 'C' ? 'bg-green-200 text-green-700/60' : 'bg-neutral-200 text-neutral-700/60'}`}
           >
             {chip}
           </div>
@@ -141,7 +143,7 @@ export default function PackTable() {
 
       return (
         <div className="bg-green-200 text-green-700/80 text-xs px-2 rounded-full">
-          Activated
+          {t("Activate")}
         </div>
       );
     }
@@ -287,14 +289,14 @@ export default function PackTable() {
       <div className="flex flex-col">
         {groupsToRender.map(([lang, langPacks]) => {
           const open = expanded[lang];
-          const label = LANG_MAP[lang] || lang;
+          const label = t(LANG_MAP[lang] || lang);
           const currentPack = langPacks[0];
           const currentState = currentPack ? getInstallState(currentPack) : null;
 
           return (
             <div
               key={lang}
-              className="overflow-hidden border-t border-neutral-300 hover:bg-neutral-100 transition-colors"
+              className="overflow-hidden border-t border-neutral-200 hover:bg-neutral-100 transition-colors"
             >
               <button
                 onClick={() =>
@@ -303,11 +305,9 @@ export default function PackTable() {
                     [lang]: !prev[lang],
                   }))
                 }
-                className="w-full flex items-center px-4 py-3 transition gap-3"
+                className="w-full flex items-center py-3 px-4 transition gap-3"
               >
-                <span className="font-medium">
-                  {label} ({lang})
-                </span>
+                <span className="font-medium">{label}</span>
                 {currentState ? renderHeaderStatus(currentState) : null}
                 <div className="ml-auto">
                   {open ? (
@@ -353,7 +353,7 @@ export default function PackTable() {
                               state.installed ? (
                                 <Button
                                   onClick={() => handleUninstall(pack)}
-                                  text="Deactivate"
+                                  text={t("Deactivate")}
                                   black
                                   fit
                                   disabled={isHiddenVersion}
@@ -361,7 +361,7 @@ export default function PackTable() {
                               ) : (
                                 <Button
                                   onClick={() => handleActivate(pack)}
-                                  text="Activate"
+                                  text={t("Activate")}
                                   fit
                                   disabled={isHiddenVersion}
                                 />
@@ -378,11 +378,11 @@ export default function PackTable() {
                                     disabled={isHiddenVersion || state.lemma_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.lemma_installed
-                                        ? "bg-green-200 text-green-600"
+                                        ? "bg-green-200 text-green-700/50"
                                         : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
-                                    {state.lemma_installed ? "Core installed" : "Install Core"}
+                                    {state.lemma_installed ? t("Core installed") : t("Install Core")}
                                   </button>
                                   <button
                                     type="button"
@@ -390,13 +390,13 @@ export default function PackTable() {
                                     disabled={isHiddenVersion || !state.lemma_installed || state.ngram_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.ngram_installed
-                                        ? "bg-green-200 text-green-600"
+                                        ? "bg-neutral-200 text-neutral-700/50"
                                         : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
                                     {state.ngram_installed
-                                      ? "Writing Assistant installed"
-                                      : "Install Writing Assistant"}
+                                      ? t("Writing Assistant installed")
+                                      : t("Install Writing Assistant")}
                                   </button>
                                 </div>
 
@@ -416,7 +416,7 @@ export default function PackTable() {
 
                         {errorMap[key] ? (
                           <div className="text-red-500 text-xs mt-2">
-                            {errorMap[key]}
+                            {t(errorMap[key])}
                           </div>
                         ) : null}
                       </div>

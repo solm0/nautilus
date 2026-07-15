@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   platform: process.platform,
   getNowPlaying: () => ipcRenderer.invoke("now-playing:get"),
+  relaunchApp: () => ipcRenderer.invoke("app:relaunch"),
   onDeepLink: (callback) => {
     const listener = (_event, url) => callback(url);
     ipcRenderer.on("deep-link-url", listener);

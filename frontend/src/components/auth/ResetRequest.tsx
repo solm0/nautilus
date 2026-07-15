@@ -2,11 +2,13 @@ import { useState } from "react"
 import { requestReset } from "../../api"
 import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
+import { useI18n } from "../../i18n"
 
 export default function ResetRequest(){
 
   const [email,setEmail]=useState("")
   const [msg,setMsg]=useState("")
+  const { t } = useI18n();
 
   async function submit(){
     if (email.trim()) {
@@ -37,12 +39,12 @@ export default function ResetRequest(){
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text="Request reset" onClick={submit} fit />
+          <Button text={t("Request reset")} onClick={submit} fit />
         </div>
       </div>
 
       <div className="flex flex-col gap-2 text-neutral-50">
-        <LinkButton text="Back to login" link="/login" />
+        <LinkButton text={t("Back to login")} link="/login" />
       </div>
     </>
   )

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { resetPassword } from "../../api"
 import SystemMessage from "./SystemMessage"
 import Button, { LinkButton } from "../../components/util/Button"
+import { useI18n } from "../../i18n"
 
 export default function ResetPassword(){
 
@@ -10,6 +11,7 @@ export default function ResetPassword(){
 
   const [pw,setPw]=useState("")
   const [msg,setMsg]=useState("")
+  const { t } = useI18n();
 
   async function submit(){
     if (pw.trim()) {
@@ -39,12 +41,12 @@ export default function ResetPassword(){
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text="change password" onClick={submit} fit />
+          <Button text={t("Change password")} onClick={submit} fit />
         </div>
 
       </div>
 
-      {msg === 'your password was reset.' && <LinkButton link="/login" text="login" />}
+      {msg === 'your password was reset.' && <LinkButton link="/login" text={t("Login")} />}
     </>
   )
 }

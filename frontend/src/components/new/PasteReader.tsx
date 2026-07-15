@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { FooterAction } from "./New";
 import type { TextAnalysisResult } from "../pageTypes";
 import { analyzeBlocks } from "../../api";
+import { useI18n } from "../../i18n";
 
 export default function PasteReader({
   language, setAnalyzing, setResult, setFooterAction
@@ -12,6 +13,7 @@ export default function PasteReader({
   setFooterAction: (action: FooterAction | null) => void;
 }) {
   const [pasteText, setPasteText] = useState("");
+  const { t } = useI18n();
 
   function textToBlocks(text: string) {
     return text.split("\n").map(line => ({
@@ -35,13 +37,13 @@ export default function PasteReader({
 
   useEffect(() => {
     setFooterAction({
-      text: "Done",
+      text: t("Done"),
       onClick: handlePasteAnalyze,
       disabled: !pasteText.trim(),
     });
 
     return () => setFooterAction(null);
-  }, [handlePasteAnalyze, pasteText, setFooterAction]);
+  }, [handlePasteAnalyze, pasteText, setFooterAction, t]);
 
 
   return (
@@ -50,11 +52,7 @@ export default function PasteReader({
         value={pasteText}
         onChange={(e) => setPasteText(e.target.value)}
         className="w-full h-full resize-none rounded-sm focus:outline-none bg-neutral-50/80 p-2"
-        placeholder={`Paste text here
-
-Tip !!!
-
-Accuracy improves when punctuation and line breaks are used properly in sentences.`}
+        placeholder={t("Paste text here\n\nTip !!!\n\nAccuracy improves when punctuation and line breaks are used properly in sentences.")}
         spellCheck={false}
       />
     </>

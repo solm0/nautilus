@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getProgress, installPack } from "../../api";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import Button from "../util/Button";
+import { useI18n } from "../../i18n";
 
 const LANG_MAP: Record<string, string> = {
   ru: "Russian",
@@ -53,6 +54,7 @@ export default function PackModal({
   onClose,
   onInstalled,
 }: Props) {
+  const { t } = useI18n();
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -64,8 +66,8 @@ export default function PackModal({
   const intervalRef = useRef<number | null>(null);
   const installedRef = useRef(false);
 
-  const langName = LANG_MAP[lang] || lang;
-  const assetLabel = assetKind === "lemma" ? "Core" : "Writing Assistant";
+  const langName = t(LANG_MAP[lang] || lang);
+  const assetLabel = assetKind === "lemma" ? t("Core") : t("Writing Assistant");
 
   const stopPolling = () => {
     if (intervalRef.current !== null) {
@@ -109,23 +111,26 @@ export default function PackModal({
           );
 
           if (nextStatus === "downloading_pack") {
-            setStatusText("Downloading language pack...");
+            setStatusText(t("Downloading language pack..."));
           } else if (nextStatus === "extracting_pack") {
-            setStatusText("Extracting language pack...");
+            setStatusText(t("Extracting language pack..."));
           } else if (nextStatus === "installing_model") {
             const modelLabel = p.model_name || "analysis model";
 
             if (typeof p.model_percent === "number") {
-              setStatusText(`Installing ${modelLabel}... ${p.model_percent}%`);
+              setStatusText(t("Installing {modelLabel}... {percent}%", {
+                modelLabel,
+                percent: p.model_percent,
+              }));
             } else {
-              setStatusText(`Installing ${modelLabel}...`);
+              setStatusText(t("Installing {modelLabel}...", { modelLabel }));
             }
           } else if (nextStatus === "verifying_install") {
-            setStatusText("Finalizing installation...");
+            setStatusText(t("Finalizing installation..."));
           } else if (nextStatus === "done") {
-            setStatusText("Installation complete.");
+            setStatusText(t("Installation complete."));
           } else if (nextStatus === "error") {
-            setStatusText("Installation failed.");
+            setStatusText(t("Installation failed."));
           }
 
           if (nextStatus === "done") {
@@ -171,11 +176,11 @@ export default function PackModal({
       <div className="flex flex-col gap-6 min-w-[320px]">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold pr-6">
-            {langName} {version} {assetLabel} installing
+            {langName} {version} {assetLabel} {t("installing")}
           </h2>
 
           <p className="text-sm text-neutral-500">
-            Do not close this window until installation is complete.
+            {t("Do not close this window until installation is complete.")}
           </p>
         </div>
 
@@ -205,11 +210,11 @@ export default function PackModal({
 
         {done && (
           <div className="flex flex-col gap-4">
-            <div className="text-sm text-green-600">Installed successfully.</div>
+            <div className="text-sm text-green-600">{t("Installed successfully.")}</div>
 
             <Button
               onClick={handleClose}
-              text="Close"
+              text={t("Close")}
               black
               fit
             />

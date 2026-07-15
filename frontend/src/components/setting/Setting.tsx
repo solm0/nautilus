@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import {
   deleteAccount,
   getLatestVersionInfo,
@@ -19,6 +19,8 @@ import { useSettings } from "../useSettings";
 import { isCapacitorApp } from "../../platform";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import NotificationPermissionModal from "./NotificationPermissionModal";
+import { useI18n } from "../../i18n";
+import { relaunchApp } from "../../relaunch";
 import {
   getAppNotificationPermissionStatus,
   openAppNotificationSettings,
@@ -28,6 +30,7 @@ import {
 const APP_VERSION = __APP_VERSION__;
 
 function AppVersionSection() {
+  const { t } = useI18n();
   const [latestVersionInfo, setLatestVersionInfo] =
     useState<LatestVersionInfo | null>(null);
   const [latestVersionError, setLatestVersionError] = useState("");
@@ -69,12 +72,12 @@ function AppVersionSection() {
 
   return (
     <section className="w-full flex flex-col gap-4 pt-8 md:pt-12 items-start">
-      <h2>App version</h2>
+      <h2>{t("App version")}</h2>
       <div className="flex items-center gap-2 text-sm">
         <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
           <span className="rounded-full bg-green-200/60 px-2 py-0.5 text-xs text-green-700">
-            Latest
+            {t("Latest")}
           </span>
         )}
       </div>
@@ -83,7 +86,9 @@ function AppVersionSection() {
         <div className="flex flex-col items-start gap-3 rounded-lg border border-neutral-300 p-4">
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">
-              A new version({latestVersionInfo.version}) is available.
+              {t("A new version({version}) is available.", {
+                version: latestVersionInfo.version,
+              })}
             </p>
             {latestVersionInfo.notes.length > 0 && (
               <ul className="list-disc pl-5 text-sm text-neutral-600">
@@ -93,7 +98,7 @@ function AppVersionSection() {
               </ul>
             )}
           </div>
-          <Button text="Download now" onClick={openDownloadPage} black />
+          <Button text={t("Download now")} onClick={openDownloadPage} black />
         </div>
       )}
 
@@ -155,6 +160,7 @@ export function UserIcon({user}: {user?: User | null}) {
 }
 
 export function UserProfile() {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [value, setValue] = useState("");
@@ -239,7 +245,7 @@ export function UserProfile() {
 
           <p className="text-sm pt-1 pb-2">E-mail: {user?.email}</p>
           <MyCommentsModal />
-          <Button onClick={() => setOpenLogoutModal(true)} text="Logout" />
+          <Button onClick={() => setOpenLogoutModal(true)} text={t("Logout")} />
         </div>
 
         <Button
@@ -247,7 +253,7 @@ export function UserProfile() {
             setDeleteError("");
             setOpenDeleteModal(true);
           }}
-          text="Delete account"
+          text={t("Delete account")}
           disabled={deleting}
           red
         />
@@ -255,9 +261,9 @@ export function UserProfile() {
 
       <ResponsiveModal open={openLogoutModal} onClose={() => setOpenLogoutModal(false)}>
         <div className="flex flex-col gap-5 md:pb-3">
-          <h2>Log out?</h2>
+          <h2>{t("Log out?")}</h2>
           <Button
-            text="Yes"
+            text={t("Yes")}
             onClick={logout}
             fit
             black
@@ -267,15 +273,15 @@ export function UserProfile() {
 
       <ResponsiveModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
         <div className="flex flex-col gap-5 md:pb-3">
-          <h2>Delete account?</h2>
+          <h2>{t("Delete account?")}</h2>
           <p className="pr-8 text-sm text-neutral-500">
-            Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.
+            {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
           </p>
           {deleteError && (
             <p className="text-sm text-red-600">{deleteError}</p>
           )}
           <Button
-            text={deleting ? "Deleting..." : "Delete"}
+            text={deleting ? t("Deleting...") : t("Delete")}
             onClick={handleDeleteAccount}
             disabled={deleting}
             fit
@@ -288,6 +294,7 @@ export function UserProfile() {
 }
 
 export default function Setting() {
+  const { locale, t } = useI18n();
   const mobileApp = isCapacitorApp();
   const [notificationPermission, setNotificationPermission] =
     useState<AppNotificationPermissionStatus | null>(null);
@@ -297,6 +304,7 @@ export default function Setting() {
     toggleSetting,
     setSettings,
   } = useSettings();
+  const pendingLanguageChange = settings.system_language !== locale;
 
   useEffect(() => {
     if (!mobileApp) return;
@@ -348,18 +356,28 @@ export default function Setting() {
     await openAppNotificationSettings();
   }
 
+  function handleSystemLanguageChange(
+    event: ChangeEvent<HTMLSelectElement>,
+  ) {
+    const nextLanguage = event.target.value === "ko" ? "ko" : "en";
+    setSettings((prev) => ({
+      ...prev,
+      system_language: nextLanguage,
+    }));
+  }
+
   return (
     <>
       <div className="w-full h-full overflow-y-scroll overflow-x-hidden flex flex-col gap-7 pr-3 z-30 pl-3 md:pl-6 bg-neutral-50 pb-7">
         <AppVersionSection />
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Preferences</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Preferences")}</h2>
         <section className="w-full h-auto mb-14 flex flex-col gap-7">
         <div className="flex flex-col gap-4">
-          <h3>Page view</h3>
+          <h3>{t("Page view")}</h3>
           <div className="flex flex-col items-start text-sm gap-2">
 
             <div className="flex items-center gap-2">
-              <span>lemma info</span>
+              <span>{t("lemma info")}</span>
               <SettingToggle
                 settingKey="lemma_info"
                 value={settings.lemma_info}
@@ -395,15 +413,15 @@ export default function Setting() {
 
         {mobileApp && (
           <div className="flex flex-col gap-4">
-            <h3>Notifications</h3>
+            <h3>{t("Notifications")}</h3>
             <div className="flex flex-col items-start text-sm gap-2">
               <div className="flex items-center gap-2">
-                <span>now playing alerts</span>
+                <span>{t("now playing alerts")}</span>
                 <button
                   type="button"
                   onClick={handleNowPlayingNotificationsToggle}
                   aria-pressed={settings.now_playing_notifications}
-                  title="now playing alerts"
+                  title={t("now playing alerts")}
                   className={`
                     relative inline-flex h-5 w-9 items-center rounded-full
                     p-0.5 transition-colors
@@ -433,7 +451,7 @@ export default function Setting() {
                   className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
                   onClick={() => setOpenNotificationModal(true)}
                 >
-                  Notifications are blocked on this device. Open settings.
+                  {t("Notifications are blocked on this device. Open settings.")}
                 </button>
               )}
             </div>
@@ -441,31 +459,52 @@ export default function Setting() {
         )}
 
         <div className="flex items-center gap-4">
-          <h3>Theme</h3>
+          <h3>{t("Theme")}</h3>
           <div>
             <ThemeToggle />
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <h3>System language</h3>
+        <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-5">
+            <h3>{t("System language")}</h3>
+            <div className="flex gap-3 h-9">
+              <select
+                value={settings.system_language}
+                onChange={handleSystemLanguageChange}
+                className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
+              >
+                <option value="en">en</option>
+                <option value="ko">ko</option>
+              </select>
+              {pendingLanguageChange ? (
+                <Button
+                  text={t("Relaunch")}
+                  onClick={() => {
+                    void relaunchApp();
+                  }}
+                  black
+                />
+              ) : null}
+            </div>
+          </div>
         </div>
         </section>
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Language packs</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Language packs")}</h2>
         <p className="text-sm">
           {mobileApp
-            ? "Activate only the languages you want to use on this device."
-            : "To reduce storage, keep a single language version."}
+            ? t("Activate only the languages you want to use on this device.")
+            : t("To reduce storage, keep a single language version.")}
         </p>
         <section className="w-full h-auto mb-14 flex flex-col gap-4">
           <PackTable />
         </section>
         
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Mutuals</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Mutuals")}</h2>
         <Mutuals />
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">Profile</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Profile")}</h2>
         <UserProfile />
       </div>
 

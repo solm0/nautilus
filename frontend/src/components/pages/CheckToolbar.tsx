@@ -1,6 +1,7 @@
 import { FolderInput, Trash2 } from "lucide-react";
 import { IconButton } from "../util/Button";
 import type { SelectedItem } from "./PageLayout";
+import { useI18n } from "../../i18n";
 
 export default function CheckToolbar({
   selectedItems,
@@ -13,6 +14,7 @@ export default function CheckToolbar({
   onMove: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   const pageIds = selectedItems
     .filter(i => i.type === "page")
     .map(i => i.id);
@@ -20,7 +22,7 @@ export default function CheckToolbar({
     <div className="flex gap-1 h-6">
       <IconButton icon={
         <div className="flex gap-1 items-center">
-          <span className="text-xs pb-px">clear</span>
+          <span className="text-xs pb-px">{t("Clear search")}</span>
         </div>
       } onClick={clear}/>
       <IconButton icon={<FolderInput size={14} />} onClick={onMove} disabled={pageIds.length === 0}/>

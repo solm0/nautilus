@@ -11,6 +11,7 @@ import CommentItem, { CommentInput } from "./CommentItem";
 import { isValidUrl } from "../pageview/AnnotationNew";
 import NgramToggleInput, { type NgramToggleInputHandle } from "../pageview/NgramToggleInput";
 import { UserIcon } from "../setting/Setting";
+import { useI18n } from "../../i18n";
 
 export default function AnnotationCard({
   item, autoOpenComments, pinned = false, onUpdate, onDelete
@@ -21,6 +22,7 @@ export default function AnnotationCard({
   onUpdate?: (item: TimelineItem) => void;
   onDelete?: (id: number) => void;
 }) {
+  const { locale, t } = useI18n();
   const [openModal, setOpenModal] = useState(false);
   const [open, setOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -169,11 +171,11 @@ export default function AnnotationCard({
         <div className="flex gap-2">
           <span>
             {item.user?.id === user?.id
-              ? "Me"
-              : (item.user?.name ?? "Unknown")}
+              ? t("Me")
+              : (item.user?.name ?? t("Unknown"))}
           </span>
           <span className="text-neutral-400">
-            {formatRelative(item.created_at)}
+            {formatRelative(item.created_at, locale)}
           </span>
         </div>
 
@@ -238,7 +240,7 @@ export default function AnnotationCard({
                         className="flex gap-1 text-sm items-center text-neutral-400 hover:text-neutral-600 transition-colors mt-1"
                         onClick={()=>setExpanded(!expanded)}
                       >
-                        {expanded ? 'hide' : 'more'}
+                        {expanded ? t("hide") : t("more")}
                       </button>
                     }
                   </div>
@@ -264,7 +266,7 @@ export default function AnnotationCard({
                 {msg && <p className="text-sm opacity-70">{msg}</p>}
                 <div className="self-end flex gap-2 pb-4 w-full">
                   <Button
-                    text="Revert changes"
+                  text={t("Revert changes")}
                     onClick={()=>{
                       setEditing(false);
                       setMsg(null);
@@ -272,7 +274,7 @@ export default function AnnotationCard({
                     black fit
                   />
                   <Button
-                    text={"Save changes"}
+                    text={t("Save changes")}
                     onClick={handleSave}
                     disabled={loading || !canSave}
                     black fit
@@ -287,8 +289,8 @@ export default function AnnotationCard({
       {/* delete modal */}
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7 md:pb-3">
-          <h2>Delete this annotation?</h2>
-          <Button text="Delete" onClick={handleDelete} fit red/>
+          <h2>{t("Delete this annotation?")}</h2>
+          <Button text={t("Delete")} onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>
 

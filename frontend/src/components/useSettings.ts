@@ -12,6 +12,7 @@ const STORAGE_KEY = "nautilus_settings";
 
 export type AppSettings = {
   lemma_info: boolean;
+  system_language: "en" | "ko";
 
   highlight_nsubj: boolean;
   highlight_root: boolean;
@@ -21,6 +22,7 @@ export type AppSettings = {
 
 const DEFAULT_SETTINGS: AppSettings = {
   lemma_info: false,
+  system_language: "en",
 
   highlight_nsubj: true,
   highlight_root: true,
@@ -137,12 +139,16 @@ export function useSettings() {
 
   const toggleSetting = useCallback(
     <K extends keyof AppSettings>(key: K) => {
+      if (typeof settings[key] !== "boolean") {
+        return;
+      }
+
       updateSettings((prev) => ({
         ...prev,
-        [key]: !prev[key],
+        [key]: !(prev[key] as boolean),
       }));
     },
-    []
+    [settings]
   );
 
   return {

@@ -3,11 +3,13 @@ import { login } from "../../api"
 import { useNavigate } from "react-router-dom"
 import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
+import { useI18n } from "../../i18n"
 
 export default function Login(){
   const [email,setEmail]=useState("")
   const [password,setPassword]=useState("")
   const [msg,setMsg]=useState("")
+  const { t } = useI18n();
 
   const navigate = useNavigate();
 
@@ -57,8 +59,8 @@ export default function Login(){
       </div>
 
       <div className="flex flex-col gap-2 text-neutral-50">
-        <LinkButton text="Create an account" link="/signup" />
-        <LinkButton text="Forgot password?" link="/reset-request" />
+        <LinkButton text={t("Create an account")} link="/signup" />
+        <LinkButton text={t("Forgot password?")} link="/reset-request" />
       </div>
 
     </>

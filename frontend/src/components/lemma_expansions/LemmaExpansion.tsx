@@ -3,6 +3,7 @@ import LemmaRelated from "./LemmaRelated";
 import LemmaKwic from "./LemmaKwic";
 import type { LemmaData } from "../pageTypes";
 import { Star } from "lucide-react";
+import { useI18n } from "../../i18n";
 
 export default function LemmaExpansion({
   data, onSelect, onToggleFavorite, language, lemmaInfo
@@ -13,6 +14,7 @@ export default function LemmaExpansion({
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
 }) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [isFavoriteLocal, setIsFavoriteLocal] = useState(data.is_favorite);
 
@@ -89,7 +91,7 @@ export default function LemmaExpansion({
                 py-2 rounded-lg transition-all
               `}
             >
-              {m}
+              {t(m)}
             </button>
           ))}
         </div>

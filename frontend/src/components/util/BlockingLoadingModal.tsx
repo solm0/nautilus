@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../../i18n";
 
 type BlockingLoadingModalProps = {
   open: boolean;
@@ -13,6 +14,7 @@ export default function BlockingLoadingModal({
   usePortal = true,
 }: BlockingLoadingModalProps) {
   const [mounted, setMounted] = useState(open);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (open) {
@@ -56,7 +58,7 @@ export default function BlockingLoadingModal({
           aria-busy={open}
         >
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-700" />
-          <p className="text-neutral-700 font-source">{message}</p>
+          <p className="text-neutral-700 font-source">{t(message)}</p>
         </div>
       </div>
     </div>

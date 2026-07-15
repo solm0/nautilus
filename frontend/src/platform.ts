@@ -23,6 +23,7 @@ declare global {
       platform?: string;
       getNowPlaying?: () => Promise<unknown>;
       onDeepLink?: (callback: (url: string) => void) => (() => void) | void;
+      relaunchApp?: () => Promise<void>;
     };
   }
 }

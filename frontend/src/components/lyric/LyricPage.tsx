@@ -18,6 +18,7 @@ import { useAutoCenterActiveItem } from "./useAutoCenterActiveItem";
 import { Speaker } from "lucide-react";
 import { isCapacitorApp } from "../../platform";
 import { getLookupMorph } from "../tokenLookup";
+import { useI18n } from "../../i18n";
 
 function median(values: number[]) {
   if (values.length === 0) return 0;
@@ -211,6 +212,7 @@ function PlayingWaveform({ playing }: { playing: boolean }) {
 }
 
 export default function LyricPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const {
     loading,
@@ -324,27 +326,27 @@ export default function LyricPage() {
     <div className={`flex flex-col items-start h-full w-full gap-2 pr-4 pb-18 md:pb-4 md:pr-6 pl-3 md:pl-6 ${mobileApp ? 'bg-neutral-200' : 'bg-neutral-transparent'}`}>
 
       <div className="flex flex-col gap-2 pt-12 pb-2">
-        <h2>Get lyrics</h2>
+        <h2>{t("Get lyrics")}</h2>
       </div>
 
       <div className="flex flex-1 min-h-0 w-full max-w-3xl flex-col gap-4 items-start">
 
         {loading && (
           <div className="rounded-sm bg-neutral-50 p-6 text-sm text-neutral-500">
-            Checking current playback...
+            {t("Checking current playback...")}
           </div>
         )}
 
         {!loading && permission?.supported && permission.needs_user_action && (
           <div className="flex flex-col gap-4 rounded-sm bg-neutral-50 p-6">
             <div className="flex flex-col gap-1">
-              <h3>Playback access is not enabled</h3>
+              <h3>{t("Playback access is not enabled")}</h3>
               <p className="text-sm text-neutral-500">
-                Android needs notification access to inspect active media sessions. macOS should work automatically with supported desktop players.
+                {t("Android needs notification access to inspect active media sessions. macOS should work automatically with supported desktop players.")}
               </p>
             </div>
             <div className="flex justify-start">
-              <Button text="Open permission settings" onClick={openNowPlayingPermissionSettings} fit black />
+              <Button text={t("Open permission settings")} onClick={openNowPlayingPermissionSettings} fit black />
             </div>
           </div>
         )}
@@ -352,9 +354,9 @@ export default function LyricPage() {
         {!loading && permission && !permission.supported && (
           <div className="flex flex-col gap-4 rounded-sm bg-neutral-50 p-6">
             <div className="flex flex-col gap-1">
-              <h3>Playback detection is unavailable</h3>
+              <h3>{t("Playback detection is unavailable")}</h3>
               <p className="text-sm text-neutral-500">
-                This build did not expose the local now-playing bridge on this platform yet.
+                {t("This build did not expose the local now-playing bridge on this platform yet.")}
               </p>
             </div>
             <div className="text-xs text-neutral-400">
@@ -365,7 +367,7 @@ export default function LyricPage() {
 
         {!loading && (!permission || permission.granted) && !hasTrack && (
           <div className="rounded-sm bg-neutral-50 p-6 text-neutral-500">
-            No active track was detected. On macOS, supported players are the desktop Spotify app and Music app. On Android, any player exposing a media session should work after notification access is granted.
+            {t("No active track was detected. On macOS, supported players are the desktop Spotify app and Music app. On Android, any player exposing a media session should work after notification access is granted.")}
           </div>
         )}
 
@@ -391,7 +393,7 @@ export default function LyricPage() {
 
             <div className="flex-1 min-h-0 relative overflow-hidden rounded-sm text-lg md:text-xl py-4">
               <span className="absolute top-3 right-3 text-sm text-neutral-500">
-                {track.lyrics?.is_synced ? "synced" : track.lyrics ? "plain" : ""}
+                {track.lyrics?.is_synced ? t("synced") : track.lyrics ? t("plain") : ""}
               </span>
 
               {syncedLines.length > 0 ? (
@@ -420,9 +422,9 @@ export default function LyricPage() {
                   {plainLines.join("\n")}
                 </div>
               ) : lyricsLoading ? (
-                <div className="text-neutral-500">Looking for lyrics...</div>
+                <div className="text-neutral-500">{t("Looking for lyrics...")}</div>
               ) : (
-                <div className="text-neutral-500">Lyrics were not found for the current track.</div>
+                <div className="text-neutral-500">{t("Lyrics were not found for the current track.")}</div>
               )}
             </div>
           </div>
@@ -447,14 +449,14 @@ export default function LyricPage() {
         <div className="w-full">
           {savedPageId ? (
             <Button
-              text="Go to page"
+              text={t("Go to page")}
               onClick={() => navigate(`/page/${savedPageId}`)}
               fit
               black
             />
           ) : (
             <Button
-              text={saving ? "Saving..." : "Save"}
+              text={saving ? t("Saving...") : t("Save")}
               onClick={handleSave}
               disabled={isSaveDisabled}
               fit

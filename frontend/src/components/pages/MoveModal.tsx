@@ -4,6 +4,7 @@ import type { Notebook } from "./PageLayout";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import Button from "../util/Button";
 import { CENTRAL_API, authHeaders } from "../../api";
+import { useI18n } from "../../i18n";
 
 function buildNotebookOptions(
   notebooks: Notebook[],
@@ -41,6 +42,7 @@ export default function MoveModal({
   notebooks: Notebook[];
   reload: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [selectedNotebook, setSelectedNotebook] = useState<number | null>(null);
 
   const notebookOptions = useMemo(
@@ -72,7 +74,9 @@ export default function MoveModal({
     <ResponsiveModal open={open} onClose={onClose}>
       <div className="flex flex-col gap-7">
         <h2>
-          Move {pageIds.length > 1 ? `${pageIds.length} pages` : `page "${pageLabel ?? ""}"`}
+          {pageIds.length > 1
+            ? t("Move {count} pages", { count: pageIds.length })
+            : t("Move page \"{name}\"", { name: pageLabel ?? "" })}
         </h2>
 
         <select
@@ -84,7 +88,7 @@ export default function MoveModal({
           }
           className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
         >
-          <option value="">(root)</option>
+          <option value="">{t("root (folder option)")}</option>
           {notebookOptions.map((notebook) => (
             <option key={notebook.id} value={notebook.id}>
               {notebook.name}
@@ -93,7 +97,7 @@ export default function MoveModal({
         </select>
 
         <Button
-          text="Move"
+          text={t("Move")}
           onClick={() => movePages(selectedNotebook)}
           fit
           black

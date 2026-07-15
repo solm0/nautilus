@@ -3,6 +3,7 @@ import { Outlet, useLocation, useParams } from "react-router-dom";
 import { Menu, Search, X } from "lucide-react";
 
 import MoveModal from "./MoveModal";
+import { useI18n } from "../../i18n";
 import PageCard from "./PageCard";
 import { Toolbar } from "./Toolbar";
 
@@ -120,6 +121,7 @@ function buildNotebookPath(
 }
 
 export default function PageLayout() {
+  const { t } = useI18n();
   const { id } = useParams();
   const location = useLocation();
   const currentPageId = id ? Number(id) : null;
@@ -860,7 +862,7 @@ export default function PageLayout() {
         <input
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search pages and folders"
+          placeholder={t("Search")}
           className="min-w-0 flex-1 bg-transparent text-xs text-neutral-700 placeholder:text-neutral-400 focus:outline-none"
         />
         <button
@@ -871,7 +873,7 @@ export default function PageLayout() {
               ? "hover:bg-neutral-100 hover:text-neutral-700"
               : "pointer-events-none opacity-30"
           }`}
-          title="Clear search"
+          title={t("Clear search")}
         >
           <X size={14} />
         </button>
@@ -943,7 +945,7 @@ export default function PageLayout() {
           ))
         ) : (
           <div className="px-2 py-3 text-sm text-neutral-400">
-            No matches found.
+            {t("No matches found.")}
           </div>
         )
       ) : (
@@ -979,7 +981,7 @@ export default function PageLayout() {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="w-full justify-between flex z-30 px-2 items-center h-8">
-        <p className="text-xs opacity-60">Pages</p>
+        <p className="text-xs opacity-60">{t("Pages")}</p>
         <Toolbar reload={reload} />
       </div>
 
@@ -988,7 +990,7 @@ export default function PageLayout() {
       {!isSearching && pinnedPages.length > 0 ? (
         <div className="pl-2 mr-2 py-2 mb-1 border-b border-neutral-400/50">
           <div className="pb-1 pt-1 text-xs opacity-60">
-            Pinned
+            {t("Pinned")}
           </div>
           <div className="flex flex-col">
             {pinnedPages.map((page) => (
@@ -1130,7 +1132,7 @@ export default function PageLayout() {
             type="button"
             className="absolute left-3 top-10 z-[40] flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-50/90 text-neutral-700 shadow-md backdrop-blur-sm"
             onClick={() => setPageSidebarOpen(true)}
-            title="Open pages"
+            title={t("Open pages")}
           >
             <Menu size={18} />
           </button>
@@ -1143,7 +1145,7 @@ export default function PageLayout() {
               className="absolute inset-0 bg-neutral-950/40 transition-opacity duration-200"
               style={{ opacity: mobileSidebarEntered ? 1 : 0 }}
               onClick={() => setPageSidebarOpen(false)}
-              aria-label="Close pages sidebar"
+              aria-label={t("Close pages sidebar")}
             />
             <div
               className="absolute inset-y-0 left-0 overflow-hidden border-r border-neutral-200 bg-neutral-50 shadow-2xl transition-[width,transform] duration-200"
@@ -1233,16 +1235,16 @@ export default function PageLayout() {
       >
         <div className="flex flex-col gap-7">
           <h2>
-            Delete{" "}
-            {deleteTarget?.type === "page" ? "page" : "folder"}
+            {t("Delete")}{" "}
+            {deleteTarget?.type === "page" ? t("page") : t("folder")}
             {deleteTarget ? ` "${deleteTarget.item.name}"` : ""}?
           </h2>
 
           {deleteTarget?.type === "notebook" ? (
-            <p>Deleting a folder will also delete the pages inside it.</p>
+            <p>{t("Deleting a folder will also delete the pages inside it.")}</p>
           ) : null}
 
-          <Button text="Delete" onClick={handleDelete} fit red />
+          <Button text={t("Delete")} onClick={handleDelete} fit red />
         </div>
       </ResponsiveModal>
     </>

@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import Button from "../util/Button";
 import { ArrowUpRight } from "lucide-react";
+import { useI18n } from "../../i18n";
 
 export default function MyCommentsModal() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const { items, load, hasMore, loading } = useMyComments();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -38,11 +40,11 @@ export default function MyCommentsModal() {
 
   return (
     <>
-      <Button text="My comments" onClick={() => setOpen(true)} />
+      <Button text={t("My comments")} onClick={() => setOpen(true)} />
 
       <ResponsiveModal open={open} onClose={() => setOpen(false)} big>
         <div className="flex flex-col gap-7 overflow-hidden">
-          <h2>My Comments</h2>
+          <h2>{t("My Comments")}</h2>
           
           <div className="flex flex-col overflow-y-auto">
             {dedupedItems.map(c => (
@@ -67,8 +69,8 @@ export default function MyCommentsModal() {
 
           <div ref={sentinelRef} className="h-10" />
 
-          {loading && <p className="opacity-50 w-full text-center text-sm">loading...</p>}
-          {!hasMore && <p className="opacity-50 w-full text-center text-sm">End of the list</p>}
+          {loading && <p className="opacity-50 w-full text-center text-sm">{t("Loading...")}</p>}
+          {/* {!hasMore && <p className="opacity-50 w-full text-center text-sm">{t("End of the list")}</p>} */}
         </div>
       </ResponsiveModal>
     </>

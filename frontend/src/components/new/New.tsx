@@ -8,6 +8,7 @@ import { ResponsiveModal } from "../util/ResponsiveModal";
 import type { TextAnalysisResult } from "../pageTypes";
 import { filterTextAnalysisByRanges, type SelectionRange } from "../pageUtils";
 import LanguageSelect from "../util/LanguageSelect";
+import { useI18n } from "../../i18n";
 
 export type FooterAction = {
   text: string;
@@ -16,6 +17,7 @@ export type FooterAction = {
 };
 
 export default function New() {
+  const { t } = useI18n();
   const [result, setResult] = useState<TextAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [footerAction, setFooterAction] = useState<FooterAction | null>(null);
@@ -91,7 +93,7 @@ export default function New() {
   };
 
   const statusText = analyzing
-    ? "Running Stanza analysis..."
+    ? t("Running Stanza analysis...")
     : null;
 
   const handleReset = () => {
@@ -111,7 +113,7 @@ export default function New() {
       {/* SECTION 1: HEADER */}
       <div className="flex flex-col gap-2 pt-12 pb-2">
         <h2 className="flex items-baseline gap-4">
-          Paste text
+          {t("Paste text")}
         </h2>
 
       </div>
@@ -143,7 +145,7 @@ export default function New() {
               />
             </div>
           ): (
-            <div className="w-full flex-1 md:w-1/2 flex items-center justify-center">Loading...</div>
+            <div className="w-full flex-1 md:w-1/2 flex items-center justify-center">{t("Loading...")}</div>
           )}
           
           {/* PREVIEW */}
@@ -153,7 +155,7 @@ export default function New() {
           `}>
             {result ? (
               <>
-                <p>Select text to keep. Otherwise, all text will be used.</p>
+                <p>{t("Select text to keep. Otherwise, all text will be used.")}</p>
                 <div className="w-full flex-1 bg-neutral-100 rounded shrink-0 overflow-y-scroll">
                   <PagePreview
                     blocks={result.blocks}
@@ -164,7 +166,7 @@ export default function New() {
               </>
             ): (
               <div className="text-neutral-400 w-full h-full flex items-center justify-center p-2">
-                Preview will show here
+                {t("Preview will show here")}
               </div>
             )}
         </div>
@@ -175,7 +177,7 @@ export default function New() {
 
         {isPreviewStep && (
           <Button
-            text="Retry"
+            text={t("Retry")}
             onClick={handleReset}
             fit
             black
@@ -200,7 +202,7 @@ export default function New() {
           />
         ) : (
           <Button 
-            text="Next"
+            text={t("Next")}
             onClick={handleNext}
             disabled={!isReady || !language}
             fit
@@ -211,11 +213,11 @@ export default function New() {
 
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="text-lg font-medium">Save Page</h2>
+          <h2 className="text-lg font-medium">{t("Save Page")}</h2>
 
           {/* page name */}
           <input
-            placeholder="Page name"
+            placeholder={t("Page name")}
             value={pageName}
             onChange={(e) => setPageName(e.target.value)}
             className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
@@ -231,7 +233,7 @@ export default function New() {
             }
             className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
           >
-            <option value="">(root)</option>
+            <option value="">{t("root (folder option)")}</option>
             {notebooks.map((n) => (
               <option key={n.id} value={n.id}>
                 {n.name}
@@ -240,7 +242,7 @@ export default function New() {
           </select>
 
           {/* save */}
-          <Button text="Save" onClick={handleSave} black fit />
+          <Button text={t("Save")} onClick={handleSave} black fit />
         </div>
       </ResponsiveModal>
     </div>

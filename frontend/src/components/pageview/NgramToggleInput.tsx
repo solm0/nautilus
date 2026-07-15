@@ -10,6 +10,7 @@ import {
 import NgramWriter, { type NgramWriterHandle } from "./NgramWriter";
 import LanguageSelect from "../util/LanguageSelect";
 import { LANG_MAP } from "../setting/PackTable";
+import { useI18n } from "../../i18n";
 
 export type NgramToggleInputHandle = {
   flushPendingInput: () => string;
@@ -70,6 +71,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   onHasTextChange,
   autofocus = true
 }, ref) => {
+  const { t } = useI18n();
   const [useNgram, setUseNgram] = useState(defaultOn);
   const [tokens, setTokens] = useState<string[]>([]);
   const [language, setLanguage] = useState<{
@@ -195,13 +197,13 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
             ref={plainRef}
             className="z-10 flex h-7 items-center justify-center whitespace-nowrap px-3 text-center"
           >
-            Plain
+            {t("Plain")}
           </span>
           <span
             ref={assistantRef}
             className="z-10 flex h-7 items-center justify-center whitespace-nowrap px-3 text-center"
           >
-            Writing Assistant
+            {t("Writing Assistant")}
           </span>
         </button>
 
@@ -232,7 +234,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           onChange={(e) => onChange(e.target.value)}
           className="w-full h-full resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
           spellCheck={false}
-          placeholder={`Add your thoughts... ${ language?.lang && `in ${LANG_MAP[language?.lang]}`}.`}
+          placeholder={`${t("Add your thoughts...")}${language?.lang ? ` in ${LANG_MAP[language?.lang]}.` : ""}`}
         />
       )}
     </div>

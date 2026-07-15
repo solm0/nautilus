@@ -384,6 +384,10 @@ app.whenReady().then(async () => {
   createWindow();
 
   ipcMain.handle("now-playing:get", async () => getMacNowPlaying());
+  ipcMain.handle("app:relaunch", async () => {
+    app.relaunch();
+    app.exit(0);
+  });
 
   dispatchDeepLink(extractDeepLink(process.argv));
 

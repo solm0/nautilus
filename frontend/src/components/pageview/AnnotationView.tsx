@@ -7,6 +7,7 @@ import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInpu
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { Pencil, Trash2 } from "lucide-react";
 import Button, { IconButton } from "../util/Button";
+import { useI18n } from "../../i18n";
 
 export default function AnnotationView({
   panel,
@@ -19,6 +20,7 @@ export default function AnnotationView({
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   pageLanguage: string;
 }) {
+  const { t } = useI18n();
   const annotationPanel =
     panel?.type === "annotation:view" ? panel : null;
 
@@ -115,7 +117,7 @@ export default function AnnotationView({
       {/* buttons */}
       {!editing &&
         <div className="w-full h-auto flex items-center justify-between">
-          <p className="text-xs text-neutral-400">Created: {annotationPanel.data.created_at?.slice(0,10)}</p>
+          <p className="text-xs text-neutral-400">{t("Created:")} {annotationPanel.data.created_at?.slice(0,10)}</p>
           <div className="flex gap-1">
             <IconButton
               icon={<Pencil size={14} />}
@@ -166,7 +168,7 @@ export default function AnnotationView({
         {editing &&
           <div className="self-end flex gap-2 w-full">
             <Button
-              text="Revert changes"
+              text={t("Revert changes")}
               onClick={()=>{
                 setEditing(false);
                 setMsg(null);
@@ -174,7 +176,7 @@ export default function AnnotationView({
               black fit
             />
             <Button
-              text={loading === "edit" ? "Saving..." : "Save changes"}
+              text={loading === "edit" ? t("Saving...") : t("Save changes")}
               onClick={handleSave}
               disabled={loading === "edit" || !canSave}
               black fit
@@ -190,8 +192,8 @@ export default function AnnotationView({
       {/* delete modal */}
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="pr-3">Delete this annotation?</h2>
-          <Button text="Delete" onClick={handleDelete} fit red/>
+          <h2 className="pr-3">{t("Delete this annotation?")}</h2>
+          <Button text={t("Delete")} onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>
     </div>

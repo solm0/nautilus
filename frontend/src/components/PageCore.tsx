@@ -17,6 +17,7 @@ import { useSettings, type AppSettings } from "./useSettings";
 import { Check, Ellipsis, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { MiniPopup } from "./util/MiniPopup";
 import { IconButton } from "./util/Button";
+import { useI18n } from "../i18n";
 
 /* =========================================================
  CONFIG
@@ -665,6 +666,7 @@ export default function PageCore({
   let globalIndex = 0;
 
   const { settings } = useSettings();
+  const { t } = useI18n();
   const [openMetadataMenuId, setOpenMetadataMenuId] = useState<string | null>(null);
   const [draftMetadata, setDraftMetadata] = useState("");
   const [editingMetadataIndex, setEditingMetadataIndex] = useState<number | null>(null);
@@ -764,7 +766,7 @@ export default function PageCore({
             <div className={`flex flex-col gap-2 text-sm ${pageSource === 'lrclib' ? 'items-start' : 'items-center'} `}>
               {pageSource && pageSource !== 'user' ? (
                 <div className="flex flex-col gap-1 pb-6">
-                  <span className="text-xs">Source</span>
+                  <span className="text-xs">{t("Source")}</span>
                   <span className="uppercase">{pageSource}</span>
                 </div>
               ) : null}
@@ -869,7 +871,7 @@ export default function PageCore({
                                 }}
                               >
                                 <Pencil size={13} />
-                                <span>Edit</span>
+                                <span>{t("Edit")}</span>
                               </button>
                               <button
                                 type="button"
@@ -903,7 +905,7 @@ export default function PageCore({
                   className="flex items-center gap-2 border border-dashed border-neutral-300 px-3 py-2 text-neutral-400 transition-colors hover:border-neutral-400 hover:text-neutral-700"
                 >
                   <Plus size={14} />
-                  <span>Add metadata</span>
+                  <span>{t("Add metadata")}</span>
                 </button>
               ) : null}
 
@@ -911,7 +913,7 @@ export default function PageCore({
                 <div className={`flex flex-col gap-2 bg-neutral-200/50 px-3 py-2 w-105 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                   <textarea
                     className={`min-w-[12em] focus:outline-none w-full ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
-                    placeholder="Add metadata"
+                    placeholder={t("Add metadata")}
                     value={draftMetadata}
                     onChange={(event) => setDraftMetadata(event.target.value)}
                     onKeyDown={(event) => {

@@ -2,12 +2,14 @@ import { useState } from "react"
 import { signup } from "../../api"
 import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
+import { useI18n } from "../../i18n"
 
 export default function Signup(){
   const [name, setName] = useState("")
   const [email,setEmail]=useState("")
   const [password,setPassword]=useState("")
   const [msg,setMsg]=useState("")
+  const { t } = useI18n();
 
   async function submit(){
     if (name.trim() && email.trim() && password.trim()) {
@@ -54,13 +56,13 @@ export default function Signup(){
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text="Sign up" onClick={submit} fit />
+          <Button text={t("Sign up")} onClick={submit} fit />
         </div>
       </div>
 
 
       <div className="flex flex-col gap-2 text-neutral-50">
-        <LinkButton text="Already have an account?" link="/login" />
+        <LinkButton text={t("Already have an account?")} link="/login" />
       </div>
     </>
   )

@@ -25,6 +25,7 @@ import { isTrackReferenceMatch } from "../../nowPlaying";
 import { useNowPlaying } from "../lyric/useNowPlaying";
 import { getActiveTimedBlockIndex } from "../lyric/spotifyLyrics";
 import { getLookupMorph } from "../tokenLookup";
+import { useI18n } from "../../i18n";
 
 const lemmaInfoCache = new Map<string, Record<string, LemmaData>>();
 const lemmaAttemptedKeysCache = new Map<string, Set<string>>();
@@ -45,6 +46,7 @@ export type SidePanelState =
   | null;
 
 export default function PageView() {
+  const { t } = useI18n();
   const mobileApp = isCapacitorApp();
   const { id } = useParams();
 
@@ -279,7 +281,7 @@ export default function PageView() {
 
   const trackReference = result?.track_ref ?? null;
   const loadingMessage = loadingPage
-    ? "Fetching page..."
+    ? t("Fetching page...")
     : null;
   const shouldSyncTimedBlocks =
     Boolean(trackReference) &&
@@ -336,11 +338,11 @@ export default function PageView() {
           <div className="absolute inset-0 flex items-center justify-center p-5">
             <div className="w-full max-w-sm rounded-sm bg-neutral-50 px-7 py-6 shadow-lg flex flex-col gap-7">
               <p>
-                {mobileApp ? "Activate " : "Install "}
+                {mobileApp ? `${t("Activate")} ` : t("Install ")}
                 {language ? LANG_MAP[language] ?? language : null}
                 {mobileApp ? " to continue." : " pack to continue."}
               </p>
-              <Button text="Go to settings" onClick={() => navigate('/setting')} fit black />
+              <Button text={t("settings")} onClick={() => navigate('/setting')} fit black />
             </div>
           </div>
         </div>
@@ -435,7 +437,7 @@ export default function PageView() {
 
           {loadingLemma && !loadingPage && !noPack && (
             <div className="pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
-              Fetching lemmas...
+              {t("Fetching lemmas...")}
             </div>
           )}
         </>

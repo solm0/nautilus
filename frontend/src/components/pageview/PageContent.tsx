@@ -11,6 +11,7 @@ import { useAutoCenterActiveItem } from "../lyric/useAutoCenterActiveItem";
 import { useSettings } from "../useSettings";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 import type { MorphToken, Token } from "../pageTypes";
+import { useI18n } from "../../i18n";
 
 const LONG_PRESS_MS = 600;
 const DRAG_THRESHOLD = 8;
@@ -57,6 +58,7 @@ export default function PageContent({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
+  const { t } = useI18n();
   
   const [selection, setSelection] = useState<{
     anchor: number;
@@ -574,7 +576,7 @@ export default function PageContent({
               style={{ left: menu.x, top: menu.y + 5 }}
             >
               <div className="w-7 h-7 bg-neutral-800 text-neutral-100 rounded-full flex items-center justify-center  drop-shadow-lg">
-                <IconButton icon={hasCopied ? <Check size={15} /> : <Copy size={15} />} onClick={copySelection} title="copy text" />
+                <IconButton icon={hasCopied ? <Check size={15} /> : <Copy size={15} />} onClick={copySelection} title={t("copy text")} />
               </div>
 
               <div className="w-auto h-7.5 p-1 bg-neutral-800 text-neutral-100 rounded-full flex items-center gap-1 drop-shadow-lg">
@@ -593,7 +595,7 @@ export default function PageContent({
                     });
                     setMenu(null);
                   }}
-                  title="articulation"
+                  title={t("articulation")}
                 />
               </div>
 
@@ -615,7 +617,7 @@ export default function PageContent({
                     });
                     setMenu(null);
                   }}
-                  title="new memo"
+                  title={t("new memo")}
                 />
                 <IconButton
                   icon={<Link size={15} />}
@@ -634,7 +636,7 @@ export default function PageContent({
                     });
                     setMenu(null);
                   }}
-                  title="new link"
+                  title={t("new link")}
                 />
                 <IconButton
                   icon={<Smile size={15} />}
@@ -651,7 +653,7 @@ export default function PageContent({
                       }
                     });
                   }}
-                  title="new emoji"
+                  title={t("new emoji")}
                 />
               </div>
 

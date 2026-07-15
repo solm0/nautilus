@@ -6,6 +6,7 @@ import { Plus } from "lucide-react"
 import SystemMessage from "../auth/SystemMessage"
 import type { User } from "../../types"
 import { UserIcon } from "./Setting"
+import { useI18n } from "../../i18n"
 
 export type TimelineItem = {
   id: number
@@ -23,6 +24,7 @@ export type TimelineItem = {
 }
 
 export default function Mutuals() {
+  const { t } = useI18n();
   const [mutuals, setMutuals] = useState<User[]>([])
   const [received, setReceived] = useState<{ id: number; user: User }[]>([])
   const [sent, setSent] = useState<User[]>([])
@@ -69,42 +71,42 @@ export default function Mutuals() {
     <div className="flex flex-col gap-7">
       {/* 1. my mutuals */}
       <div className="flex items-center gap-3">
-        <Button text="My mutuals" onClick={() => setOpenList(true)} />
+        <Button text={t("My mutuals")} onClick={() => setOpenList(true)} />
         <IconButton icon={<Plus size={15} />} onClick={() => setOpenSend(true)} />
       </div>
 
       {/* modal */}
       <ResponsiveModal open={openSend} onClose={() => setOpenSend(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="text-lg font-semibold">Send request</h2>
+          <h2 className="text-lg font-semibold">{t("Send request")}</h2>
 
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Write email"
+            placeholder={t("email")}
             className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
           />
 
           <div className="flex flex-col gap-2">
             {error && <SystemMessage msg={error} />}
-            <Button text="Request" onClick={handleRequest} fit black />
+            <Button text={t("Request")} onClick={handleRequest} fit black />
           </div>
         </div>
       </ResponsiveModal>
 
       <ResponsiveModal open={openList} onClose={() => setOpenList(false)}>
         <div className="flex flex-col gap-7">
-          <h2>My mutuals</h2>
+          <h2>{t("My mutuals")}</h2>
 
           {mutuals.length === 0 && (
-            <p className="text-sm opacity-50">No mutuals yet</p>
+            <p className="text-sm opacity-50">{t("No mutuals yet")}</p>
           )}
 
           {mutuals.map(u => (
             <div key={u.id} className="flex gap-3 border-b border-neutral-200 p-2 items-start">
               <UserIcon user={u} />
               <div key={u.id} className="">
-                <p>{u.name || "Unnamed"}</p>
+                <p>{u.name || t("Unnamed")}</p>
                 <p className="text-sm opacity-50">{u.email}</p>
               </div>
             </div>
@@ -115,14 +117,14 @@ export default function Mutuals() {
       {/* 3. received */}
       {received.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h3>Requests</h3>
+          <h3>{t("Requests")}</h3>
           {received.map(r => (
             <div key={r.id} className="flex justify-between items-center">
               <div>
-                <p>{r.user.name || "Unnamed"}</p>
+                <p>{r.user.name || t("Unnamed")}</p>
                 <p className="text-sm opacity-50">{r.user.email}</p>
               </div>
-              <Button text="Accept" onClick={() => handleAccept(r.id)} />
+              <Button text={t("Accept")} onClick={() => handleAccept(r.id)} />
             </div>
           ))}
         </div>
@@ -131,10 +133,10 @@ export default function Mutuals() {
       {/* 4. sent */}
       {sent.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h3>Sent</h3>
+          <h3>{t("Sent")}</h3>
           {sent.map(u => (
             <div key={u.id}>
-              <p>{u.name || "Unnamed"}</p>
+              <p>{u.name || t("Unnamed")}</p>
               <p className="text-sm opacity-50">{u.email}</p>
             </div>
           ))}

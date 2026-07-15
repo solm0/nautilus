@@ -12,6 +12,7 @@ import { IconButton } from "../util/Button";
 import { AlignCenterVertical } from "lucide-react";
 import { lemmaLookup } from "../../api";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
+import { useI18n } from "../../i18n";
 
 function highlightIntersect(
   surface: string,
@@ -215,6 +216,7 @@ export default function LemmaKwic({
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
 }) {
+  const { t } = useI18n();
   const [hovered, setHovered] = useState<{
     pos: string | null;
     dep: string | null;
@@ -379,7 +381,7 @@ export default function LemmaKwic({
 
       {loadingLemma && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
-          Fetching lemmas...
+          {t("Fetching lemmas...")}
         </div>
       )}
 

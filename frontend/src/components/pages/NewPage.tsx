@@ -3,10 +3,12 @@ import FluidBackground from "../FluidBackground";
 import { Music4 } from "lucide-react";
 import { useNowPlaying } from "../lyric/useNowPlaying";
 import Logotype from "../svgs/Logotype";
+import { useI18n } from "../../i18n";
 
 export function NewPage() {
   const navigate = useNavigate();
   const { hasTrack } = useNowPlaying();
+  const { t } = useI18n();
 
   return (
     <div className="relative w-full h-full flex items-center justify-center">
@@ -15,7 +17,7 @@ export function NewPage() {
         type="button"
         onClick={() => navigate("/lyric")}
         className="fixed top-10 right-4 md:right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 hover:opacity-70 transition-opacity"
-        title="Lyrics"
+        title={t("Lyrics")}
       >
         <Music4 size={18} />
         {hasTrack ? (

@@ -6,6 +6,7 @@ import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useState } from "react";
 import { CENTRAL_API } from "../../api";
 import { isCapacitorApp } from "../../platform";
+import { useI18n } from "../../i18n";
 
 function CreateNotebookContent({
   onCreate,
@@ -15,6 +16,7 @@ function CreateNotebookContent({
   onClose: () => void;
 }) {
   const [name, setName] = useState("");
+  const { t } = useI18n();
   async function handleCreate() {
     if (!name.trim()) return;
     await onCreate(name);
@@ -23,18 +25,18 @@ function CreateNotebookContent({
 
   return (
     <div className="flex flex-col gap-7">
-      <h2 className="text-lg font-medium">Create Notebook</h2>
+      <h2 className="text-lg font-medium">{t("Create Notebook")}</h2>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Notebook name"
+        placeholder={t("Notebook name")}
         className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
         autoFocus
       />
       <Button
         disabled={!name.trim()}
         onClick={handleCreate}
-        text="Create"
+        text={t("Create")}
         fit
         black
       />
@@ -48,6 +50,7 @@ export function Toolbar({
   reload: () => Promise<void>;
 }) {
   const mobileApp = isCapacitorApp();
+  const { t } = useI18n();
   const [openFilePopup, setOpenFilePopup] = useState(false);
   const [openFolderModal, setOpenFolderModal] = useState(false);
 
@@ -57,7 +60,7 @@ export function Toolbar({
         to='/new'
         className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2">
         <Type size={16} />
-        Paste text
+        {t("Paste text")}
       </Link>
     </>
   )
@@ -85,7 +88,7 @@ export function Toolbar({
         <IconButtonEvent
           icon={<FolderPlus size={mobileApp ? 16 : 14} />}
           onClick={() => setOpenFolderModal(true)}
-          title="Create Notebook"
+          title={t("Create Notebook")}
         />
 
         {/* Page */}
@@ -96,7 +99,7 @@ export function Toolbar({
               e.stopPropagation();
               setOpenFilePopup((v) => !v);
             }}
-            title="Create Page"
+            title={t("Create Page")}
           />
           <MiniPopup
             open={openFilePopup}
