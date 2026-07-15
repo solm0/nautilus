@@ -7,7 +7,7 @@ import Button from "../util/Button";
 import { isCapacitorApp } from "../../platform";
 import { invalidateInstalledLanguagesCache } from "../util/LanguageSelect";
 
-export const TARGET_PACK_VERSION = "1.1.0";
+export const HIDDEN_PACK_VERSIONS = new Set([]);
 
 export type Pack = {
   lang: string;
@@ -42,26 +42,23 @@ export const LANG_MAP: Record<string, string> = {
   sq: "Albanian",
 };
 
-export function normalizePackForTargetRelease(pack: Pack): Pack {
-  return {
-    ...pack,
-    version: TARGET_PACK_VERSION,
-    tag: `v${TARGET_PACK_VERSION}`,
-    lemma_filename: `${pack.lang}-v${TARGET_PACK_VERSION}-lemma.zip`,
-    ngram_filename: `${pack.lang}-v${TARGET_PACK_VERSION}-ngram.zip`,
-  };
-}
-
 export function normalizePacksForTargetRelease(packs: Pack[]): Pack[] {
-  const latestByLang = new Map<string, Pack>();
+  return packs
+    .filter((pack) => !HIDDEN_PACK_VERSIONS.has(pack.version))
+    .sort((a, b) => {
+      const langOrder = a.lang.localeCompare(b.lang, undefined, {
+        sensitivity: "base",
+      });
 
-  for (const pack of packs) {
-    latestByLang.set(pack.lang, normalizePackForTargetRelease(pack));
-  }
+      if (langOrder !== 0) {
+        return langOrder;
+      }
 
-  return Array.from(latestByLang.values()).sort((a, b) =>
-    a.lang.localeCompare(b.lang, undefined, { sensitivity: "base" }),
-  );
+      return b.version.localeCompare(a.version, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
 }
 
 export default function PackTable() {

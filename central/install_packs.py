@@ -237,8 +237,19 @@ def process_language(lang: str):
 
 
 def main():
+    langs = []
+    seen = set()
+
     for pack in PACKS:
         lang = pack["lang"]
+
+        if lang in seen:
+            continue
+
+        seen.add(lang)
+        langs.append(lang)
+
+    for lang in langs:
 
         try:
             process_language(lang)
