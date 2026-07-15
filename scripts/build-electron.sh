@@ -55,6 +55,36 @@ if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* || "$OSTYPE" == win32* ]]; then
   DATA_SEPARATOR=";"
 fi
 
+PYINSTALLER_ARGS=(
+  --noconfirm
+  --clean
+  --onedir
+  --name main
+  --distpath "$BACKEND_TEMP_DIST"
+  --workpath "$PYINSTALLER_WORK_DIR/work"
+  --specpath "$PYINSTALLER_WORK_DIR/spec"
+  --paths "$ROOT_DIR"
+  --collect-submodules shared
+)
+
+OPTIONAL_DATA_DIRS=(
+  "backend/data:data"
+  "backend/models:models"
+  "backend/classla_models:classla_models"
+)
+
+for entry in "${OPTIONAL_DATA_DIRS[@]}"; do
+  src_rel="${entry%%:*}"
+  dest_rel="${entry##*:}"
+  src_abs="$ROOT_DIR/$src_rel"
+
+  if [[ -e "$src_abs" ]]; then
+    PYINSTALLER_ARGS+=(--add-data "$src_abs${DATA_SEPARATOR}$dest_rel")
+  else
+    echo "Skipping missing optional path: $src_rel"
+  fi
+done
+
 echo "[1/3] Building frontend web app"
 (cd "$ROOT_DIR/frontend" && npm run build)
 
@@ -63,18 +93,7 @@ rm -rf "$BACKEND_TEMP_DIST" "$PYINSTALLER_WORK_DIR" "$FINAL_BACKEND_DIST"
 mkdir -p "$BACKEND_TEMP_DIST" "$PYINSTALLER_WORK_DIR" "$FINAL_BACKEND_DIST"
 
 "$BACKEND_PYTHON" -m PyInstaller \
-  --noconfirm \
-  --clean \
-  --onedir \
-  --name main \
-  --distpath "$BACKEND_TEMP_DIST" \
-  --workpath "$PYINSTALLER_WORK_DIR/work" \
-  --specpath "$PYINSTALLER_WORK_DIR/spec" \
-  --paths "$ROOT_DIR" \
-  --collect-submodules shared \
-  --add-data "$ROOT_DIR/backend/data${DATA_SEPARATOR}data" \
-  --add-data "$ROOT_DIR/backend/models${DATA_SEPARATOR}models" \
-  --add-data "$ROOT_DIR/backend/classla_models${DATA_SEPARATOR}classla_models" \
+  "${PYINSTALLER_ARGS[@]}" \
   "$ROOT_DIR/backend/main.py"
 
 cp -R "$BACKEND_TEMP_DIST/main/." "$FINAL_BACKEND_DIST/"
