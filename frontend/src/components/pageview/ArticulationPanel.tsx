@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchArticulation, type ArticulationDetail } from "../../api";
 import type { Token } from "../pageTypes";
 import { AudioWaveform, Pause, Play } from "lucide-react";
@@ -1325,12 +1325,6 @@ export default function ArticulationPanel({
   const [morphSourceFeature, setMorphSourceFeature] = useState<ArticulationDetail["feature"] | null>(null);
   const previousFeatureRef = useRef<ArticulationDetail["feature"] | null>(null);
   const sequenceRef = useRef<HTMLDivElement>(null);
-  const [highlightRect, setHighlightRect] = useState<{
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1468,46 +1462,6 @@ export default function ArticulationPanel({
     });
   }, [items, language, tokens]);
 
-  useLayoutEffect(() => {
-    if (!activeItem || !sequenceRef.current) {
-      setHighlightRect(null);
-      return;
-    }
-
-    const nodes = Array.from(
-      sequenceRef.current.querySelectorAll<HTMLElement>(
-        `[data-token-index="${activeItem.token_index}"][data-segment-ids]`,
-      ),
-    ).filter((node) => {
-      const ids = (node.dataset.segmentIds ?? "")
-        .split(",")
-        .filter((value) => value.trim().length > 0)
-        .map((value) => Number(value))
-        .filter((value) => Number.isFinite(value));
-      return ids.includes(activeItem.segment_index);
-    });
-
-    if (nodes.length === 0) {
-      setHighlightRect(null);
-      return;
-    }
-
-    const containerRect = sequenceRef.current.getBoundingClientRect();
-    const { scrollLeft, scrollTop } = sequenceRef.current;
-    const rects = nodes.map((node) => node.getBoundingClientRect());
-    const left = Math.min(...rects.map((rect) => rect.left)) - containerRect.left + scrollLeft;
-    const right = Math.max(...rects.map((rect) => rect.right)) - containerRect.left + scrollLeft;
-    const top = Math.min(...rects.map((rect) => rect.top)) - containerRect.top + scrollTop;
-    const bottom = Math.max(...rects.map((rect) => rect.bottom)) - containerRect.top + scrollTop;
-
-    setHighlightRect({
-      left,
-      top,
-      width: right - left,
-      height: bottom - top,
-    });
-  }, [activeItem, tokenLayouts]);
-
   if (error || assetsError) {
     return <div className="p-5 text-sm text-red-600">{error ?? assetsError}</div>;
   }
@@ -1519,17 +1473,6 @@ export default function ArticulationPanel({
   return (
     <div className="flex w-full h-full flex-col overflow-hidden">
       <div ref={sequenceRef} className="relative flex flex-wrap items-start content-start justify-start gap-y-5 gap-x-3 leading-none text-neutral-900 overflow-y-scroll py-3 px-3 min-h-1/2">
-        {highlightRect && (
-          <div
-            className="pointer-events-none absolute rounded-sm bg-neutral-200/90 transition-all duration-200 "
-            style={{
-              left: highlightRect.left,
-              top: highlightRect.top,
-              width: highlightRect.width,
-              height: highlightRect.height,
-            }}
-          />
-        )}
         {tokenLayouts.map((layout) => {
           return (
             <div key={`${layout.tokenIndex}-${layout.tokenSurface}`} className="relative z-10 flex items-start">
@@ -1616,19 +1559,19 @@ export default function ArticulationPanel({
             value={playbackSpeed}
             onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
             className="h-6 w-full appearance-none bg-transparent cursor-pointer
-              [&::-webkit-slider-runnable-track]:h-3
+              [&::-webkit-slider-runnable-track]:h-1
               [&::-webkit-slider-runnable-track]:rounded-sm
-              [&::-webkit-slider-runnable-track]:bg-neutral-300
+              [&::-webkit-slider-runnable-track]:bg-neutral-200
               [&::-webkit-slider-thumb]:-mt-1
-              [&::-webkit-slider-thumb]:h-5
+              [&::-webkit-slider-thumb]:h-3
               [&::-webkit-slider-thumb]:w-3
               [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:rounded-sm
+              [&::-webkit-slider-thumb]:rounded-full
               [&::-webkit-slider-thumb]:bg-neutral-800
               [&::-moz-range-track]:h-2
-              [&::-moz-range-track]:rounded-sm
-              [&::-moz-range-track]:bg-neutral-300
-              [&::-moz-range-thumb]:h-5
+              [&::-moz-range-track]:rounded-full
+              [&::-moz-range-track]:bg-neutral-200
+              [&::-moz-range-thumb]:h-3
               [&::-moz-range-thumb]:w-3
               [&::-moz-range-thumb]:rounded-sm
               [&::-moz-range-thumb]:border-0
