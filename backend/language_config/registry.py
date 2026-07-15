@@ -4,7 +4,7 @@ import importlib
 import re
 
 
-BASE_DIR = Path("./data/static")
+BASE_DIR = Path(__file__).resolve().parent.parent / "data" / "static"
 
 _registry: Dict[str, dict] = {}
 

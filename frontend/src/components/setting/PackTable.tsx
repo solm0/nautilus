@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon, Trash2 } from "lucide-react";
 import { getInstalled, getPacks, installPack, uninstallPack } from "../../api";
 import PackModal from "./PackModal";
@@ -7,7 +7,7 @@ import Button from "../util/Button";
 import { isCapacitorApp } from "../../platform";
 import { invalidateInstalledLanguagesCache } from "../util/LanguageSelect";
 
-export const HIDDEN_PACK_VERSIONS = new Set([]);
+export const HIDDEN_PACK_VERSIONS = new Set(["1.0.0"]);
 
 export type Pack = {
   lang: string;
@@ -44,7 +44,6 @@ export const LANG_MAP: Record<string, string> = {
 
 export function normalizePacksForTargetRelease(packs: Pack[]): Pack[] {
   return packs
-    .filter((pack) => !HIDDEN_PACK_VERSIONS.has(pack.version))
     .sort((a, b) => {
       const langOrder = a.lang.localeCompare(b.lang, undefined, {
         sensitivity: "base",
@@ -68,6 +67,11 @@ export default function PackTable() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedInstall, setSelectedInstall] = useState<SelectedInstall | null>(null);
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
+  const expandedPointerDownRef = useRef<{
+    x: number;
+    y: number;
+    shouldIgnoreClick: boolean;
+  } | null>(null);
 
   async function refreshInstalled() {
     const data = await getInstalled();
@@ -104,11 +108,11 @@ export default function PackTable() {
     const chips: string[] = [];
 
     if (state.lemma_installed) {
-      chips.push("Lemmas");
+      chips.push("L");
     }
 
     if (state.ngram_installed) {
-      chips.push("Writing assistant");
+      chips.push("W");
     }
 
     if (chips.length === 0) {
@@ -120,7 +124,7 @@ export default function PackTable() {
         {chips.map((chip) => (
           <div
             key={chip}
-            className="bg-green-200 text-green-700/80 text-xs px-2 rounded-full"
+            className="bg-green-200 text-green-700/80 text-xs px-1.5 rounded-full"
           >
             {chip}
           </div>
@@ -236,6 +240,48 @@ export default function PackTable() {
     });
   }
 
+  function collapseLanguage(lang: string) {
+    setExpanded((prev) => ({
+      ...prev,
+      [lang]: false,
+    }));
+  }
+
+  function handleExpandedPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    expandedPointerDownRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      shouldIgnoreClick: false,
+    };
+  }
+
+  function handleExpandedPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    const pointerDown = expandedPointerDownRef.current;
+
+    if (!pointerDown) {
+      return;
+    }
+
+    const movedX = Math.abs(event.clientX - pointerDown.x);
+    const movedY = Math.abs(event.clientY - pointerDown.y);
+
+    if (movedX > 5 || movedY > 5) {
+      pointerDown.shouldIgnoreClick = true;
+    }
+  }
+
+  function handleExpandedClick(lang: string) {
+    const pointerDown = expandedPointerDownRef.current;
+
+    if (pointerDown?.shouldIgnoreClick || window.getSelection()?.toString()) {
+      expandedPointerDownRef.current = null;
+      return;
+    }
+
+    expandedPointerDownRef.current = null;
+    collapseLanguage(lang);
+  }
+
   return (
     <>
       <div className="flex flex-col">
@@ -248,7 +294,7 @@ export default function PackTable() {
           return (
             <div
               key={lang}
-              className="overflow-hidden border-t border-neutral-300 hover:bg-neutral-200 transition-colors"
+              className="overflow-hidden border-t border-neutral-300 hover:bg-neutral-100 transition-colors"
             >
               <button
                 onClick={() =>
@@ -273,15 +319,24 @@ export default function PackTable() {
               </button>
 
               {open && (
-                <div>
+                <div
+                  onPointerDown={handleExpandedPointerDown}
+                  onPointerUp={handleExpandedPointerUp}
+                  onClick={() => handleExpandedClick(lang)}
+                >
                   {langPacks.map((pack) => {
                     const state = getInstallState(pack);
                     const key = `${pack.lang}-${pack.version}`;
+                    const isHiddenVersion = HIDDEN_PACK_VERSIONS.has(pack.version);
+                    const shouldDisableRemove =
+                      isHiddenVersion || (!state.lemma_installed && !state.ngram_installed);
 
                     return (
                       <div
                         key={key}
-                        className="flex flex-col px-4 py-3 border-b border-neutral-100 last:border-b-0"
+                        className={`flex flex-col px-4 py-3 border-b border-neutral-200 last:border-b-0 transition-opacity ${
+                          isHiddenVersion ? "opacity-30" : ""
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="text-sm flex-1">
@@ -301,25 +356,30 @@ export default function PackTable() {
                                   text="Deactivate"
                                   black
                                   fit
+                                  disabled={isHiddenVersion}
                                 />
                               ) : (
                                 <Button
                                   onClick={() => handleActivate(pack)}
                                   text="Activate"
                                   fit
+                                  disabled={isHiddenVersion}
                                 />
                               )
                             ) : (
-                              <div className="flex items-start justify-end gap-2">
+                              <div
+                                className="flex items-start justify-end gap-2"
+                                onClick={(event) => event.stopPropagation()}
+                              >
                                 <div className="flex flex-col gap-2">
                                   <button
                                     type="button"
                                     onClick={() => openInstall(pack, "lemma")}
-                                    disabled={state.lemma_installed}
-                                    className={`rounded-sm border px-3 py-2 text-xs font-semibold transition-colors ${
+                                    disabled={isHiddenVersion || state.lemma_installed}
+                                    className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.lemma_installed
-                                        ? "border-green-600 bg-green-600 text-white"
-                                        : "border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-900 hover:text-neutral-100"
+                                        ? "bg-green-200 text-green-600"
+                                        : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
                                     {state.lemma_installed ? "Lemmas installed" : "Install lemmas"}
@@ -327,24 +387,25 @@ export default function PackTable() {
                                   <button
                                     type="button"
                                     onClick={() => openInstall(pack, "ngram")}
-                                    disabled={!state.lemma_installed || state.ngram_installed}
-                                    className={`rounded-sm border px-3 py-2 text-xs font-semibold transition-colors ${
+                                    disabled={isHiddenVersion || !state.lemma_installed || state.ngram_installed}
+                                    className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.ngram_installed
-                                        ? "border-green-600 bg-green-600 text-white"
-                                        : "border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-900 hover:text-neutral-100 disabled:opacity-40 disabled:pointer-events-none"
+                                        ? "bg-green-200 text-green-600"
+                                        : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
                                     {state.ngram_installed
-                                      ? "Writing assistant installed"
-                                      : "Install writing assistant"}
+                                      ? "Writing Assistant installed"
+                                      : "Install Writing Assistant"}
                                   </button>
                                 </div>
 
                                 <button
                                   type="button"
                                   onClick={() => handleUninstall(pack)}
-                                  className="rounded-sm border border-neutral-300 p-2 text-neutral-600 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
-                                  title="Remove lemmas and writing assistant"
+                                  disabled={shouldDisableRemove}
+                                  className="rounded-sm p-2 text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-transparent disabled:hover:text-neutral-600"
+                                  title="Remove Lemmas and Writing Assistant"
                                 >
                                   <Trash2 size={14} />
                                 </button>

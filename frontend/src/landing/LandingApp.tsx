@@ -157,7 +157,7 @@ function LandingApp() {
               <div className="flex-1 relative flex flex-col gap-4">
                 <img src="/landing/landing_1.png" className="grayscale brightness-120"/>
                 <p className="font-semibold">생성을 통계로 보조</p>
-                <p>n-gram 모델을 이용한 다음 단어 추천과 prefix 기반 검색을 제공합니다.</p>
+                <p>Writing Assistant를 이용한 다음 단어 추천과 prefix 기반 검색을 제공합니다.</p>
                 <ArrowDown size={15} />
                 <p>백지에서 문장을 시작하는 부담을 줄이고, 불완전한 어휘 지식<span className="text-xs">(예: 앞부분만 기억남, 굴절 어미가 헷갈림)</span>을 보완해 줍니다.</p>
               </div>
@@ -233,7 +233,7 @@ function LandingApp() {
                       생성을 통계로 보조
                     </p>
                     <h3 className="text-neutral-900">
-                      N-gram Editor
+                      Writing Assistant
                     </h3>
                   </div>
                   <p className="text-sm text-neutral-600">
@@ -253,7 +253,7 @@ function LandingApp() {
                       autofocus={false}
                     />
                   ) : (
-                    <DemoPlaceholder message={error ?? "Loading n-gram demo..."} />
+                    <DemoPlaceholder message={error ?? "Loading Writing Assistant demo..."} />
                   )}
                 </div>
               </div>
@@ -329,7 +329,7 @@ function LandingApp() {
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_9.png" />
                   <p className="font-semibold">Mutual</p>
-                  <p>Mutual 관계를 맺은 사용자와 주석을 공유하고 댓글을 주고받을 수 있습니다. 댓글을 쓸 때도 N-gram Editor를 사용할 수 있습니다.</p>
+                  <p>Mutual 관계를 맺은 사용자와 주석을 공유하고 댓글을 주고받을 수 있습니다. 댓글을 쓸 때도 Writing Assistant를 사용할 수 있습니다.</p>
                 </div>
               </div>
             </div>
@@ -341,18 +341,18 @@ function LandingApp() {
             <h3 className="mt-7">언어 팩</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>Wortschatz Leipzig에서 관리하는 언어별 위키피디아, 웹 코퍼스를 사용합니다.</li>
-              <li>N-gram 모델, prefix 인덱스, lemma 사전 등 언어별 데이터를 만들고, 이를 구문 분석 모델<span className="text-xs">(예: stanza, spacy, kiwi)</span> 파일과 함께 하나의 언어 팩으로 묶습니다.</li>
+              <li>Writing Assistant 모델, prefix 인덱스, lemma 사전 등 언어별 데이터를 만들고, 이를 구문 분석 모델<span className="text-xs">(예: stanza, spacy, kiwi)</span> 파일과 함께 하나의 언어 팩으로 묶습니다.</li>
               <li>데스크탑에서는 언어 팩을 로컬에 설치해 오프라인으로 분석할 수 있고, 모바일에서는 서버를 통해 같은 기능을 사용합니다.</li>
             </ul>
             <img src="/landing/landing_10.png" className="max-w-[40em]" />
 
-            <h3 className="mt-7">N-gram 학습과 prefix 인덱스 생성</h3>
+            <h3 className="mt-7">Writing Assistant 학습과 prefix 인덱스 생성</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>문장 코퍼스를 정규화하고 소문자화한 뒤 토큰으로 분리합니다. 허용 문자, 하이픈 처리, 정규화 방식은 언어별 규칙을 따릅니다.</li>
               <li>문장 양끝에 경계 토큰을 붙이고 unigram, bigram, trigram 빈도를 셉니다.</li>
               <li>각 문맥<span className="text-xs">(context)</span>마다 상위 후보만 남기고, raw count를 score로 정규화해 추천에 쓸 수 있게 합니다.</li>
               <li>prefix 인덱스는 단어 앞부분을 최대 5글자 정도까지 잘라 만들고, prefix별 상위 빈도 후보만 저장합니다.</li>
-              <li>런타임에서는 먼저 prefix로 후보를 좁힌 뒤, 앞 문맥의 n-gram 점수와 결합해 추천 순서를 다시 정합니다.</li>
+              <li>런타임에서는 먼저 prefix로 후보를 좁힌 뒤, 앞 문맥의 Writing Assistant 점수와 결합해 추천 순서를 다시 정합니다.</li>
             </ul>
             <h3 className="mt-7">Lemma 사전 생성</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">

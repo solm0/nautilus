@@ -48,7 +48,7 @@ export default function MyCommentsModal() {
             {dedupedItems.map(c => (
               <div
                 key={`${c.id}-${c.annotation_id}`}
-                className="min-h-12 flex items-center p-4 cursor-pointer border-b border-neutral-300 hover:bg-neutral-200 transition-colors group"
+                className="min-h-12 flex items-center p-4 cursor-pointer border-b border-neutral-300 hover:bg-neutral-100 transition-colors group"
                 onClick={() => {
                   navigate(`/annotations?id=${c.annotation_id}`);
                   setOpen(false);

@@ -799,7 +799,7 @@ export default function PageCore({
                     {isEditing ? (
                       <div className={`flex flex-col gap-2 px-3 py-2 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                         <textarea
-                          className={`min-w-[12em] bg-transparent focus:outline-none ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
+                          className={`bg-transparent focus:outline-none ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
                           value={draftMetadata}
                           onChange={(event) => setDraftMetadata(event.target.value)}
                           onKeyDown={(event) => {
@@ -835,7 +835,7 @@ export default function PageCore({
                       <div className={`flex flex-col ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                         {item.startsWith('https://')
                           ? (
-                            <a href={item} className="underline underline-offset-3 hover:text-neutral-400 transition-colors" target="_blank">{item}</a>
+                            <a href={item} className="underline underline-offset-3 hover:text-neutral-400 transition-colors max-w-105 truncate" target="_blank">{item}</a>
                           ) : (
                             <span className="select-text" style={{ userSelect: "text", WebkitUserSelect: "text" }}>
                               {item}
@@ -910,9 +910,9 @@ export default function PageCore({
               ) : null}
 
               {canManageMetadata && editingMetadataIndex === -1 ? (
-                <div className={`flex flex-col gap-2 bg-neutral-200/50 px-3 py-2 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
+                <div className={`flex flex-col gap-2 bg-neutral-200/50 px-3 py-2 w-105 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                   <textarea
-                    className={`min-w-[12em] focus:outline-none ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
+                    className={`min-w-[12em] focus:outline-none w-full ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
                     placeholder="Add metadata"
                     value={draftMetadata}
                     onChange={(event) => setDraftMetadata(event.target.value)}

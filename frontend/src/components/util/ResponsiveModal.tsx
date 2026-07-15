@@ -7,10 +7,17 @@ type Props = {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  big?: boolean
+  big?: boolean;
+  closeOnBackdrop?: boolean;
 };
 
-export function ResponsiveModal({ open, onClose, children, big=false }: Props) {
+export function ResponsiveModal({
+  open,
+  onClose,
+  children,
+  big = false,
+  closeOnBackdrop = true,
+}: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(open);
   const [translateY, setTranslateY] = useState(0);
@@ -105,7 +112,7 @@ export function ResponsiveModal({ open, onClose, children, big=false }: Props) {
       <div
         className="absolute inset-0 bg-neutral-700 transition-opacity duration-200"
         style={{ opacity: overlayOpacity }}
-        onClick={onClose}
+        onClick={closeOnBackdrop ? onClose : undefined}
       />
 
       {/* content */}
@@ -116,7 +123,7 @@ export function ResponsiveModal({ open, onClose, children, big=false }: Props) {
             ? "absolute bottom-0 w-full rounded-t-2xl pt-2 pb-7"
             : big
               ? "absolute top-1/2 left-1/2 w-200 h-auto -translate-x-1/2 -translate-y-1/2 rounded-lg pt-7"
-              : "absolute top-1/2 left-1/2 w-96 -translate-x-1/2 -translate-y-1/2 rounded-lg pt-7"
+              : "absolute top-1/2 left-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-lg pt-7"
           }
         `}
         style={

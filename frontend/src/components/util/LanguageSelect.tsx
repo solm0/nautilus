@@ -67,6 +67,7 @@ export default function LanguageSelect({
   options,
   allowUnselected = false,
   requireNgram = false,
+  onNgramInstalled,
 }: {
   language: string | null;
   setLanguage: (l: { lang: string } | null) => void;
@@ -76,6 +77,7 @@ export default function LanguageSelect({
   options?: { lang: string }[];
   allowUnselected?: boolean;
   requireNgram?: boolean;
+  onNgramInstalled?: (lang: string) => void;
 }) {
   const mobileApp = isCapacitorApp();
   const [languages, setLanguages] = useState<NormalizedLanguageOption[]>([]);
@@ -184,7 +186,7 @@ export default function LanguageSelect({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 items-start">
         <div className={`shrink-0 flex gap-1 w-auto min-w-12 h-10 p-1 rounded-sm items-center ${background ? "bg-neutral-200/80" : "bg-neutral-50/80"}`}>
           {loading && <p className="px-2 text-sm text-neutral-400">Loading...</p>}
 
@@ -216,9 +218,9 @@ export default function LanguageSelect({
           <button
             type="button"
             onClick={() => setInstallingPack(selectedPack)}
-            className="w-full rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
+            className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300"
           >
-            Install writing assistant for {selectedPack.lang}
+            Install Writing Assistant for {selectedPack.lang}
           </button>
         ) : null}
       </div>
@@ -234,6 +236,7 @@ export default function LanguageSelect({
             invalidateInstalledLanguagesCache();
             const packs = await loadInstalledPacks();
             setInstalledPacks(packs);
+            onNgramInstalled?.(installingPack.lang);
           }}
         />
       ) : null}

@@ -42,6 +42,7 @@ type ProgressPayload = {
   detail?: string;
   bytes?: string;
   model_percent?: number;
+  model_name?: string;
 };
 
 export default function PackModal({
@@ -64,7 +65,7 @@ export default function PackModal({
   const installedRef = useRef(false);
 
   const langName = LANG_MAP[lang] || lang;
-  const assetLabel = assetKind === "lemma" ? "lemmas" : "writing assistant";
+  const assetLabel = assetKind === "lemma" ? "lemmas" : "Writing Assistant";
 
   const stopPolling = () => {
     if (intervalRef.current !== null) {
@@ -112,10 +113,12 @@ export default function PackModal({
           } else if (nextStatus === "extracting_pack") {
             setStatusText("Extracting language pack...");
           } else if (nextStatus === "installing_model") {
+            const modelLabel = p.model_name || "analysis model";
+
             if (typeof p.model_percent === "number") {
-              setStatusText(`Installing analysis model... ${p.model_percent}%`);
+              setStatusText(`Installing ${modelLabel}... ${p.model_percent}%`);
             } else {
-              setStatusText("Installing analysis model...");
+              setStatusText(`Installing ${modelLabel}...`);
             }
           } else if (nextStatus === "verifying_install") {
             setStatusText("Finalizing installation...");
@@ -164,10 +167,10 @@ export default function PackModal({
       : Math.round(progress * 100);
 
   return (
-    <ResponsiveModal open={true} onClose={handleClose}>
+    <ResponsiveModal open={true} onClose={handleClose} closeOnBackdrop={false}>
       <div className="flex flex-col gap-6 min-w-[320px]">
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-lg font-semibold pr-6">
             {langName} {version} {assetLabel} installing
           </h2>
 
@@ -197,6 +200,7 @@ export default function PackModal({
               {statusDetail}
             </div>
           ) : null}
+
         </div>
 
         {done && (

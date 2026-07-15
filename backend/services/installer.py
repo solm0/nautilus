@@ -6,6 +6,7 @@ import io
 import re
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 import shutil
 from language_config.model_store import ensure_model_installed, model_installed, remove_models
@@ -13,6 +14,7 @@ from language_config.registry import invalidate_language as invalidate_nlp_langu
 from language_config.sqlite_pack import (
     LEMMA_TABLES,
     NGRAM_TABLES,
+    NGRAM_DB_NAMES,
     find_lemma_db,
     find_ngram_db,
     has_required_tables,
@@ -21,16 +23,18 @@ from shared.services.lemma_service import invalidate_language as invalidate_lemm
 
 load_dotenv()
 
-DATA_DIR = Path("./data/static")
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "static"
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 progress_map = {}
+ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 TQDM_PERCENT_RE = re.compile(r"(?P<percent>\d{1,3})%\|")
 TQDM_BYTES_RE = re.compile(
     r"(?P<current>\d+(?:\.\d+)?[KMG]?)/(?P<total>\d+(?:\.\d+)?[KMG]?)"
 )
+DOWNLOAD_URL_RE = re.compile(r"Downloading\s+(?P<url>https?://\S+?)(?::\s|$)")
 
 
 def get_install_state(lang: str, version: str):
@@ -39,10 +43,11 @@ def get_install_state(lang: str, version: str):
     ngram_db_path = find_ngram_db(path)
     model_ready = model_installed(lang)
 
-    lemma_installed = (
+    lemma_data_ready = (
         lemma_db_path is not None
         and has_required_tables(lemma_db_path, LEMMA_TABLES)
     )
+    lemma_installed = lemma_data_ready and model_ready
     ngram_installed = (
         ngram_db_path is not None
         and has_required_tables(ngram_db_path, NGRAM_TABLES)
@@ -61,6 +66,24 @@ def invalidate_runtime(lang: str):
     invalidate_lemma_language(lang)
 
 
+def clear_existing_install_target(lang: str, version: str, asset_kind: str):
+    path = DATA_DIR / lang / version
+
+    if asset_kind == "lemma":
+        if path.exists():
+            shutil.rmtree(path, ignore_errors=True)
+        remove_models(lang)
+        return
+
+    if not path.exists():
+        return
+
+    for db_name in NGRAM_DB_NAMES:
+        candidate = path / db_name
+        if candidate.exists():
+            candidate.unlink()
+
+
 def set_progress(task_id: str, progress: float, status: str, **extra):
     payload = {
         "progress": max(0.0, min(progress, 1.0)),
@@ -71,7 +94,7 @@ def set_progress(task_id: str, progress: float, status: str, **extra):
 
 
 def parse_model_download_output(text: str):
-    line = text.strip()
+    line = ANSI_ESCAPE_RE.sub("", text).strip()
 
     if not line:
         return None
@@ -79,14 +102,20 @@ def parse_model_download_output(text: str):
     normalized = " ".join(line.split())
     percent_match = TQDM_PERCENT_RE.search(normalized)
     bytes_match = TQDM_BYTES_RE.search(normalized)
+    model_name = extract_model_name(normalized)
 
     if not percent_match and not bytes_match:
+        if model_name is None:
+            return None
+
         return {
             "detail": normalized,
+            "model_name": model_name,
         }
 
     parsed = {
         "detail": normalized,
+        "model_name": model_name,
     }
 
     if percent_match:
@@ -99,6 +128,24 @@ def parse_model_download_output(text: str):
         parsed["bytes"] = f"{bytes_match.group('current')}/{bytes_match.group('total')}"
 
     return parsed
+
+
+def extract_model_name(text: str) -> str | None:
+    url_match = DOWNLOAD_URL_RE.search(text)
+
+    if not url_match:
+        return None
+
+    url_path = urlparse(url_match.group("url")).path
+    basename = Path(url_path).name.strip()
+
+    if not basename:
+        return None
+
+    if basename.endswith(".zip"):
+        return basename[:-4]
+
+    return basename
 
 
 class ProgressCaptureStream(io.TextIOBase):
@@ -145,6 +192,7 @@ class ProgressCaptureStream(io.TextIOBase):
         detail = parsed.get("detail")
         percent = parsed.get("percent")
         bytes_text = parsed.get("bytes")
+        model_name = parsed.get("model_name")
 
         if percent is None:
             set_progress(
@@ -154,6 +202,7 @@ class ProgressCaptureStream(io.TextIOBase):
                 phase="model",
                 detail=detail,
                 bytes=bytes_text,
+                model_name=model_name,
             )
             return
 
@@ -169,6 +218,7 @@ class ProgressCaptureStream(io.TextIOBase):
             detail=detail,
             bytes=bytes_text,
             model_percent=percent,
+            model_name=model_name,
         )
 
 
@@ -199,6 +249,8 @@ def install_pack(
 
     if asset_kind == "ngram" and not get_install_state(lang, version)["lemma_installed"]:
         raise Exception("lemma pack must be installed first")
+
+    clear_existing_install_target(lang, version, asset_kind)
 
     api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{lang}-v{version}"
 

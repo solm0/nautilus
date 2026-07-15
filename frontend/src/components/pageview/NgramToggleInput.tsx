@@ -1,4 +1,12 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import NgramWriter, { type NgramWriterHandle } from "./NgramWriter";
 import LanguageSelect from "../util/LanguageSelect";
 import { LANG_MAP } from "../setting/PackTable";
@@ -67,9 +75,14 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   const [language, setLanguage] = useState<{
     lang: string;
   } | null>(pageLanguage ? {lang: pageLanguage} : null);
+  const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties>({});
+  const [writerRefreshKey, setWriterRefreshKey] = useState(0);
 
   const initializedRef = useRef(false);
   const writerRef = useRef<NgramWriterHandle>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const plainRef = useRef<HTMLSpanElement>(null);
+  const assistantRef = useRef<HTMLSpanElement>(null);
 
   // 🔹 최초 1회만 text → tokens
   useEffect(() => {
@@ -94,6 +107,14 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
 
       return next;
     });
+  };
+
+  const handleNgramInstalled = (installedLang: string) => {
+    if (language?.lang !== installedLang) return;
+
+    setUseNgram(true);
+    setTokens(textToTokens(value));
+    setWriterRefreshKey((prev) => prev + 1);
   };
 
   // 🔹 ngram 사용 중일 때만 tokens → text
@@ -129,24 +150,59 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
     },
   }), [onChange, tokens, useNgram, value]);
 
+  useLayoutEffect(() => {
+    const updateIndicator = () => {
+      const toggle = toggleRef.current;
+      const activeLabel = useNgram ? assistantRef.current : plainRef.current;
+      if (!toggle || !activeLabel) return;
+
+      setIndicatorStyle({
+        left: activeLabel.offsetLeft,
+        width: activeLabel.offsetWidth,
+      });
+    };
+
+    updateIndicator();
+
+    const observer = new ResizeObserver(updateIndicator);
+    if (toggleRef.current) observer.observe(toggleRef.current);
+    if (plainRef.current) observer.observe(plainRef.current);
+    if (assistantRef.current) observer.observe(assistantRef.current);
+
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [useNgram]);
+
   return (
     <div className="w-full h-full flex flex-col items-start gap-2 overflow-y-scroll">
 
-      <div className="w-full flex gap-4 items-center justify-center">
+      <div className="w-full flex gap-4 items-start justify-center">
         <button
+          ref={toggleRef}
           type="button"
           onClick={handleToggle}
-          className="shrink-0 group relative h-8 w-auto items-center rounded-full bg-neutral-200/80 p-0.3 transition-colors hover:bg-neutral-200 dark:bg-neutral-400 dark:hover:bg-neutral-500 text-sm flex px-1"
+          className="shrink-0 relative inline-flex h-8 items-center rounded-full bg-neutral-200/80 p-0.5 text-xs transition-colors hover:bg-neutral-200 dark:bg-neutral-400 dark:hover:bg-neutral-500 mt-1"
         >
           <div
-            className={`absolute flex h-7 w-auto px-2 items-center justify-center rounded-full bg-neutral-50 text-neutral-700 shadow-sm transition-transform duration-200 ${
-              useNgram ? "translate-x-12" : "-translate-x-0.5"
-            }`}
+            className="absolute bottom-0.5 top-0.5 rounded-full bg-neutral-50 text-neutral-700 shadow-sm transition-all duration-200"
+            style={indicatorStyle}
+          />
+          <span
+            ref={plainRef}
+            className="z-10 flex h-7 items-center justify-center whitespace-nowrap px-3 text-center"
           >
-            <span className="opacity-0">{useNgram ? 'N-gram' : 'Plain'}</span>
-          </div>
-          <span className="px-2 z-10">Plain</span>
-          <span className="px-2 z-10">N-gram</span>
+            Plain
+          </span>
+          <span
+            ref={assistantRef}
+            className="z-10 flex h-7 items-center justify-center whitespace-nowrap px-3 text-center"
+          >
+            Writing Assistant
+          </span>
         </button>
 
         <LanguageSelect
@@ -155,13 +211,14 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           background={background}
           options={languageOptions}
           requireNgram
+          onNgramInstalled={handleNgramInstalled}
         />
       </div>
 
       {useNgram && language ? (
         <NgramWriter
           ref={writerRef}
-          key={language.lang}
+          key={`${language.lang}-${writerRefreshKey}`}
           language={language.lang}
           tokens={tokens}
           setTokens={setTokens}
