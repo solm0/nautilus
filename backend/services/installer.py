@@ -19,11 +19,12 @@ from language_config.sqlite_pack import (
     find_ngram_db,
     has_required_tables,
 )
+from runtime_paths import get_backend_root
 from shared.services.lemma_service import invalidate_language as invalidate_lemma_language
 
 load_dotenv()
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "static"
+DATA_DIR = get_backend_root() / "data" / "static"
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")

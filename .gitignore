@@ -22,6 +22,10 @@ dist
 dist-ssr
 *.local
 
+.build/
+backend-dist
+dist-electron
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

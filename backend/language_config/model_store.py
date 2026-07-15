@@ -3,8 +3,10 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from runtime_paths import get_backend_root
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+
+BASE_DIR = get_backend_root()
 STANZA_MODEL_DIR = BASE_DIR / "models"
 CLASSLA_MODEL_DIR = BASE_DIR / "classla_models"
 

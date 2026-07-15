@@ -4,8 +4,9 @@ from typing import Dict
 
 from language_config.registry import get_latest_version_path
 from language_config.sqlite_pack import LanguagePackDB, find_pack_db
+from runtime_paths import get_backend_root
 
-BASE_DIR = Path(__file__).resolve().parents[2] / "backend" / "data" / "static"
+BASE_DIR = get_backend_root() / "data" / "static"
 
 # lang별 캐시
 _registry: Dict[str, dict] = {}

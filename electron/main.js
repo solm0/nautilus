@@ -247,8 +247,17 @@ async function startBackend() {
     ? []
     : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "0.0.0.0"];
 
+  const env = {
+    ...process.env,
+    NAUTILUS_BACKEND_ROOT: backendCwd,
+    NAUTILUS_FRONTEND_DIST: isPackaged
+      ? path.join(backendCwd, "frontend")
+      : path.join(__dirname, "..", "frontend", "dist"),
+  };
+
   backendProcess = spawn(backendExecutable, args, {
     cwd: backendCwd,
+    env,
     stdio: "pipe",
   });
 
