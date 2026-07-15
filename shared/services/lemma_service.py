@@ -1,10 +1,28 @@
 import random
+import os
 from pathlib import Path
 from typing import Dict
 
 from language_config.registry import get_latest_version_path
 from language_config.sqlite_pack import LanguagePackDB, find_pack_db
-from runtime_paths import get_backend_root
+
+try:
+    from runtime_paths import get_backend_root as _get_backend_root
+except ModuleNotFoundError:
+    _get_backend_root = None
+
+
+def get_backend_root() -> Path:
+    override = os.getenv("NAUTILUS_BACKEND_ROOT")
+
+    if override:
+        return Path(override).resolve()
+
+    if _get_backend_root is not None:
+        return _get_backend_root()
+
+    return Path(__file__).resolve().parents[2] / "backend"
+
 
 BASE_DIR = get_backend_root() / "data" / "static"
 
