@@ -1,6 +1,9 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+import uvicorn
 
 from routers.lemmas_router import router as lemmas_router
 from routers.lang_router import router as lang_router
@@ -68,3 +71,12 @@ def serve_frontend_asset(full_path: str):
         raise HTTPException(status_code=404, detail="Frontend build not found")
 
     return FileResponse(index_file)
+
+
+def run() -> None:
+    port = int(os.getenv("NAUTILUS_BACKEND_PORT", "8010"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+if __name__ == "__main__":
+    run()

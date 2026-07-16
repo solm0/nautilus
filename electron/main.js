@@ -417,6 +417,8 @@ app.whenReady().then(async () => {
       "Backend 오류",
       `FastAPI 서버를 시작할 수 없습니다.\n${e.message || "백엔드 로그를 확인하세요."}`
     );
+    app.quit();
+    return;
   }
 
   createWindow();
