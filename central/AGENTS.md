@@ -24,6 +24,8 @@
 - Mobile uses `central` for account/content calls and `/api/mobile/*`
 - Desktop Electron should still use the local `backend` for local language analysis
 - If behavior should match both local and central servers, compare with `shared` before changing duplicated service code
+- Do not assume language packs or lemma DBs live under `backend/data/static` when working on `central`
+- For `central`, prefer `central/data/static` or an explicit runtime override such as `NAUTILUS_DATA_STATIC_ROOT`
 
 ## Notes
 

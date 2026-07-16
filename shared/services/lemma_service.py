@@ -12,19 +12,30 @@ except ModuleNotFoundError:
     _get_backend_root = None
 
 
-def get_backend_root() -> Path:
-    override = os.getenv("NAUTILUS_BACKEND_ROOT")
-
+def get_static_data_root() -> Path:
+    override = os.getenv("NAUTILUS_DATA_STATIC_ROOT")
     if override:
         return Path(override).resolve()
 
+    candidates: list[Path] = []
+
     if _get_backend_root is not None:
-        return _get_backend_root()
+        candidates.append(_get_backend_root() / "data" / "static")
 
-    return Path(__file__).resolve().parents[2] / "backend"
+    repo_root = Path(__file__).resolve().parents[2]
+    candidates.extend([
+        repo_root / "central" / "data" / "static",
+        repo_root / "backend" / "data" / "static",
+    ])
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return candidates[0]
 
 
-BASE_DIR = get_backend_root() / "data" / "static"
+BASE_DIR = get_static_data_root()
 
 # lang별 캐시
 _registry: Dict[str, dict] = {}
@@ -35,9 +46,12 @@ def _load_language(lang: str):
         return _registry[lang]
 
     lang_dir = BASE_DIR / lang
-    version_path = get_latest_version_path(lang_dir)
-    db_path = find_pack_db(version_path)
-    pack_db = LanguagePackDB(db_path) if db_path else None
+    pack_db = None
+
+    if lang_dir.exists():
+        version_path = get_latest_version_path(lang_dir)
+        db_path = find_pack_db(version_path)
+        pack_db = LanguagePackDB(db_path) if db_path else None
 
     data = {
         "pack_db": pack_db,

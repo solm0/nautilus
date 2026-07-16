@@ -23,3 +23,5 @@
 
 - Names mirror service modules under `backend/services` and `central/services`
 - Before editing, confirm whether this folder is actually imported by the target app or just kept in sync manually
+- If a shared service touches language-pack files, do not hardcode `backend/data/static` as the only source
+- Shared path resolution must work for both local `backend` and cloud `central`, or accept an explicit override such as `NAUTILUS_DATA_STATIC_ROOT`
