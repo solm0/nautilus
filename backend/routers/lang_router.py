@@ -2,6 +2,8 @@ from fastapi import APIRouter, BackgroundTasks
 import uuid
 import httpx
 import os
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 from services.installer import (
@@ -14,6 +16,12 @@ from services.installer import (
 router = APIRouter(prefix="/api/lang", tags=["lang"])
 
 CENTRAL_API = (os.getenv("CENTRAL_API") or "https://nautilus.solmi.wiki/api").rstrip("/")
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from central.packs import PACKS
 
 
 # -----------------------------
@@ -21,10 +29,14 @@ CENTRAL_API = (os.getenv("CENTRAL_API") or "https://nautilus.solmi.wiki/api").rs
 # -----------------------------
 
 def fetch_packs():
-    with httpx.Client(http2=False, timeout=10.0) as client:
-        res = client.get(f"{CENTRAL_API}/lang/packs")
-        res.raise_for_status()
-        return res.json()
+    try:
+        with httpx.Client(http2=False, timeout=10.0) as client:
+            res = client.get(f"{CENTRAL_API}/lang/packs")
+            res.raise_for_status()
+            return res.json()
+    except Exception as exc:
+        print(f"[lang_router] failed to fetch packs from {CENTRAL_API}: {exc}")
+        return PACKS
 
 # -----------------------------
 # INSTALLED STATUS

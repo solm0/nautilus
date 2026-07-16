@@ -38,6 +38,5 @@ dist-ssr
 .build/
 backend-dist
 dist-electron
-
 .build-check/
 .build-check-2/
