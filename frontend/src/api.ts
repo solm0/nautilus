@@ -8,13 +8,9 @@ import {
   getEnabledMobileLanguages,
 } from "./mobilePacks";
 
-function requireEnv(value: string | undefined, label: string) {
-  if (!value) {
-    throw new Error(`${label} is not configured`);
-  }
-
-  return value;
-}
+const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
+const DEFAULT_ELECTRON_LOCAL_API = "http://localhost:8010/api";
+const DEFAULT_WEB_LOCAL_API = "http://localhost:8000/api";
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -25,30 +21,24 @@ function resolveCentralApi() {
 
   if (platform === "electron") {
     return trimTrailingSlash(
-      requireEnv(
-        import.meta.env.VITE_ELECTRON_CENTRAL_API
-          ?? import.meta.env.VITE_CENTRAL_API,
-        "central api",
-      ),
+      import.meta.env.VITE_ELECTRON_CENTRAL_API
+        ?? import.meta.env.VITE_CENTRAL_API
+        ?? DEFAULT_CENTRAL_API,
     );
   }
 
   if (platform === "mobile") {
     return trimTrailingSlash(
-      requireEnv(
-        import.meta.env.VITE_MOBILE_CENTRAL_API
-          ?? import.meta.env.VITE_CENTRAL_API,
-        "mobile central api",
-      ),
+      import.meta.env.VITE_MOBILE_CENTRAL_API
+        ?? import.meta.env.VITE_CENTRAL_API
+        ?? DEFAULT_CENTRAL_API,
     );
   }
 
   return trimTrailingSlash(
-    requireEnv(
-      import.meta.env.VITE_WEB_CENTRAL_API
-        ?? import.meta.env.VITE_CENTRAL_API,
-      "web central api",
-    ),
+    import.meta.env.VITE_WEB_CENTRAL_API
+      ?? import.meta.env.VITE_CENTRAL_API
+      ?? DEFAULT_CENTRAL_API,
   );
 }
 
@@ -59,7 +49,7 @@ function resolveLocalApi(centralApi: string) {
     return trimTrailingSlash(
       import.meta.env.VITE_ELECTRON_LOCAL_API
         ?? import.meta.env.VITE_LOCAL_API
-        ?? "http://localhost:8010/api",
+        ?? DEFAULT_ELECTRON_LOCAL_API,
     );
   }
 
@@ -73,7 +63,7 @@ function resolveLocalApi(centralApi: string) {
   return trimTrailingSlash(
     import.meta.env.VITE_WEB_LOCAL_API
       ?? import.meta.env.VITE_LOCAL_API
-      ?? "http://localhost:8000/api",
+      ?? DEFAULT_WEB_LOCAL_API,
   );
 }
 
