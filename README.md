@@ -61,15 +61,15 @@ Codex용 운영 가이드는 각 폴더의 `AGENTS.md`를 참고하면 됩니다
 
 GitHub Actions는 태그별로 서로 다른 워크플로우를 실행합니다.
 
-- Desktop: [.github/workflows/electron-build.yml](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/.github/workflows/electron-build.yml)
-- Android: [.github/workflows/android-build.yml](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/.github/workflows/android-build.yml)
+- Desktop: `.github/workflows/electron-build.yml`
+- Android: `.github/workflows/android-build.yml`
 
 배포 버전 숫자도 플랫폼별로 따로 관리합니다.
 
-- Desktop 버전 기준: [electron/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/electron/package.json)
-- Android 버전 기준: [frontend/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/frontend/package.json)
+- Desktop 버전 기준: `electron/package.json`
+- Android 버전 기준: `frontend/package.json`
 
-버전 동기화 스크립트는 [scripts/sync-app-version.mjs](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/scripts/sync-app-version.mjs)입니다.
+버전 동기화 스크립트는 `scripts/sync-app-version.mjs`입니다.
 
 - Desktop 버전은 `central/static/latest-version-desktop.json`에 반영됩니다.
 - Android 버전은 `frontend/android/app/build.gradle`의 `versionCode`, `versionName`과 `central/static/latest-version-android.json`에 반영됩니다.

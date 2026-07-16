@@ -5,7 +5,6 @@ import Desk from "../components/lemma_expansions/Desk";
 import PageContent from "../components/pageview/PageContent";
 import NgramToggleInput from "../components/pageview/NgramToggleInput";
 import Logotype from "../components/svgs/Logotype";
-import Button from "../components/util/Button";
 import { ArrowDown } from "lucide-react";
 
 type DemoPayload = {
@@ -18,6 +17,23 @@ type DemoPayload = {
 };
 
 const fixedLanguageOptions = [{ lang: "en" }];
+const desktopDownloads = [
+  {
+    label: "macOS",
+    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-macos/Nautilus-1.0.0-arm64.dmg",
+  },
+  {
+    label: "Linux",
+    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-linux/Nautilus-1.0.0-arm64.dmg",
+  },
+  {
+    label: "Windows",
+    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-windows/Nautilus-1.0.0-arm64.dmg",
+  },
+] as const;
+
+const androidDownload =
+  "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/android/app-android-v1.0.0/Nautilus-1.0.0-android.apk";
 
 function LandingApp() {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
@@ -103,11 +119,38 @@ function LandingApp() {
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-lg font-semibold">Download (6월 중 배포 예정)</p>
-              <div className="flex gap-4 items-center">
-                <Button text="Desktop App" disabled onClick={()=>console.log('desktop')} black/>
-                <Button text="Android App" disabled onClick={()=>console.log('android')} black/>
-                <Button text="Chrome Extension" disabled onClick={()=>console.log('chrome')} black/>
+              <p className="text-lg font-semibold">Download</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-neutral-600">Desktop App</p>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {desktopDownloads.map((download) => (
+                      <a
+                        key={download.label}
+                        href={download.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
+                      >
+                        {download.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-neutral-600">Android App</p>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <a
+                      href={androidDownload}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
+                    >
+                      APK Download
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -126,12 +169,6 @@ function LandingApp() {
               </a>
               <a href="#use" className="transition-colors hover:text-neutral-900">
                 3. How to use
-              </a>
-              <a href="#works" className="transition-colors hover:text-neutral-900">
-                4. How it works
-              </a>
-              <a href="#contribute" className="transition-colors hover:text-neutral-900">
-                5. Become a Contributor!
               </a>
             </div>
           </nav>
@@ -336,7 +373,7 @@ function LandingApp() {
           </section>
 
           {/* works */}
-          <section id="works" className="flex flex-col gap-7">
+          {/* <section id="works" className="flex flex-col gap-7">
             <h2 className="font-serif text-4xl! pt-8">4. How it works</h2>
             <h3 className="mt-7">언어 팩</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
@@ -434,17 +471,9 @@ function LandingApp() {
 }`}</pre>
               </div>
             </div>
-          </section>
+          </section> */}
 
-          {/* contribute */}
-          <section id="contribute" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl! pt-8">5. Become a contributor!</h2>
-            <div className="flex gap-4 flex-col max-w-[40em]">
-              <p>당신의 언어, 혹은 지금 배우고 있는 언어를 Nautilus에 추가하고 발전시키는 일을 함께해 주세요. 그 언어에 매력을 느낀 이유나 학습하면서 겪은 불편 등 주관적인 이야기 역시 큰 도움이 됩니다.</p>
-              <a href="mailto:solmi-@kookmin.ac.kr">solmi-@kookmin.ac.kr</a>
-            </div>
-            
-          </section>
+          
 
 
           <footer className="border-t border-neutral-300 h-56 text-sm text-neutral-400 pt-4"></footer>

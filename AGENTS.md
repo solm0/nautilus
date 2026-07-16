@@ -1,4 +1,4 @@
-# Repo Guide For Codex
+# Repo Guide For Agents
 
 ## Read this first
 

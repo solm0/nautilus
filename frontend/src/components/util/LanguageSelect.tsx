@@ -40,6 +40,12 @@ function normalizeOptions(options: LanguageOption[]) {
   }));
 }
 
+function normalizeInstalledPacksResponse(
+  res: unknown,
+): InstalledPack[] {
+  return Array.isArray(res) ? (res as InstalledPack[]) : [];
+}
+
 async function loadInstalledPacks() {
   if (installedPacksCache) {
     return installedPacksCache;
@@ -48,8 +54,9 @@ async function loadInstalledPacks() {
   if (!installedPacksPromise) {
     installedPacksPromise = getInstalled()
       .then((res: InstalledPack[]) => {
-        installedPacksCache = res;
-        return res;
+        const normalized = normalizeInstalledPacksResponse(res);
+        installedPacksCache = normalized;
+        return normalized;
       })
       .finally(() => {
         installedPacksPromise = null;
@@ -91,6 +98,15 @@ export default function LanguageSelect({
   useEffect(() => {
     let active = true;
 
+    if (options) {
+      setLanguages(normalizeOptions(options));
+      setInstalledPacks([]);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     if (!installedPacksCache) {
       setLoading(true);
     }
@@ -99,24 +115,15 @@ export default function LanguageSelect({
       .then((packs) => {
         if (!active) return;
         setInstalledPacks(packs);
-
-        if (options) {
-          setLanguages(normalizeOptions(options));
-        } else {
-          setLanguages(
-            packs
-              .filter((pack) => pack.lemma_installed || pack.installed)
-              .map((pack) => ({ lang: pack.lang })),
-          );
-        }
+        setLanguages(
+          packs
+            .filter((pack) => pack.lemma_installed || pack.installed)
+            .map((pack) => ({ lang: pack.lang })),
+        );
       })
       .catch(() => {
         if (!active) return;
-        if (options) {
-          setLanguages(normalizeOptions(options));
-        } else {
-          setLanguages([]);
-        }
+        setLanguages([]);
         setInstalledPacks([]);
       })
       .finally(() => {

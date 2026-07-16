@@ -127,13 +127,13 @@ GitHub Actions를 쓰는 이유도 바로 이 점 때문입니다.
 
 현재 릴리스 버전은 플랫폼별로 따로 관리합니다.
 
-- Desktop 버전: [electron/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/electron/package.json)
-- Android 버전: [frontend/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/frontend/package.json)
+- Desktop 버전: `electron/package.json`
+- Android 버전: `frontend/package.json`
 
-[scripts/sync-app-version.mjs](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/scripts/sync-app-version.mjs)를 실행하면:
+`scripts/sync-app-version.mjs`를 실행하면:
 
 - Desktop 최신 버전 정보는 `central/static/latest-version-desktop.json`에 반영됩니다.
 - Android 최신 버전 정보는 `central/static/latest-version-android.json`에 반영됩니다.
 - Android 네이티브 버전은 `frontend/android/app/build.gradle`에 반영됩니다.
 
-Electron 빌드 시에는 [scripts/build-electron.sh](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/scripts/build-electron.sh)가 `APP_VERSION_OVERRIDE`를 사용해서 데스크톱 버전 번호가 프론트 설정 페이지에도 보이도록 맞춥니다.
+Electron 빌드 시에는 `scripts/build-electron.sh`가 `APP_VERSION_OVERRIDE`를 사용해서 데스크톱 버전 번호가 프론트 설정 페이지에도 보이도록 맞춥니다.

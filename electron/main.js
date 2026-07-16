@@ -7,6 +7,8 @@ const { exec } = require("child_process");
 
 let mainWindow;
 let backendProcess;
+let backendReady = false;
+let backendStartError = null;
 const DEEP_LINK_PROTOCOL = "nautilus";
 const pendingDeepLinks = [];
 const DEV_BACKEND_PORT = 8010;
@@ -219,8 +221,9 @@ function killPort(port) {
 
 // ─── FastAPI 서버 실행 ───────────────────────────────────────
 async function startBackend() {
-
   await killPort(DEV_BACKEND_PORT);
+  backendReady = false;
+  backendStartError = null;
 
   // 개발: 시스템 python / 배포: 번들된 실행파일
   const isPackaged = app.isPackaged;
@@ -261,6 +264,12 @@ async function startBackend() {
     stdio: "pipe",
   });
 
+  backendProcess.once("error", (error) => {
+    backendStartError = new Error(
+      `백엔드 실행 실패: ${error.message || "알 수 없는 오류"}`
+    );
+  });
+
   backendProcess.stdout.on("data", (data) => {
     console.log(`[FastAPI] ${data}`);
   });
@@ -269,26 +278,55 @@ async function startBackend() {
     console.error(`[FastAPI ERR] ${data}`);
   });
 
-  backendProcess.on("exit", (code) => {
-    console.log(`[FastAPI] exit code: ${code}`);
+  backendProcess.on("exit", (code, signal) => {
+    console.log(`[FastAPI] exit code: ${code}, signal: ${signal}`);
+    if (!backendReady && !backendStartError) {
+      backendStartError = new Error(
+        `백엔드가 준비되기 전에 종료되었습니다. (code: ${code ?? "null"}, signal: ${signal ?? "none"})`
+      );
+    }
   });
 }
 
 // ─── FastAPI 준비될 때까지 대기 ──────────────────────────────
-function waitForBackend(url, retries = 20, delay = 500) {
+function waitForBackend(url, retries = 120, delay = 500) {
   return new Promise((resolve, reject) => {
     const check = (n) => {
-      http
-        .get(url, (res) => {
-          if (res.statusCode < 500) resolve();
-          else if (n > 0) setTimeout(() => check(n - 1), delay);
-          else reject(new Error("Backend 응답 없음"));
-        })
-        .on("error", () => {
-          if (n > 0) setTimeout(() => check(n - 1), delay);
-          else reject(new Error("Backend 연결 실패"));
-        });
+      if (backendStartError) {
+        reject(backendStartError);
+        return;
+      }
+
+      const request = http.get(url, (res) => {
+        if (res.statusCode < 500) {
+          backendReady = true;
+          resolve();
+          return;
+        }
+
+        if (n > 0) {
+          setTimeout(() => check(n - 1), delay);
+          return;
+        }
+
+        reject(new Error(`백엔드 응답 이상: HTTP ${res.statusCode}`));
+      });
+
+      request.setTimeout(2000, () => {
+        request.destroy(new Error("백엔드 요청 시간 초과"));
+      });
+
+      request.on("error", () => {
+        if (backendStartError) {
+          reject(backendStartError);
+        } else if (n > 0) {
+          setTimeout(() => check(n - 1), delay);
+        } else {
+          reject(new Error("백엔드 연결 실패"));
+        }
+      });
     };
+
     check(retries);
   });
 }
@@ -373,11 +411,11 @@ app.whenReady().then(async () => {
   await startBackend();
 
   try {
-    await waitForBackend(`http://localhost:${DEV_BACKEND_PORT}/docs`);
+    await waitForBackend(`http://localhost:${DEV_BACKEND_PORT}/`);
   } catch (e) {
     dialog.showErrorBox(
       "Backend 오류",
-      "FastAPI 서버를 시작할 수 없습니다.\nPython 환경을 확인하세요."
+      `FastAPI 서버를 시작할 수 없습니다.\n${e.message || "백엔드 로그를 확인하세요."}`
     );
   }
 
@@ -394,11 +432,9 @@ app.whenReady().then(async () => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-  if (process.platform === "darwin") {
-    app.dock.setIcon(path.join(__dirname, "../electron/resources/icon.png"));
-
+  if (process.platform === "darwin" && !app.isPackaged) {
+    app.dock.setIcon(path.join(__dirname, "resources", "icon.png"));
   }
-  
 });
 
 app.on("window-all-closed", () => {
