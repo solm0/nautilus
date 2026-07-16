@@ -5,13 +5,17 @@ import sys
 from pathlib import Path
 
 
+def is_packaged_backend() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
 def get_backend_root() -> Path:
     override = os.getenv("NAUTILUS_BACKEND_ROOT")
 
     if override:
         return Path(override).resolve()
 
-    if getattr(sys, "frozen", False):
+    if is_packaged_backend():
         return Path(sys.executable).resolve().parent
 
     return Path(__file__).resolve().parent
@@ -32,6 +36,33 @@ def get_static_data_root() -> Path:
         return override
 
     return get_backend_root() / "data" / "static"
+
+
+def get_runtime_root() -> Path:
+    override = _resolve_override("NAUTILUS_RUNTIME_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_backend_root() / "data_runtime"
+
+
+def get_runtime_state_root() -> Path:
+    override = _resolve_override("NAUTILUS_RUNTIME_STATE_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_runtime_root() / "state"
+
+
+def get_runtime_package_root() -> Path:
+    override = _resolve_override("NAUTILUS_RUNTIME_PACKAGE_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_runtime_root() / "site-packages"
 
 
 def get_stanza_model_root() -> Path:

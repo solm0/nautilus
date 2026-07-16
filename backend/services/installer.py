@@ -19,12 +19,23 @@ from language_config.sqlite_pack import (
     find_ngram_db,
     has_required_tables,
 )
-from runtime_paths import get_static_data_root
+from runtime_paths import get_runtime_state_root, get_static_data_root
+from runtime_overlay import prepare_packaged_runtime_dependencies
+from shared.manifests import (
+    RuntimeDependencyError,
+    ensure_runtime_ready,
+    get_language_package_ids,
+    get_resource_package_ids,
+    get_shared_dependency_ids,
+    get_runtime_state_snapshot,
+    release_runtime,
+)
 from shared.services.lemma_service import invalidate_language as invalidate_lemma_language
 
 load_dotenv()
 
 DATA_DIR = get_static_data_root()
+STATE_ROOT = get_runtime_state_root()
 
 progress_map = {}
 ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
@@ -33,6 +44,24 @@ TQDM_BYTES_RE = re.compile(
     r"(?P<current>\d+(?:\.\d+)?[KMG]?)/(?P<total>\d+(?:\.\d+)?[KMG]?)"
 )
 DOWNLOAD_URL_RE = re.compile(r"Downloading\s+(?P<url>https?://\S+?)(?::\s|$)")
+
+
+def get_runtime_dependency_ids(lang: str) -> list[str]:
+    ordered = []
+
+    for dependency_id in get_shared_dependency_ids(lang):
+        if dependency_id not in ordered:
+            ordered.append(dependency_id)
+
+    for package_id in get_language_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    for package_id in get_resource_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    return ordered
 
 
 def get_install_state(lang: str, version: str):
@@ -56,6 +85,7 @@ def get_install_state(lang: str, version: str):
         "ngram_installed": ngram_installed,
         "model_installed": model_ready,
         "installed": lemma_installed and model_ready,
+        "runtime_state": get_runtime_state_snapshot(STATE_ROOT, lang),
     }
 
 
@@ -221,6 +251,8 @@ class ProgressCaptureStream(io.TextIOBase):
 
 def install_model_with_progress(lang: str, task_id: str):
     capture = ProgressCaptureStream(task_id)
+    prepare_packaged_runtime_dependencies(get_runtime_dependency_ids(lang))
+    ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
 
     with redirect_stderr(capture), redirect_stdout(capture):
         ensure_model_installed(lang)
@@ -378,6 +410,7 @@ def uninstall_pack(lang: str, version: str):
         shutil.rmtree(path, ignore_errors=True)
 
     if not language_has_installed_lemma_pack(lang):
+        release_runtime(STATE_ROOT, lang)
         remove_models(lang)
 
 def is_installed(lang: str, version: str):

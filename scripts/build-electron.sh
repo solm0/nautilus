@@ -70,6 +70,17 @@ PYINSTALLER_ARGS=(
   --collect-submodules language_config
 )
 
+# Some NLP libraries load package data files at runtime with plain filesystem
+# paths, so PyInstaller needs explicit collection rules for them.
+PYINSTALLER_DATA_PACKAGES=(
+  classla
+  obeliks
+  udtools
+  reldi_tokeniser
+  kiwipiepy
+  kiwipiepy_model
+)
+
 # Keep the desktop bundle lean by excluding ML packages that are present in
 # the venv but not used by the packaged backend entrypoints.
 PYINSTALLER_EXCLUDES=(
@@ -83,6 +94,13 @@ PYINSTALLER_EXCLUDES=(
 for module_name in "${PYINSTALLER_EXCLUDES[@]}"; do
   PYINSTALLER_ARGS+=(--exclude-module "$module_name")
 done
+
+for package_name in "${PYINSTALLER_DATA_PACKAGES[@]}"; do
+  PYINSTALLER_ARGS+=(--collect-data "$package_name")
+done
+
+# kiwipiepy_model is a data-only dependency that Kiwi loads indirectly.
+PYINSTALLER_ARGS+=(--hidden-import kiwipiepy_model)
 
 OPTIONAL_DATA_DIRS=()
 

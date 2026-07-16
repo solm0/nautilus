@@ -4,13 +4,11 @@ import shutil
 from pathlib import Path
 
 from runtime_paths import get_classla_model_root, get_stanza_model_root
+from shared.manifests import get_model_provider
 
 
 STANZA_MODEL_DIR = get_stanza_model_root()
 CLASSLA_MODEL_DIR = get_classla_model_root()
-
-CLASSLA_LANGS = {"sr", "mk"}
-STANZA_LANGS = {"de", "en", "ja", "ko", "ru", "sq"}
 
 
 def _legacy_stanza_root() -> Path | None:
@@ -39,7 +37,7 @@ def _lang_path(root: Path | None, lang: str) -> Path | None:
 
 
 def get_local_model_dir(lang: str) -> Path:
-    if lang in CLASSLA_LANGS:
+    if get_model_provider(lang) == "classla":
         return CLASSLA_MODEL_DIR
 
     return STANZA_MODEL_DIR
@@ -50,10 +48,12 @@ def get_local_model_path(lang: str) -> Path:
 
 
 def get_legacy_model_path(lang: str) -> Path | None:
-    if lang in CLASSLA_LANGS:
+    provider = get_model_provider(lang)
+
+    if provider == "classla":
         return _lang_path(_legacy_classla_root(), lang)
 
-    if lang in STANZA_LANGS:
+    if provider == "stanza":
         return _lang_path(_legacy_stanza_root(), lang)
 
     return None
@@ -88,7 +88,7 @@ def ensure_model_installed(lang: str) -> Path:
 
     local_dir.mkdir(parents=True, exist_ok=True)
 
-    if lang in CLASSLA_LANGS:
+    if get_model_provider(lang) == "classla":
         import classla
 
         classla.download(lang, dir=str(local_dir))

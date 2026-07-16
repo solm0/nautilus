@@ -1,0 +1,6 @@
+{
+  "id": "torch",
+  "consumers": [
+    "mk"
+  ]
+}

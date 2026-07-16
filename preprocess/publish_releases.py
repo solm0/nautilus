@@ -14,7 +14,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from central.packs import PACKS
+from shared.manifests import PACKS
 
 
 BACKEND_ENV_PATH = ROOT_DIR / "backend" / ".env"

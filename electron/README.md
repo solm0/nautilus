@@ -122,8 +122,15 @@ Electron 데스크톱 앱은 개발 실행과 배포 실행에서 언어 데이�
 - 배포된 Electron 앱:
   - 앱 번들 안에 언어팩/모델을 기본 포함하지 않음
   - 사용자별 app data 경로에 설치
+  - runtime 상태와 refcount도 사용자별 app data 경로에 기록
 
 즉 배포 앱에서는 언어팩과 NLP 모델이 필요할 때 내려받아지고, 같은 언어의 마지막 lemma pack이 제거되면 해당 언어 모델도 함께 제거됩니다.
+
+현재 배포 앱 기준 주요 경로는 아래와 같습니다.
+
+- 언어팩 데이터: `.../language-data/static`
+- 모델 데이터: `.../language-models/stanza`, `.../language-models/classla`
+- runtime 상태 파일: `.../runtime/state`
 
 경로를 직접 하드코딩하지 말고 `backend/runtime_paths.py`를 통해 접근해야 개발/배포 경로가 꼬이지 않습니다.
 

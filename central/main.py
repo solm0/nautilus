@@ -5,12 +5,18 @@ from sqlalchemy import text
 
 from db import engine, Base
 from language_config.model_store import (
-    CLASSLA_LANGS,
     download_model,
     ensure_model_directories,
     model_exists,
 )
-from packs import PACKS
+from packs import get_model_provider, list_languages
+from runtime_paths import get_runtime_state_root
+from shared.manifests import (
+    ensure_runtime_ready,
+    get_language_package_ids,
+    get_resource_package_ids,
+    get_shared_dependency_ids,
+)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,27 +36,40 @@ BASE_DIR = Path(__file__).resolve().parent
 LANDING_DIR = BASE_DIR / "static" / "landing"
 
 app = FastAPI()
+STATE_ROOT = get_runtime_state_root()
+
+
+def get_runtime_dependency_ids(lang: str) -> list[str]:
+    ordered = []
+
+    for dependency_id in get_shared_dependency_ids(lang):
+        if dependency_id not in ordered:
+            ordered.append(dependency_id)
+
+    for package_id in get_language_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    for package_id in get_resource_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    return ordered
 
 
 def ensure_language_models():
     ensure_model_directories()
 
-    checked = set()
-
-    for pack in PACKS:
-        lang = pack["lang"]
-
-        if lang in checked:
-            continue
-
-        checked.add(lang)
-
+    for lang in list_languages():
         if model_exists(lang):
             print(f"[skip] model exists: {lang}")
+            ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
             continue
 
         try:
-            if lang in CLASSLA_LANGS:
+            ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
+
+            if get_model_provider(lang) == "classla":
                 print(f"[classla] downloading: {lang}")
                 download_model(lang)
 

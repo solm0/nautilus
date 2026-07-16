@@ -4,6 +4,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import uvicorn
+from runtime_overlay import bootstrap_packaged_runtime
+
+bootstrap_packaged_runtime()
 
 from routers.lemmas_router import router as lemmas_router
 from routers.lang_router import router as lang_router

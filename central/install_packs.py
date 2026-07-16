@@ -14,6 +14,13 @@ from language_config.sqlite_pack import (
     has_required_tables,
 )
 from packs import PACKS
+from runtime_paths import get_runtime_state_root
+from shared.manifests import (
+    ensure_runtime_ready,
+    get_language_package_ids,
+    get_resource_package_ids,
+    get_shared_dependency_ids,
+)
 
 # 1. GitHub Releases 조회
 # 2. 언어별 최신 버전 선택
@@ -26,6 +33,25 @@ from packs import PACKS
 CENTRAL_DIR = Path(__file__).resolve().parent
 BASE_DIR = CENTRAL_DIR / "data" / "static"
 TMP_DIR = CENTRAL_DIR / "tmp_packs"
+STATE_ROOT = get_runtime_state_root()
+
+
+def get_runtime_dependency_ids(lang: str) -> list[str]:
+    ordered = []
+
+    for dependency_id in get_shared_dependency_ids(lang):
+        if dependency_id not in ordered:
+            ordered.append(dependency_id)
+
+    for package_id in get_language_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    for package_id in get_resource_package_ids(lang):
+        if package_id not in ordered:
+            ordered.append(package_id)
+
+    return ordered
 
 
 def get_latest_release_asset(lang: str):
@@ -166,6 +192,7 @@ def process_language(lang: str):
             and is_version_fully_installed(lang, str(latest_version))
         ):
             print(f"{lang} already up to date ({installed_latest})")
+            ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
             return
 
     remove_old_versions(lang, str(latest_version))
@@ -190,6 +217,8 @@ def process_language(lang: str):
         raise RuntimeError(
             f"{lang} {latest_version} install is incomplete after downloading split assets"
         )
+
+    ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
 
 
 def main():

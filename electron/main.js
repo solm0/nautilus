@@ -250,6 +250,8 @@ async function startBackend() {
     : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "0.0.0.0"];
 
   const userDataRoot = app.getPath("userData");
+  const runtimeRoot = path.join(userDataRoot, "runtime");
+  const runtimePackageRoot = path.join(runtimeRoot, "site-packages");
   const dataStaticRoot = path.join(userDataRoot, "language-data", "static");
   const stanzaModelRoot = path.join(userDataRoot, "language-models", "stanza");
   const classlaModelRoot = path.join(userDataRoot, "language-models", "classla");
@@ -258,7 +260,9 @@ async function startBackend() {
     ...process.env,
     NAUTILUS_BACKEND_ROOT: backendCwd,
     ...(isPackaged
-      ? {
+        ? {
+          NAUTILUS_RUNTIME_ROOT: runtimeRoot,
+          NAUTILUS_RUNTIME_PACKAGE_ROOT: runtimePackageRoot,
           NAUTILUS_DATA_STATIC_ROOT: dataStaticRoot,
           NAUTILUS_STANZA_MODEL_ROOT: stanzaModelRoot,
           NAUTILUS_CLASSLA_MODEL_ROOT: classlaModelRoot,
