@@ -67,6 +67,7 @@ PYINSTALLER_ARGS=(
   --paths "$ROOT_DIR"
   --paths "$ROOT_DIR/backend"
   --collect-submodules shared
+  --collect-submodules language_config
 )
 
 # Keep the desktop bundle lean by excluding ML packages that are present in
@@ -81,18 +82,6 @@ PYINSTALLER_EXCLUDES=(
 
 for module_name in "${PYINSTALLER_EXCLUDES[@]}"; do
   PYINSTALLER_ARGS+=(--exclude-module "$module_name")
-done
-
-for module_path in "$ROOT_DIR"/backend/language_config/*.py; do
-  module_name="$(basename "$module_path" .py)"
-
-  case "$module_name" in
-    __init__|registry|model_store|sqlite_pack)
-      continue
-      ;;
-  esac
-
-  PYINSTALLER_ARGS+=(--hidden-import "language_config.$module_name")
 done
 
 OPTIONAL_DATA_DIRS=()
