@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import PageContent from "./PageContent";
 import {
   CENTRAL_API,
@@ -17,15 +17,14 @@ import AnnotationView from "./AnnotationView";
 import AnnotationNew from "./AnnotationNew";
 import ArticulationPanel from "./ArticulationPanel";
 import { useLayout } from "../RootLayout";
-import { LANG_MAP, type Pack } from "../setting/PackTable";
-import Button from "../util/Button";
+import { type Pack } from "../setting/PackTable";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
-import { isCapacitorApp } from "../../platform";
 import { isTrackReferenceMatch } from "../../nowPlaying";
 import { useNowPlaying } from "../lyric/useNowPlaying";
 import { getActiveTimedBlockIndex } from "../lyric/spotifyLyrics";
 import { getLookupMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
+import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
 
 const lemmaInfoCache = new Map<string, Record<string, LemmaData>>();
 const lemmaAttemptedKeysCache = new Map<string, Set<string>>();
@@ -47,7 +46,6 @@ export type SidePanelState =
 
 export default function PageView() {
   const { t } = useI18n();
-  const mobileApp = isCapacitorApp();
   const { id } = useParams();
 
   const [result, setResult] = useState<TextAnalysisResult | null>(null);
@@ -80,7 +78,6 @@ export default function PageView() {
   const fetchedRef = useRef(false);
   const inflightLemmaKeysRef = useRef(new Set<string>());
   const activeLemmaPageKeyRef = useRef<string | null>(null);
-  const navigate = useNavigate();
 
   const lastPanelRef = useRef<SidePanelState>(null);
   const { progressMs, track } = useNowPlaying({
@@ -332,21 +329,11 @@ export default function PageView() {
         usePortal={false}
       />
 
-      {noPack && (
-        <div className="absolute inset-0 z-80">
-          <div className="absolute inset-0 bg-neutral-700/40" />
-          <div className="absolute inset-0 flex items-center justify-center p-5">
-            <div className="w-full max-w-sm rounded-sm bg-neutral-50 px-7 py-6 shadow-lg flex flex-col gap-7">
-              <p>
-                {mobileApp ? `${t("Activate")} ` : t("Install ")}
-                {language ? LANG_MAP[language] ?? language : null}
-                {mobileApp ? " to continue." : " pack to continue."}
-              </p>
-              <Button text={t("settings")} onClick={() => navigate('/setting')} fit black />
-            </div>
-          </div>
-        </div>
-      )}
+      <LanguagePackRequiredModal
+        language={language ?? ""}
+        open={noPack && language !== null}
+        onClose={() => setNoPack(false)}
+      />
 
       {result && (
         <>

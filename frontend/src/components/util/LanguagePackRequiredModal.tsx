@@ -1,0 +1,42 @@
+import { useNavigate } from "react-router-dom";
+import { isCapacitorApp } from "../../platform";
+import { useI18n } from "../../i18n";
+import { LANG_MAP } from "../setting/PackTable";
+import { ResponsiveModal } from "./ResponsiveModal";
+import Button from "./Button";
+
+export default function LanguagePackRequiredModal({
+  language,
+  open,
+  onClose,
+}: {
+  language: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const mobileApp = isCapacitorApp();
+
+  const handleOpenSettings = () => {
+    onClose();
+    navigate("/setting");
+  };
+
+  return (
+    <ResponsiveModal open={open} onClose={onClose}>
+      <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50 px-7 py-6">
+        <p>
+          {mobileApp
+            ? t("Activate {language} to continue.", {
+                language: t(LANG_MAP[language] ?? language),
+              })
+            : t("Install {language} pack to continue.", {
+                language: t(LANG_MAP[language] ?? language),
+              })}
+        </p>
+        <Button text={t("settings")} onClick={handleOpenSettings} fit black />
+      </div>
+    </ResponsiveModal>
+  );
+}

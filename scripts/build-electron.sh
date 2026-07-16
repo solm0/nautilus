@@ -69,6 +69,20 @@ PYINSTALLER_ARGS=(
   --collect-submodules shared
 )
 
+# Keep the desktop bundle lean by excluding ML packages that are present in
+# the venv but not used by the packaged backend entrypoints.
+PYINSTALLER_EXCLUDES=(
+  torchvision
+  onnxruntime
+  pandas
+  scipy
+  skimage
+)
+
+for module_name in "${PYINSTALLER_EXCLUDES[@]}"; do
+  PYINSTALLER_ARGS+=(--exclude-module "$module_name")
+done
+
 for module_path in "$ROOT_DIR"/backend/language_config/*.py; do
   module_name="$(basename "$module_path" .py)"
 

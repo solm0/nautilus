@@ -6,6 +6,8 @@ import Desk from "../lemma_expansions/Desk";
 import type { LemmaData } from "../pageTypes";
 import { useLayout } from "../RootLayout";
 import { useI18n } from "../../i18n";
+import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
+import { hasLemmaPackInstalled } from "../util/LanguageSelect";
 
 function groupLemmas(favorites: Set<string>) {
   const groups: Record<string, string[]> = {}
@@ -31,6 +33,7 @@ export default function Lemmas(){
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [lemmaData, setLemmaData] = useState<LemmaData | null>(null);
   const [currentLang, setCurrentLang] = useState<string | null>(null);
+  const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
   useRef<LemmaData | null>(null)
@@ -78,12 +81,35 @@ export default function Lemmas(){
 
   const onLemmaClick = async (lemma:string, pos:string, language:string) => {
     setCurrentLang(language);
+    const hasPack = await hasLemmaPackInstalled(language);
+
+    if (!hasPack) {
+      setMissingPackLang(language);
+      return;
+    }
+
     const data = await lemmaLookupOne({ lemma, pos }, language);
+
+    if (data.related.length === 0) {
+      const hasPackAfterLookup = await hasLemmaPackInstalled(language);
+
+      if (!hasPackAfterLookup) {
+        setMissingPackLang(language);
+        return;
+      }
+    }
+
     setLemmaData(data);
   }
 
   return (
     <div className="w-full h-full flex pl-3 md:pl-6 bg-neutral-50">
+      <LanguagePackRequiredModal
+        language={missingPackLang ?? ""}
+        open={missingPackLang !== null}
+        onClose={() => setMissingPackLang(null)}
+      />
+
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
 
         <h2 className="top-0 pt-8 md:pt-12 z-30">{t("My Lemmas")}</h2>

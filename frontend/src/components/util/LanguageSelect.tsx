@@ -66,6 +66,17 @@ async function loadInstalledPacks() {
   return installedPacksPromise;
 }
 
+export async function getInstalledPacksCached() {
+  return loadInstalledPacks();
+}
+
+export async function hasLemmaPackInstalled(language: string) {
+  const packs = await loadInstalledPacks();
+  return packs.some(
+    (pack) => pack.lang === language && (pack.lemma_installed || pack.installed),
+  );
+}
+
 export default function LanguageSelect({
   language,
   setLanguage,

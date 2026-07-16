@@ -882,7 +882,7 @@ export default function PageCore({
                                 }}
                               >
                                 <Trash2 size={13} />
-                                <span>Delete</span>
+                                <span>{t("Delete")}</span>
                               </button>
                             </MiniPopup>
                           </div>

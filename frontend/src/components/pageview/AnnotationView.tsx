@@ -79,7 +79,7 @@ export default function AnnotationView({
     // link validation
     if (annotationPanel.data.type === "link") {
       if (!isValidUrl(nextValue)) {
-        setMsg("Invalid URL");
+        setMsg(t("Invalid URL"));
         setLoading(null);
         return;
       }

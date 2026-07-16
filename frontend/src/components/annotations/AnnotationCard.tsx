@@ -66,7 +66,7 @@ export default function AnnotationCard({
     // link validation
     if (item.type === "link") {
       if (!isValidUrl(nextValue)) {
-        setMsg("Invalid URL");
+        setMsg(t("Invalid URL"));
         return;
       }
     }

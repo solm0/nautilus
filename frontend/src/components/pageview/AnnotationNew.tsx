@@ -4,6 +4,7 @@ import type { Annotation } from "../pageTypes";
 import { authHeaders, CENTRAL_API } from "../../api";
 import Button from "../util/Button";
 import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInput";
+import { useI18n } from "../../i18n";
 
 export function isValidUrl(str: string) {
   try {
@@ -22,6 +23,7 @@ export default function AnnotationNew({
   setPanelData: (p: SidePanelState | null) => void;
   pageLanguage: string;
 }) {
+  const { t } = useI18n();
   const [inputValue, setInputValue] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [canSave, setCanSave] = useState(false);
@@ -55,7 +57,7 @@ export default function AnnotationNew({
     // link validation
     if (annotationData.type === "link") {
       if (!isValidUrl(nextValue)) {
-        setMsg("Invalid URL");
+        setMsg(t("Invalid URL"));
         return;
       }
     }
@@ -95,18 +97,20 @@ export default function AnnotationNew({
             background
           />
         ) : (
-          <input
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-            placeholder="https://..."
-            className="mt-7 border-2 border-neutral-300 rounded-md w-full px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
-          />
+          <div className="flex flex-col gap-1">
+            <input
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder="https://..."
+              className="mt-7 border-2 border-neutral-300 rounded-md w-full px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
+            />
+            {msg && <p className="text-xs text-red-400 font-medium pb-2">{msg}</p>}
+          </div>
         )
       }
       <div className="absolute bottom-2 left-0 px-2 w-full flex flex-col">
-        {msg && <p className="text-sm text-red-600 pb-2">{msg}</p>}
         <Button
-          text={`Create new ${annotationData.type === "memo" ? 'memo':'link'}`}
+          text={annotationData.type === "memo" ? t("Create new memo") : t("Create new link")}
           onClick={createAnnotation}
           disabled={!canSave}
           fit black

@@ -1,9 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import LemmaExpansion from "./LemmaExpansion";
 import type { D3Node } from "./Breadcrumb";
 import type { LemmaData } from "../pageTypes";
 import { lemmaLookupOne } from "../../api";
 import { CircleAlert } from "lucide-react";
+import { useI18n } from "../../i18n";
+import { hasLemmaPackInstalled } from "../util/LanguageSelect";
+import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
 
 export default function LemmaExpansionWrapper({
   activeNode,
@@ -30,8 +33,10 @@ export default function LemmaExpansionWrapper({
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
 }) {
+  const { t } = useI18n();
   const inflightRef = useRef(new Set<string>());
   const statusRef = useRef(new Map<string, "loading" | "success" | "error">());
+  const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
 
   useEffect(() => {
     const lemmaKey = activeNode?.data.lemma;
@@ -49,12 +54,30 @@ export default function LemmaExpansionWrapper({
     (async () => {
       try {
         const data = await lemmaLookupOne({ lemma, pos }, language);
+
+        if (data.related.length === 0) {
+          const hasPack = await hasLemmaPackInstalled(language);
+
+          if (!hasPack) {
+            statusRef.current.set(lemmaKey, "error");
+            onLemmaFetchError?.(lemmaKey);
+            setMissingPackLang(language);
+            return;
+          }
+        }
+
         statusRef.current.set(lemmaKey, "success");
         addLemmaData(data);
         onLemmaFetchSuccess?.(lemmaKey);
       } catch {
+        const hasPack = await hasLemmaPackInstalled(language);
+
         statusRef.current.set(lemmaKey, "error");
         onLemmaFetchError?.(lemmaKey);
+
+        if (!hasPack) {
+          setMissingPackLang(language);
+        }
       } finally {
         inflightRef.current.delete(lemmaKey);
       }
@@ -70,10 +93,17 @@ export default function LemmaExpansionWrapper({
   }
   if (status === "error" || lemmaData && lemmaData.related.length == 0) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-        <CircleAlert size={20} />
-        We couldn’t find this word.
-      </div>
+      <>
+        <LanguagePackRequiredModal
+          language={missingPackLang ?? ""}
+          open={missingPackLang !== null}
+          onClose={() => setMissingPackLang(null)}
+        />
+        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+          <CircleAlert size={20} />
+          {t("We couldn't find this word.")}
+        </div>
+      </>
     );
   }
   if (lemmaData && lemmaData.related.length > 0) {
@@ -87,5 +117,11 @@ export default function LemmaExpansionWrapper({
       />
     );
   }
-  return null;
+  return (
+    <LanguagePackRequiredModal
+      language={missingPackLang ?? ""}
+      open={missingPackLang !== null}
+      onClose={() => setMissingPackLang(null)}
+    />
+  );
 }
