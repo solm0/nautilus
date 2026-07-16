@@ -249,9 +249,21 @@ async function startBackend() {
     ? []
     : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "0.0.0.0"];
 
+  const userDataRoot = app.getPath("userData");
+  const dataStaticRoot = path.join(userDataRoot, "language-data", "static");
+  const stanzaModelRoot = path.join(userDataRoot, "language-models", "stanza");
+  const classlaModelRoot = path.join(userDataRoot, "language-models", "classla");
+
   const env = {
     ...process.env,
     NAUTILUS_BACKEND_ROOT: backendCwd,
+    ...(isPackaged
+      ? {
+          NAUTILUS_DATA_STATIC_ROOT: dataStaticRoot,
+          NAUTILUS_STANZA_MODEL_ROOT: stanzaModelRoot,
+          NAUTILUS_CLASSLA_MODEL_ROOT: classlaModelRoot,
+        }
+      : {}),
     NAUTILUS_FRONTEND_DIST: isPackaged
       ? path.join(backendCwd, "frontend")
       : path.join(__dirname, "..", "frontend", "dist"),

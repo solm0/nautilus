@@ -17,6 +17,41 @@ def get_backend_root() -> Path:
     return Path(__file__).resolve().parent
 
 
+def _resolve_override(name: str) -> Path | None:
+    value = os.getenv(name)
+    if not value:
+        return None
+
+    return Path(value).resolve()
+
+
+def get_static_data_root() -> Path:
+    override = _resolve_override("NAUTILUS_DATA_STATIC_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_backend_root() / "data" / "static"
+
+
+def get_stanza_model_root() -> Path:
+    override = _resolve_override("NAUTILUS_STANZA_MODEL_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_backend_root() / "models"
+
+
+def get_classla_model_root() -> Path:
+    override = _resolve_override("NAUTILUS_CLASSLA_MODEL_ROOT")
+
+    if override is not None:
+        return override
+
+    return get_backend_root() / "classla_models"
+
+
 def get_frontend_dist_dir() -> Path | None:
     override = os.getenv("NAUTILUS_FRONTEND_DIST")
 

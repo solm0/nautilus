@@ -1,10 +1,13 @@
 import argparse
 import os
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 from huggingface_hub import HfApi, hf_hub_url
+from huggingface_hub.errors import HfHubHTTPError
+import httpx
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -18,6 +21,8 @@ BACKEND_ENV_PATH = ROOT_DIR / "backend" / ".env"
 RELEASES_DIR = ROOT_DIR / "releases"
 DEFAULT_HF_REPO_ID = "solm0/nautilus-releases"
 DEFAULT_HF_REPO_TYPE = "dataset"
+MAX_RETRIES = 4
+RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 
 
 def load_env():
@@ -31,6 +36,61 @@ def load_env():
         raise RuntimeError(f"HF_TOKEN is missing in {BACKEND_ENV_PATH}")
 
     return token, repo_id, repo_type
+
+
+def is_retryable_error(exc: Exception) -> bool:
+    if isinstance(exc, HfHubHTTPError):
+        status_code = exc.response.status_code if exc.response is not None else None
+        return status_code in RETRYABLE_STATUS_CODES
+
+    return isinstance(exc, (httpx.HTTPError, TimeoutError))
+
+
+def call_with_retry(label: str, fn, *args, **kwargs):
+    delay = 2.0
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:
+            if attempt >= MAX_RETRIES or not is_retryable_error(exc):
+                raise
+
+            print(
+                f"{label} failed on attempt {attempt}/{MAX_RETRIES} with "
+                f"{exc.__class__.__name__}: {exc}. Retrying in {delay:.0f}s...",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+            delay *= 2
+
+
+def ensure_repo_exists(api: HfApi, repo_id: str, repo_type: str) -> None:
+    try:
+        call_with_retry(
+            "create_repo",
+            api.create_repo,
+            repo_id=repo_id,
+            repo_type=repo_type,
+            private=False,
+            exist_ok=True,
+        )
+        return
+    except Exception as exc:
+        if not is_retryable_error(exc):
+            raise
+
+        print(
+            "create_repo still failed after retries. Checking whether the repo "
+            "was created despite the timeout...",
+            file=sys.stderr,
+        )
+        call_with_retry(
+            "repo_info",
+            api.repo_info,
+            repo_id=repo_id,
+            repo_type=repo_type,
+        )
 
 
 def get_pack_map():
@@ -56,7 +116,9 @@ def resolve_release_artifacts(lang: str, version: str):
 
 def upload_asset(api: HfApi, repo_id: str, repo_type: str, lang: str, version: str, asset_path: Path):
     path_in_repo = f"language-packs/{lang}/{version}/{asset_path.name}"
-    api.upload_file(
+    call_with_retry(
+        f"upload_file:{asset_path.name}",
+        api.upload_file,
         path_or_fileobj=str(asset_path),
         path_in_repo=path_in_repo,
         repo_id=repo_id,
@@ -106,7 +168,7 @@ def main():
     token, repo_id, repo_type = load_env()
     pack_map = get_pack_map()
     api = HfApi(token=token)
-    api.create_repo(repo_id=repo_id, repo_type=repo_type, private=False, exist_ok=True)
+    ensure_repo_exists(api, repo_id=repo_id, repo_type=repo_type)
 
     langs = args.langs or list(pack_map.keys())
 

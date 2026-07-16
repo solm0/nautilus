@@ -3,10 +3,10 @@ from typing import Dict
 import importlib
 import re
 
-from runtime_paths import get_backend_root
+from runtime_paths import get_static_data_root
 
 
-BASE_DIR = get_backend_root() / "data" / "static"
+BASE_DIR = get_static_data_root()
 
 _registry: Dict[str, dict] = {}
 

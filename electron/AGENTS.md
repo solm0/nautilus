@@ -28,3 +28,5 @@
 
 - `main.js` contains local now-playing integration and deep-link dispatch
 - Electron uses the local backend instead of the central mobile API for language analysis
+- Packaged Electron builds store downloaded language packs and NLP models in user app-data paths, while dev continues to use `backend/data/static`, `backend/models`, and `backend/classla_models`
+- When touching desktop language-pack paths, prefer `backend/runtime_paths.py` instead of hardcoding repo-relative directories

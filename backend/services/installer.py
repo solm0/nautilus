@@ -19,12 +19,12 @@ from language_config.sqlite_pack import (
     find_ngram_db,
     has_required_tables,
 )
-from runtime_paths import get_backend_root
+from runtime_paths import get_static_data_root
 from shared.services.lemma_service import invalidate_language as invalidate_lemma_language
 
 load_dotenv()
 
-DATA_DIR = get_backend_root() / "data" / "static"
+DATA_DIR = get_static_data_root()
 
 progress_map = {}
 ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
@@ -70,7 +70,6 @@ def clear_existing_install_target(lang: str, version: str, asset_kind: str):
     if asset_kind == "lemma":
         if path.exists():
             shutil.rmtree(path, ignore_errors=True)
-        remove_models(lang)
         return
 
     if not path.exists():
@@ -351,6 +350,26 @@ def install_pack(
         raise e
 
 
+def language_has_installed_lemma_pack(lang: str) -> bool:
+    lang_root = DATA_DIR / lang
+
+    if not lang_root.exists():
+        return False
+
+    for version_dir in lang_root.iterdir():
+        if not version_dir.is_dir():
+            continue
+
+        lemma_db_path = find_lemma_db(version_dir)
+        if lemma_db_path is None:
+            continue
+
+        if has_required_tables(lemma_db_path, LEMMA_TABLES):
+            return True
+
+    return False
+
+
 def uninstall_pack(lang: str, version: str):
     invalidate_runtime(lang)
     path = DATA_DIR / lang / version
@@ -358,7 +377,8 @@ def uninstall_pack(lang: str, version: str):
     if path.exists():
         shutil.rmtree(path, ignore_errors=True)
 
-    remove_models(lang)
+    if not language_has_installed_lemma_pack(lang):
+        remove_models(lang)
 
 def is_installed(lang: str, version: str):
     return get_install_state(lang, version)["installed"]

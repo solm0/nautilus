@@ -3,12 +3,11 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from runtime_paths import get_backend_root
+from runtime_paths import get_classla_model_root, get_stanza_model_root
 
 
-BASE_DIR = get_backend_root()
-STANZA_MODEL_DIR = BASE_DIR / "models"
-CLASSLA_MODEL_DIR = BASE_DIR / "classla_models"
+STANZA_MODEL_DIR = get_stanza_model_root()
+CLASSLA_MODEL_DIR = get_classla_model_root()
 
 CLASSLA_LANGS = {"sr", "mk"}
 STANZA_LANGS = {"de", "en", "ja", "ko", "ru", "sq"}

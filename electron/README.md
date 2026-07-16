@@ -111,6 +111,22 @@ npm run build:bundle:linux
 
 이 경로들은 모두 빌드 산출물이므로, 현재 사용 중인 빌드가 아니라면 삭제해도 됩니다.
 
+## 언어팩/모델 경로 정책
+
+Electron 데스크톱 앱은 개발 실행과 배포 실행에서 언어 데이터 경로를 다르게 사용합니다.
+
+- 개발 실행:
+  - `backend/data/static`
+  - `backend/models`
+  - `backend/classla_models`
+- 배포된 Electron 앱:
+  - 앱 번들 안에 언어팩/모델을 기본 포함하지 않음
+  - 사용자별 app data 경로에 설치
+
+즉 배포 앱에서는 언어팩과 NLP 모델이 필요할 때 내려받아지고, 같은 언어의 마지막 lemma pack이 제거되면 해당 언어 모델도 함께 제거됩니다.
+
+경로를 직접 하드코딩하지 말고 `backend/runtime_paths.py`를 통해 접근해야 개발/배포 경로가 꼬이지 않습니다.
+
 ## 주의사항
 
 `build:bundle:win`과 `build:bundle:linux`는 각 대상 OS에서 실행될 때 가장 자연스럽습니다.

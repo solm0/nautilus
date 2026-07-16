@@ -7,9 +7,9 @@ from language_config.registry import get_latest_version_path
 from language_config.sqlite_pack import LanguagePackDB, find_pack_db
 
 try:
-    from runtime_paths import get_backend_root as _get_backend_root
+    from runtime_paths import get_static_data_root as _get_static_data_root
 except ModuleNotFoundError:
-    _get_backend_root = None
+    _get_static_data_root = None
 
 
 def get_static_data_root() -> Path:
@@ -19,8 +19,8 @@ def get_static_data_root() -> Path:
 
     candidates: list[Path] = []
 
-    if _get_backend_root is not None:
-        candidates.append(_get_backend_root() / "data" / "static")
+    if _get_static_data_root is not None:
+        candidates.append(_get_static_data_root())
 
     repo_root = Path(__file__).resolve().parents[2]
     candidates.extend([

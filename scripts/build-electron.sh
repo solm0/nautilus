@@ -95,11 +95,7 @@ for module_path in "$ROOT_DIR"/backend/language_config/*.py; do
   PYINSTALLER_ARGS+=(--hidden-import "language_config.$module_name")
 done
 
-OPTIONAL_DATA_DIRS=(
-  "backend/data:data"
-  "backend/models:models"
-  "backend/classla_models:classla_models"
-)
+OPTIONAL_DATA_DIRS=()
 
 for entry in "${OPTIONAL_DATA_DIRS[@]}"; do
   src_rel="${entry%%:*}"
