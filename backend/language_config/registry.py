@@ -1,14 +1,24 @@
 from pathlib import Path
 from typing import Dict
-import importlib
 import re
 
+from . import de, en, ja, ko, mk, ru, sq, sr
 from runtime_paths import get_static_data_root
 
 
 BASE_DIR = get_static_data_root()
 
 _registry: Dict[str, dict] = {}
+LANGUAGE_MODULES = {
+    "de": de,
+    "en": en,
+    "ja": ja,
+    "ko": ko,
+    "mk": mk,
+    "ru": ru,
+    "sq": sq,
+    "sr": sr,
+}
 
 
 def parse_version(name: str):
@@ -39,9 +49,11 @@ def load_language(lang: str):
     if lang in _registry:
         return _registry[lang]
 
-    module = importlib.import_module(
-        f"language_config.{lang}"
-    )
+    try:
+        module = LANGUAGE_MODULES[lang]
+    except KeyError as exc:
+        raise KeyError(f"Unsupported language: {lang}") from exc
+
     config = module.get_config(BASE_DIR)
 
     _registry[lang] = config
@@ -58,7 +70,11 @@ def invalidate_language(lang: str):
         if hasattr(pack_db, "close"):
             pack_db.close()
 
-    module = importlib.import_module(f"language_config.{lang}")
+    module = LANGUAGE_MODULES.get(lang)
+
+    if module is None:
+        return
+
     unload = getattr(module, "unload", None)
 
     if callable(unload):
