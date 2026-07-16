@@ -75,9 +75,12 @@ PYINSTALLER_DATA_PACKAGES=(
 )
 
 PYINSTALLER_RUNTIME_OVERLAY_PACKAGES=(
+  stanza
   classla
   obeliks
   udtools
+  udapi
+  regex
   reldi_tokeniser
   kiwipiepy_model
 )

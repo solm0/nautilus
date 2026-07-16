@@ -4,6 +4,11 @@ HF_PACK_REPO_ID = "solm0/nautilus-releases"
 HF_PACK_REPO_TYPE = "dataset"
 
 RUNTIME_PACKAGE_SPECS = {
+    "stanza": {
+        "project": "stanza",
+        "version": "1.11.1",
+        "install_mode": "pypi_wheel",
+    },
     "classla": {
         "project": "classla",
         "version": "2.2.1",
@@ -25,8 +30,18 @@ RUNTIME_PACKAGE_SPECS = {
         "install_mode": "pypi_wheel",
     },
     "kiwipiepy_model": {
-        "project": "kiwipiepy_model",
+        "project": "kiwipiepy-model",
         "version": "0.23.0",
+        "install_mode": "pypi_wheel",
+    },
+    "udapi": {
+        "project": "udapi",
+        "version": "0.5.2",
+        "install_mode": "pypi_wheel",
+    },
+    "regex": {
+        "project": "regex",
+        "version": "2025.11.3",
         "install_mode": "pypi_wheel",
     },
 }
@@ -67,8 +82,8 @@ RUNTIME_MANIFESTS = {
         "lang": "de",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza"],
-        "resource_packages": [],
+        "language_packages": ["stanza", "udtools", "udapi", "regex"],
+        "resource_packages": ["udtools"],
         "models": [
             {
                 "id": "stanza-de",
@@ -82,8 +97,8 @@ RUNTIME_MANIFESTS = {
         "lang": "en",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza"],
-        "resource_packages": [],
+        "language_packages": ["stanza", "udtools", "udapi", "regex"],
+        "resource_packages": ["udtools"],
         "models": [
             {
                 "id": "stanza-en",
@@ -97,8 +112,8 @@ RUNTIME_MANIFESTS = {
         "lang": "ja",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza"],
-        "resource_packages": [],
+        "language_packages": ["stanza", "udtools", "udapi", "regex"],
+        "resource_packages": ["udtools"],
         "models": [
             {
                 "id": "stanza-ja",
@@ -112,8 +127,8 @@ RUNTIME_MANIFESTS = {
         "lang": "ko",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza", "kiwipiepy", "kiwipiepy_model"],
-        "resource_packages": ["kiwipiepy", "kiwipiepy_model"],
+        "language_packages": ["stanza", "udtools", "udapi", "regex", "kiwipiepy", "kiwipiepy_model"],
+        "resource_packages": ["udtools", "kiwipiepy", "kiwipiepy_model"],
         "models": [
             {
                 "id": "stanza-ko",
@@ -127,7 +142,7 @@ RUNTIME_MANIFESTS = {
         "lang": "mk",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["classla", "obeliks", "udtools", "reldi_tokeniser"],
+        "language_packages": ["classla", "obeliks", "udtools", "udapi", "regex", "reldi_tokeniser"],
         "resource_packages": ["obeliks", "udtools", "reldi_tokeniser"],
         "models": [
             {
@@ -142,8 +157,8 @@ RUNTIME_MANIFESTS = {
         "lang": "ru",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza"],
-        "resource_packages": [],
+        "language_packages": ["stanza", "udtools", "udapi", "regex"],
+        "resource_packages": ["udtools"],
         "models": [
             {
                 "id": "stanza-ru",
@@ -157,8 +172,8 @@ RUNTIME_MANIFESTS = {
         "lang": "sq",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["stanza"],
-        "resource_packages": [],
+        "language_packages": ["stanza", "udtools", "udapi", "regex"],
+        "resource_packages": ["udtools"],
         "models": [
             {
                 "id": "stanza-sq",
@@ -172,7 +187,7 @@ RUNTIME_MANIFESTS = {
         "lang": "sr",
         "runtime_version": 1,
         "shared_dependencies": ["torch"],
-        "language_packages": ["classla", "obeliks", "udtools", "reldi_tokeniser"],
+        "language_packages": ["classla", "obeliks", "udtools", "udapi", "regex", "reldi_tokeniser"],
         "resource_packages": ["obeliks", "udtools", "reldi_tokeniser"],
         "models": [
             {
