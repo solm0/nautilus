@@ -105,6 +105,7 @@ jobs:
             cffi==2.0.0 \
             chardet==7.4.3 \
             charset-normalizer==2.0.12 \
+            classla==2.2.1 \
             click==8.3.3 \
             colorama==0.4.6 \
             colorlog==6.10.1 \
@@ -130,6 +131,7 @@ jobs:
             imagesize==2.0.0 \
             Jinja2==3.1.6 \
             kiwipiepy==0.23.1 \
+            kiwipiepy_model==0.23.0 \
             lazy-loader==0.5 \
             lxml==6.1.0 \
             macholib==1.16.4 \
@@ -140,6 +142,7 @@ jobs:
             networkx==3.6.1 \
             ninja==1.13.0 \
             numpy==2.4.4 \
+            obeliks==1.1.6 \
             opt-einsum==3.3.0 \
             packaging==26.2 \
             passlib==1.7.4 \
@@ -189,6 +192,7 @@ jobs:
             typing-inspection==0.4.2 \
             typing_extensions==4.15.0 \
             udapi==0.5.2 \
+            udtools==0.2.7 \
             ujson==5.12.0 \
             urllib3==1.26.20 \
             uvicorn==0.46.0 \

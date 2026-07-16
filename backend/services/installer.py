@@ -20,14 +20,9 @@ from language_config.sqlite_pack import (
     has_required_tables,
 )
 from runtime_paths import get_runtime_state_root, get_static_data_root
-from runtime_overlay import prepare_packaged_runtime_dependencies
 from shared.manifests import (
-    RuntimeDependencyError,
-    ensure_runtime_ready,
-    get_language_package_ids,
-    get_resource_package_ids,
-    get_shared_dependency_ids,
     get_runtime_state_snapshot,
+    mark_runtime_consumers,
     release_runtime,
 )
 from shared.services.lemma_service import invalidate_language as invalidate_lemma_language
@@ -44,24 +39,6 @@ TQDM_BYTES_RE = re.compile(
     r"(?P<current>\d+(?:\.\d+)?[KMG]?)/(?P<total>\d+(?:\.\d+)?[KMG]?)"
 )
 DOWNLOAD_URL_RE = re.compile(r"Downloading\s+(?P<url>https?://\S+?)(?::\s|$)")
-
-
-def get_runtime_dependency_ids(lang: str) -> list[str]:
-    ordered = []
-
-    for dependency_id in get_shared_dependency_ids(lang):
-        if dependency_id not in ordered:
-            ordered.append(dependency_id)
-
-    for package_id in get_language_package_ids(lang):
-        if package_id not in ordered:
-            ordered.append(package_id)
-
-    for package_id in get_resource_package_ids(lang):
-        if package_id not in ordered:
-            ordered.append(package_id)
-
-    return ordered
 
 
 def get_install_state(lang: str, version: str):
@@ -251,13 +228,12 @@ class ProgressCaptureStream(io.TextIOBase):
 
 def install_model_with_progress(lang: str, task_id: str):
     capture = ProgressCaptureStream(task_id)
-    prepare_packaged_runtime_dependencies(get_runtime_dependency_ids(lang))
-    ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
 
     with redirect_stderr(capture), redirect_stdout(capture):
         ensure_model_installed(lang)
 
     capture.flush()
+    mark_runtime_consumers(STATE_ROOT, lang)
 
 
 def install_pack(

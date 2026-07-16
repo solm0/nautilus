@@ -71,10 +71,6 @@ PYINSTALLER_ARGS=(
 )
 
 PYINSTALLER_DATA_PACKAGES=(
-  kiwipiepy
-)
-
-PYINSTALLER_RUNTIME_OVERLAY_PACKAGES=(
   stanza
   classla
   obeliks
@@ -82,6 +78,7 @@ PYINSTALLER_RUNTIME_OVERLAY_PACKAGES=(
   udapi
   regex
   reldi_tokeniser
+  kiwipiepy
   kiwipiepy_model
 )
 
@@ -99,13 +96,11 @@ for module_name in "${PYINSTALLER_EXCLUDES[@]}"; do
   PYINSTALLER_ARGS+=(--exclude-module "$module_name")
 done
 
-for module_name in "${PYINSTALLER_RUNTIME_OVERLAY_PACKAGES[@]}"; do
-  PYINSTALLER_ARGS+=(--exclude-module "$module_name")
-done
-
 for package_name in "${PYINSTALLER_DATA_PACKAGES[@]}"; do
   PYINSTALLER_ARGS+=(--collect-data "$package_name")
 done
+
+PYINSTALLER_ARGS+=(--hidden-import kiwipiepy_model)
 
 OPTIONAL_DATA_DIRS=()
 

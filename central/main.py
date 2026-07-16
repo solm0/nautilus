@@ -12,12 +12,7 @@ from language_config.model_store import (
 )
 from packs import get_model_provider, list_languages
 from runtime_paths import get_runtime_state_root
-from shared.manifests import (
-    ensure_runtime_ready,
-    get_language_package_ids,
-    get_resource_package_ids,
-    get_shared_dependency_ids,
-)
+from shared.manifests import mark_runtime_consumers
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,36 +35,16 @@ app = FastAPI()
 STATE_ROOT = get_runtime_state_root()
 
 
-def get_runtime_dependency_ids(lang: str) -> list[str]:
-    ordered = []
-
-    for dependency_id in get_shared_dependency_ids(lang):
-        if dependency_id not in ordered:
-            ordered.append(dependency_id)
-
-    for package_id in get_language_package_ids(lang):
-        if package_id not in ordered:
-            ordered.append(package_id)
-
-    for package_id in get_resource_package_ids(lang):
-        if package_id not in ordered:
-            ordered.append(package_id)
-
-    return ordered
-
-
 def ensure_language_models():
     ensure_model_directories()
 
     for lang in list_languages():
         if model_exists(lang):
             print(f"[skip] model exists: {lang}")
-            ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
+            mark_runtime_consumers(STATE_ROOT, lang)
             continue
 
         try:
-            ensure_runtime_ready(STATE_ROOT, lang, get_runtime_dependency_ids(lang))
-
             if get_model_provider(lang) == "classla":
                 print(f"[classla] downloading: {lang}")
                 download_model(lang)
@@ -77,6 +52,8 @@ def ensure_language_models():
             else:
                 print(f"[stanza] downloading: {lang}")
                 download_model(lang)
+
+            mark_runtime_consumers(STATE_ROOT, lang)
 
         except Exception as e:
             print(f"Failed downloading {lang}: {e}")
