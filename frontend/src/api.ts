@@ -80,6 +80,12 @@ function resolveLocalApi(centralApi: string) {
 export const CENTRAL_API = resolveCentralApi();
 export const LOCAL_API = resolveLocalApi(CENTRAL_API);
 
+export type LatestVersionPlatform = "desktop" | "android";
+
+function resolveLatestVersionPlatform(): LatestVersionPlatform {
+  return getAppPlatform() === "mobile" ? "android" : "desktop";
+}
+
 export type AnalyzeBlockInput = {
   text: string;
 };
@@ -98,13 +104,15 @@ export function isNewerVersion(latest: string, current: string) {
 }
 
 export type LatestVersionInfo = {
+  platform: LatestVersionPlatform;
   version: string;
   download_url: string;
   notes: string[];
 };
 
 export async function getLatestVersionInfo() {
-  const res = await fetch(`${CENTRAL_API}/latest-version`);
+  const platform = resolveLatestVersionPlatform();
+  const res = await fetch(`${CENTRAL_API}/latest-version?platform=${platform}`);
 
   if (!res.ok) {
     throw new Error(`latest version fetch failed (${res.status})`);

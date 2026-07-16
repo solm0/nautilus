@@ -26,8 +26,8 @@ GitHub 저장소 웹사이트에서 아래 순서로 실행할 수 있습니다.
 
 자동 실행 조건은 아래와 같습니다.
 
-- `app-v*` 형식 태그 push
-- 예: `app-v1.0.0`
+- `app-desktop-v*` 형식 태그 push
+- 예: `app-desktop-v1.0.0`
 
 ## 결과물 위치
 
@@ -47,20 +47,43 @@ GitHub 저장소 웹사이트에서 아래 순서로 실행할 수 있습니다.
 - `nautilus-electron-windows`
 - `nautilus-electron-linux`
 
-## Release와의 관계
+## Hugging Face 업로드
 
-`app-v*` 태그로 실행된 경우에는 결과물이 `GitHub Release assets`에도 업로드됩니다.
+`app-desktop-v*` 태그로 실행된 경우에는 결과물이 `Hugging Face`에도 업로드됩니다.
 
 즉 흐름은 아래와 같습니다.
 
 - `Run workflow` 수동 실행:
   - Actions `Artifacts`에만 업로드
-- `app-v1.0.0` 같은 태그 push:
+- `app-desktop-v1.0.0` 같은 태그 push:
   - Actions `Artifacts`에 업로드
-  - 같은 태그 이름의 GitHub Release 생성
-  - `.dmg`, `.exe`, `.AppImage`를 Release assets에 업로드
+  - `Hugging Face dataset repo`의 `releases/desktop/app-desktop-v1.0.0/` 경로에 `.dmg`, `.exe`, `.AppImage` 업로드
 
-소개 페이지의 다운로드 버튼은 보통 `Release assets` URL에 연결하면 됩니다.
+필요한 GitHub 설정:
+
+- `Settings -> Secrets and variables -> Actions -> Secrets`
+  - `HF_TOKEN`
+- `Settings -> Secrets and variables -> Actions -> Variables`
+  - `HF_REPO_ID`
+  - `HF_REPO_TYPE=dataset`
+
+권장 Hugging Face 저장소:
+
+- 타입: `Dataset`
+- 공개 범위: `Public`
+- 예: `yourname/nautilus-releases`
+
+소개 페이지의 다운로드 버튼은 보통 아래 형태의 Hugging Face URL에 연결하면 됩니다.
+
+```text
+https://huggingface.co/datasets/<HF_REPO_ID>/resolve/main/releases/desktop/<tag>/<artifact-folder>/<filename>
+```
+
+예:
+
+```text
+https://huggingface.co/datasets/yourname/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-windows/Nautilus%20Setup%201.0.0.exe
+```
 
 ## 로컬 빌드 명령
 
@@ -99,3 +122,18 @@ npm run build:bundle:linux
 - Linux용은 Linux runner
 
 GitHub Actions를 쓰는 이유도 바로 이 점 때문입니다.
+
+## 버전 관리 메모
+
+현재 릴리스 버전은 플랫폼별로 따로 관리합니다.
+
+- Desktop 버전: [electron/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/electron/package.json)
+- Android 버전: [frontend/package.json](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/frontend/package.json)
+
+[scripts/sync-app-version.mjs](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/scripts/sync-app-version.mjs)를 실행하면:
+
+- Desktop 최신 버전 정보는 `central/static/latest-version-desktop.json`에 반영됩니다.
+- Android 최신 버전 정보는 `central/static/latest-version-android.json`에 반영됩니다.
+- Android 네이티브 버전은 `frontend/android/app/build.gradle`에 반영됩니다.
+
+Electron 빌드 시에는 [scripts/build-electron.sh](/Users/solmi/Documents/2026/26-1/캡디/corpus_0423/scripts/build-electron.sh)가 `APP_VERSION_OVERRIDE`를 사용해서 데스크톱 버전 번호가 프론트 설정 페이지에도 보이도록 맞춥니다.

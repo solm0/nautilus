@@ -11,11 +11,17 @@ const androidGradlePath = path.join(
   "app",
   "build.gradle",
 );
-const latestVersionPath = path.join(
+const latestVersionDesktopPath = path.join(
   rootDir,
   "central",
   "static",
-  "latest-version.json",
+  "latest-version-desktop.json",
+);
+const latestVersionAndroidPath = path.join(
+  rootDir,
+  "central",
+  "static",
+  "latest-version-android.json",
 );
 
 function readJson(filePath) {
@@ -24,6 +30,15 @@ function readJson(filePath) {
 
 function writeJson(filePath, value) {
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf-8");
+}
+
+function syncLatestVersionFile(filePath, version, defaults) {
+  const current = readJson(filePath);
+  writeJson(filePath, {
+    ...defaults,
+    ...current,
+    version,
+  });
 }
 
 function parseSemver(version) {
@@ -44,24 +59,36 @@ function toAndroidVersionCode(version) {
 }
 
 const frontendPackage = readJson(frontendPackagePath);
-const version = frontendPackage.version;
+const androidVersion = frontendPackage.version;
 
-if (typeof version !== "string" || version.length === 0) {
+if (typeof androidVersion !== "string" || androidVersion.length === 0) {
   throw new Error("frontend/package.json is missing a valid version");
 }
 
 const electronPackage = readJson(electronPackagePath);
-electronPackage.version = version;
-writeJson(electronPackagePath, electronPackage);
+const desktopVersion = electronPackage.version;
 
-const latestVersion = readJson(latestVersionPath);
-latestVersion.version = version;
-writeJson(latestVersionPath, latestVersion);
+if (typeof desktopVersion !== "string" || desktopVersion.length === 0) {
+  throw new Error("electron/package.json is missing a valid version");
+}
+
+syncLatestVersionFile(latestVersionDesktopPath, desktopVersion, {
+  platform: "desktop",
+  download_url: "https://nautilus.solmi.wiki/#download-desktop",
+  notes: [],
+});
+syncLatestVersionFile(latestVersionAndroidPath, androidVersion, {
+  platform: "android",
+  download_url: "https://nautilus.solmi.wiki/#download-android",
+  notes: [],
+});
 
 const androidGradle = readFileSync(androidGradlePath, "utf-8")
-  .replace(/versionCode\s+\d+/, `versionCode ${toAndroidVersionCode(version)}`)
-  .replace(/versionName\s+"[^"]+"/, `versionName "${version}"`);
+  .replace(/versionCode\s+\d+/, `versionCode ${toAndroidVersionCode(androidVersion)}`)
+  .replace(/versionName\s+"[^"]+"/, `versionName "${androidVersion}"`);
 
 writeFileSync(androidGradlePath, androidGradle, "utf-8");
 
-process.stdout.write(`Synced app version to ${version}\n`);
+process.stdout.write(
+  `Synced desktop version ${desktopVersion} and android version ${androidVersion}\n`,
+);

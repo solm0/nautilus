@@ -9,6 +9,7 @@ BACKEND_TEMP_DIST="$BUILD_DIR/backend-dist"
 PYINSTALLER_WORK_DIR="$BUILD_DIR/pyinstaller"
 FINAL_BACKEND_DIST="$ROOT_DIR/backend-dist"
 FRONTEND_DIST="$ROOT_DIR/frontend/dist"
+DESKTOP_VERSION="$(node -p "require('$ROOT_DIR/electron/package.json').version")"
 
 if [[ -x "$ROOT_DIR/backend/venv/bin/python" ]]; then
   BACKEND_PYTHON="$ROOT_DIR/backend/venv/bin/python"
@@ -87,7 +88,7 @@ done
 
 echo "[1/3] Building frontend web app"
 node "$ROOT_DIR/scripts/sync-app-version.mjs"
-(cd "$ROOT_DIR/frontend" && npm run build)
+(cd "$ROOT_DIR/frontend" && APP_VERSION_OVERRIDE="$DESKTOP_VERSION" npm run build)
 
 echo "[2/3] Packaging backend into backend-dist"
 rm -rf "$BACKEND_TEMP_DIST" "$PYINSTALLER_WORK_DIR" "$FINAL_BACKEND_DIST"

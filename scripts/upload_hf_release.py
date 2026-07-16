@@ -21,6 +21,7 @@ def main() -> int:
     repo_type = os.environ.get("HF_REPO_TYPE", "dataset").strip() or "dataset"
     token = require_env("HF_TOKEN")
     tag = require_env("GITHUB_REF_NAME")
+    release_platform = require_env("RELEASE_PLATFORM")
 
     assets_dir = Path("release-assets")
     if not assets_dir.is_dir():
@@ -33,13 +34,13 @@ def main() -> int:
     api = HfApi(token=token)
     api.create_repo(repo_id=repo_id, repo_type=repo_type, private=False, exist_ok=True)
 
-    path_in_repo = f"releases/{tag}"
+    path_in_repo = f"releases/{release_platform}/{tag}"
     api.upload_folder(
         folder_path=str(assets_dir),
         path_in_repo=path_in_repo,
         repo_id=repo_id,
         repo_type=repo_type,
-        commit_message=f"Upload desktop release assets for {tag}",
+        commit_message=f"Upload {release_platform} release assets for {tag}",
     )
 
     print(f"Uploaded {len(files)} file(s) to {repo_type} repo {repo_id}")

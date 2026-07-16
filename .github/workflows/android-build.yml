@@ -1,0 +1,140 @@
+name: Build Android App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "app-android-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend and sync Capacitor Android project
+        run: npm run cap:sync
+        working-directory: frontend
+
+      - name: Configure Android SDK path
+        run: |
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "$SDK_ROOT" ]]; then
+            echo "ANDROID_SDK_ROOT or ANDROID_HOME must be available on the runner" >&2
+            exit 1
+          fi
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > frontend/android/local.properties
+
+      - name: Prepare Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nautilus-release.keystore"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/nautilus-release.keystore" >> "$GITHUB_ENV"
+          else
+            echo "ANDROID_KEYSTORE_PATH=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build Android release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+        working-directory: frontend/android
+
+      - name: Normalize APK filename
+        id: apk
+        run: |
+          if [[ "$GITHUB_REF_NAME" == app-android-v* ]]; then
+            VERSION="${GITHUB_REF_NAME#app-android-v}"
+          else
+            VERSION=$(node -p "require('./frontend/package.json').version")
+          fi
+          RELEASE_DIR="frontend/android/app/build/outputs/apk/release"
+          SIGNED_APK="$RELEASE_DIR/app-release.apk"
+          UNSIGNED_APK="$RELEASE_DIR/app-release-unsigned.apk"
+
+          if [[ -f "$SIGNED_APK" ]]; then
+            SOURCE_APK="$SIGNED_APK"
+            TARGET_APK="$RELEASE_DIR/Nautilus-${VERSION}-android.apk"
+          elif [[ -f "$UNSIGNED_APK" ]]; then
+            SOURCE_APK="$UNSIGNED_APK"
+            TARGET_APK="$RELEASE_DIR/Nautilus-${VERSION}-android-unsigned.apk"
+          else
+            echo "Could not find built APK in $RELEASE_DIR" >&2
+            exit 1
+          fi
+
+          cp "$SOURCE_APK" "$TARGET_APK"
+          echo "artifact_path=$TARGET_APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nautilus-android-apk
+          path: ${{ steps.apk.outputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-hf:
+    name: Publish Hugging Face Assets
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/app-android-v')
+    runs-on: ubuntu-latest
+    env:
+      HF_REPO_ID: ${{ vars.HF_REPO_ID }}
+      HF_REPO_TYPE: ${{ vars.HF_REPO_TYPE || 'dataset' }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      RELEASE_PLATFORM: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Hugging Face upload dependencies
+        run: python -m pip install --upgrade huggingface_hub hf-xet
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: release-assets
+
+      - name: Upload release assets to Hugging Face
+        run: python scripts/upload_hf_release.py
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          HF_XET_HIGH_PERFORMANCE: "1"

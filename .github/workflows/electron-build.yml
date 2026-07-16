@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "app-v*"
+      - "app-desktop-v*"
 
 permissions:
   contents: write
@@ -213,12 +213,13 @@ jobs:
   publish-hf:
     name: Publish Hugging Face Assets
     needs: build
-    if: startsWith(github.ref, 'refs/tags/app-v')
+    if: startsWith(github.ref, 'refs/tags/app-desktop-v')
     runs-on: ubuntu-latest
     env:
       HF_REPO_ID: ${{ vars.HF_REPO_ID }}
       HF_REPO_TYPE: ${{ vars.HF_REPO_TYPE || 'dataset' }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      RELEASE_PLATFORM: desktop
     steps:
       - name: Checkout
         uses: actions/checkout@v7
