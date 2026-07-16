@@ -239,34 +239,34 @@ def install_pack(
     asset_kind: str,
     task_id: str,
 ):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    invalidate_runtime(lang)
-
-    if asset_kind not in {"lemma", "ngram"}:
-        raise Exception(f"invalid asset_kind: {asset_kind}")
-
-    if not filename:
-        raise Exception("filename is required for split pack install")
-
-    if asset_kind == "ngram" and not get_install_state(lang, version)["lemma_installed"]:
-        raise Exception("lemma pack must be installed first")
-
-    clear_existing_install_target(lang, version, asset_kind)
-
-    api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{lang}-v{version}"
-
-    headers_api = {
-        "Authorization": f"token {GITHUB_TOKEN}"
-    }
-
-    headers_download = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/octet-stream"
-    }
-
     set_progress(task_id, 0.0, "downloading_pack", phase="pack")
 
     try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        invalidate_runtime(lang)
+
+        if asset_kind not in {"lemma", "ngram"}:
+            raise Exception(f"invalid asset_kind: {asset_kind}")
+
+        if not filename:
+            raise Exception("filename is required for split pack install")
+
+        if asset_kind == "ngram" and not get_install_state(lang, version)["lemma_installed"]:
+            raise Exception("lemma pack must be installed first")
+
+        clear_existing_install_target(lang, version, asset_kind)
+
+        api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{lang}-v{version}"
+
+        headers_api = {
+            "Authorization": f"token {GITHUB_TOKEN}"
+        }
+
+        headers_download = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/octet-stream"
+        }
+
         # 1. release 조회
         res = requests.get(api_url, headers=headers_api)
 

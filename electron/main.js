@@ -330,8 +330,42 @@ function waitForBackend(url, retries = 120, delay = 500) {
   });
 }
 
+function waitForUrl(url, retries = 10, delay = 250) {
+  return new Promise((resolve, reject) => {
+    const check = (n) => {
+      const request = http.get(url, (res) => {
+        if (res.statusCode && res.statusCode < 500) {
+          resolve();
+          return;
+        }
+
+        if (n > 0) {
+          setTimeout(() => check(n - 1), delay);
+          return;
+        }
+
+        reject(new Error(`URL 응답 이상: HTTP ${res.statusCode}`));
+      });
+
+      request.setTimeout(1000, () => {
+        request.destroy(new Error("URL 요청 시간 초과"));
+      });
+
+      request.on("error", () => {
+        if (n > 0) {
+          setTimeout(() => check(n - 1), delay);
+        } else {
+          reject(new Error("URL 연결 실패"));
+        }
+      });
+    };
+
+    check(retries);
+  });
+}
+
 // ─── BrowserWindow 생성 ──────────────────────────────────────
-function createWindow() {
+async function createWindow() {
   const isDev = !app.isPackaged;
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -348,9 +382,16 @@ function createWindow() {
   });
 
   // 개발: Vite dev server / 배포: FastAPI가 서빙하는 dist
-  const startUrl = isDev
-    ? "http://localhost:5173"
-    : `http://localhost:${DEV_BACKEND_PORT}`;
+  let startUrl = `http://localhost:${DEV_BACKEND_PORT}`;
+
+  if (isDev) {
+    try {
+      await waitForUrl("http://localhost:5173");
+      startUrl = "http://localhost:5173";
+    } catch {
+      startUrl = `http://localhost:${DEV_BACKEND_PORT}`;
+    }
+  }
 
   mainWindow.loadURL(startUrl);
 
@@ -422,7 +463,7 @@ app.whenReady().then(async () => {
     return;
   }
 
-  createWindow();
+  await createWindow();
 
   ipcMain.handle("now-playing:get", async () => getMacNowPlaying());
   ipcMain.handle("app:relaunch", async () => {
