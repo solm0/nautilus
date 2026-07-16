@@ -31,3 +31,7 @@
 
 - `main.py` may download language models during startup
 - Schema bootstrap happens in app startup, so database-related changes can affect boot behavior
+- `central` currently aims to keep one latest installed pack version per language under `central/data/static`
+- `central/install_packs.py` prewarms all languages, while runtime dependency definitions still come from `shared/manifests`
+- `central` writes runtime state/refcount files under `central/data_runtime/state` to stay consistent with desktop/backend tracking
+- If a central-only service imports `shared`, make sure repo-root bootstrap/import path setup still works under systemd or other service runners

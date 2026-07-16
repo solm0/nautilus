@@ -41,6 +41,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Free Linux disk space
+        if: runner.os == 'Linux'
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo apt-get clean
+          df -h
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -73,6 +83,8 @@ jobs:
         run: python -m venv backend/venv
 
       - name: Install backend build dependencies
+        env:
+          PIP_NO_CACHE_DIR: "1"
         run: |
           if [[ -x backend/venv/bin/python ]]; then
             BACKEND_PYTHON="backend/venv/bin/python"
@@ -82,7 +94,6 @@ jobs:
           "$BACKEND_PYTHON" -m pip install --upgrade pip
           "$BACKEND_PYTHON" -m pip install \
             aiosmtplib==5.1.0 \
-            aistudio-sdk==0.3.8 \
             altgraph==0.17.5 \
             annotated-doc==0.0.4 \
             annotated-types==0.7.0 \
@@ -94,7 +105,6 @@ jobs:
             cffi==2.0.0 \
             chardet==7.4.3 \
             charset-normalizer==2.0.12 \
-            classla==2.2.1 \
             click==8.3.3 \
             colorama==0.4.6 \
             colorlog==6.10.1 \
@@ -120,26 +130,18 @@ jobs:
             imagesize==2.0.0 \
             Jinja2==3.1.6 \
             kiwipiepy==0.23.1 \
-            kiwipiepy_model==0.23.0 \
             lazy-loader==0.5 \
             lxml==6.1.0 \
             macholib==1.16.4 \
             markdown-it-py==4.0.0 \
             MarkupSafe==3.0.3 \
             mdurl==0.1.2 \
-            modelscope==1.36.2 \
             mpmath==1.3.0 \
             networkx==3.6.1 \
             ninja==1.13.0 \
             numpy==2.4.4 \
-            obeliks==1.1.6 \
-            onnxruntime==1.25.1 \
-            opencv-contrib-python==4.10.0.84 \
-            opencv-python==4.13.0.92 \
-            opencv-python-headless==4.8.1.78 \
             opt-einsum==3.3.0 \
             packaging==26.2 \
-            pandas==3.0.2 \
             passlib==1.7.4 \
             pillow==12.2.0 \
             platformdirs==4.9.6 \
@@ -171,8 +173,6 @@ jobs:
             rsa==4.9.1 \
             ruamel.yaml==0.19.1 \
             safetensors==0.7.0 \
-            scikit-image==0.26.0 \
-            scipy==1.17.1 \
             setuptools==82.0.1 \
             shapely==2.1.2 \
             shellingham==1.5.4 \
@@ -183,15 +183,12 @@ jobs:
             starlette==0.52.1 \
             sympy==1.13.1 \
             termcolor==3.3.0 \
-            tifffile==2026.5.2 \
             torch==2.6.0 \
-            torchvision==0.21.0 \
             tqdm==4.67.3 \
             typer==0.24.2 \
             typing-inspection==0.4.2 \
             typing_extensions==4.15.0 \
             udapi==0.5.2 \
-            udtools==0.2.7 \
             ujson==5.12.0 \
             urllib3==1.26.20 \
             uvicorn==0.46.0 \

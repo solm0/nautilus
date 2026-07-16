@@ -134,6 +134,43 @@ Electron 데스크톱 앱은 개발 실행과 배포 실행에서 언어 데이�
 
 경로를 직접 하드코딩하지 말고 `backend/runtime_paths.py`를 통해 접근해야 개발/배포 경로가 꼬이지 않습니다.
 
+## 사람이 관리할 부분
+
+언어 런타임/모델/언어팩 관련해서 사람이 직접 수정해야 하는 기준 파일은 아래입니다.
+
+- 런타임 manifest 원본:
+  - `shared/manifests/language_packs.py`
+- 중앙 서버 언어팩 프리웜:
+  - `central/install_packs.py`
+- 배포 앱 빌드/백엔드 패키징:
+  - `scripts/build-electron.sh`
+
+실무적으로는 아래만 기억하면 됩니다.
+
+1. 새 언어를 추가할 때
+   - `shared/manifests/language_packs.py`의 `RUNTIME_MANIFESTS`에 새 언어를 추가합니다.
+   - 그 언어가 `stanza`를 쓰는지 `classla`를 쓰는지, 어떤 패키지/리소스를 쓰는지 여기서 정합니다.
+   - 같은 파일의 `PACK_RELEASES`에도 해당 언어의 언어팩 버전 정보를 넣어야 합니다.
+
+2. 기존 언어의 런타임 구성을 바꿀 때
+   - 예: `classla` 대신 다른 라이브러리 사용, `obeliks` 추가/제거, `kiwipiepy_model` 추가
+   - `shared/manifests/language_packs.py`의 해당 언어 manifest만 수정합니다.
+   - 순서는 코드가 `shared dependency -> language package/resource -> model -> pack` 순서로 처리하므로, 사람이 설치 순서를 따로 코드에 하드코딩할 필요는 없습니다.
+
+3. 기존 언어의 새 데이터 버전을 추가할 때
+   - `shared/manifests/language_packs.py`의 `PACK_RELEASES`에 새 버전을 추가합니다.
+   - `central`은 언어별 최신 1개 버전을 유지하려는 구조라서, 가장 최신 항목이 먼저 오도록 관리하는 것이 안전합니다.
+
+4. 배포 앱 용량을 줄이거나 번들 포함 대상을 바꿀 때
+   - `scripts/build-electron.sh`를 수정합니다.
+   - 지금 구조에서는 배포 backend만 user runtime overlay를 사용하고, 개발 서버와 central은 기존 환경을 그대로 씁니다.
+
+5. state/refcount 파일에 대해서
+   - `runtime/state` 아래 파일은 사람이 편집하는 파일이 아닙니다.
+   - 설치기와 런타임이 자동으로 관리하므로 git에 넣지 않습니다.
+
+정리하면, 사람이 자주 만질 곳은 거의 `shared/manifests/language_packs.py` 하나이고, 빌드 정책까지 바꿀 때만 `scripts/build-electron.sh`를 같이 보면 됩니다.
+
 ## 주의사항
 
 `build:bundle:win`과 `build:bundle:linux`는 각 대상 OS에서 실행될 때 가장 자연스럽습니다.

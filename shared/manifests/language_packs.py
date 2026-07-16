@@ -3,6 +3,34 @@ from __future__ import annotations
 HF_PACK_REPO_ID = "solm0/nautilus-releases"
 HF_PACK_REPO_TYPE = "dataset"
 
+RUNTIME_PACKAGE_SPECS = {
+    "classla": {
+        "project": "classla",
+        "version": "2.2.1",
+        "install_mode": "pypi_wheel",
+    },
+    "obeliks": {
+        "project": "obeliks",
+        "version": "1.1.6",
+        "install_mode": "pypi_wheel",
+    },
+    "udtools": {
+        "project": "udtools",
+        "version": "0.2.7",
+        "install_mode": "pypi_wheel",
+    },
+    "reldi_tokeniser": {
+        "project": "reldi-tokeniser",
+        "version": "1.0.3",
+        "install_mode": "pypi_wheel",
+    },
+    "kiwipiepy_model": {
+        "project": "kiwipiepy_model",
+        "version": "0.23.0",
+        "install_mode": "pypi_wheel",
+    },
+}
+
 
 def build_pack_download_url(lang: str, version: str, filename: str) -> str:
     return (
@@ -379,6 +407,10 @@ def get_runtime_resource_plan(lang: str) -> dict[str, list[str]]:
         "resource_packages": get_resource_package_ids(lang),
         "model_resources": get_model_resource_ids(lang),
     }
+
+
+def get_runtime_package_spec(package_name: str) -> dict | None:
+    return RUNTIME_PACKAGE_SPECS.get(package_name)
 
 
 def list_languages() -> list[str]:

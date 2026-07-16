@@ -37,6 +37,7 @@ On every task, read the nearest relevant `AGENTS.md` before exploring code.
 - `central/main.py`: central API entrypoint
 - `frontend/package.json`: main frontend and Capacitor scripts
 - `electron/main.js`: desktop process entrypoint
+- `shared/manifests/language_packs.py`: shared source of truth for language runtime and pack metadata
 
 ## Workflow hint
 

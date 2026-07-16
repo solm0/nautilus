@@ -5,9 +5,13 @@ import importlib.util
 import json
 import shutil
 import sys
+import tempfile
+import urllib.request
+import zipfile
 from pathlib import Path
 
 from runtime_paths import get_runtime_package_root, is_packaged_backend
+from shared.manifests import get_runtime_package_spec
 
 
 MARKER_NAME = ".nautilus-overlay.json"
@@ -65,6 +69,79 @@ def _write_marker(dest_root: Path, package_name: str, source_root: Path) -> None
         outfile.write("\n")
 
 
+def _write_download_marker(dest_root: Path, package_name: str, wheel_url: str) -> None:
+    marker = {
+        "package": package_name,
+        "version": _get_package_version(package_name),
+        "wheel_url": wheel_url,
+    }
+    path = _marker_path(dest_root, package_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as outfile:
+        json.dump(marker, outfile, ensure_ascii=True, indent=2)
+        outfile.write("\n")
+
+
+def _load_pypi_release(spec: dict) -> dict:
+    project = spec["project"]
+    version = spec["version"]
+    url = f"https://pypi.org/pypi/{project}/{version}/json"
+
+    with urllib.request.urlopen(url, timeout=30) as response:
+        return json.load(response)
+
+
+def _select_wheel_url(spec: dict) -> str:
+    payload = _load_pypi_release(spec)
+    urls = payload.get("urls") or []
+
+    preferred = []
+    fallback = []
+
+    for item in urls:
+        if item.get("packagetype") != "bdist_wheel":
+            continue
+
+        filename = item.get("filename") or ""
+        url = item.get("url")
+        if not url:
+            continue
+
+        if filename.endswith("none-any.whl"):
+            preferred.append(url)
+        else:
+            fallback.append(url)
+
+    if preferred:
+        return preferred[0]
+
+    if fallback:
+        return fallback[0]
+
+    raise RuntimeError(
+        f"No wheel asset found on PyPI for {spec['project']}=={spec['version']}"
+    )
+
+
+def _download_and_extract_wheel(package_name: str, dest_root: Path, spec: dict) -> Path:
+    wheel_url = _select_wheel_url(spec)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".whl") as tmp_file:
+        wheel_path = Path(tmp_file.name)
+
+    try:
+        with urllib.request.urlopen(wheel_url, timeout=120) as response, open(wheel_path, "wb") as outfile:
+            shutil.copyfileobj(response, outfile)
+
+        with zipfile.ZipFile(wheel_path, "r") as zip_ref:
+            zip_ref.extractall(dest_root)
+    finally:
+        wheel_path.unlink(missing_ok=True)
+
+    _write_download_marker(dest_root, package_name, wheel_url)
+    return dest_root / package_name
+
+
 def ensure_runtime_python_path() -> Path:
     runtime_package_root = get_runtime_package_root()
     runtime_package_root.mkdir(parents=True, exist_ok=True)
@@ -96,6 +173,11 @@ def ensure_runtime_dependency_overlay(package_name: str) -> Path | None:
     source_root = _get_package_root(package_name)
 
     if source_root is None:
+        spec = get_runtime_package_spec(package_name)
+
+        if spec and spec.get("install_mode") == "pypi_wheel":
+            return _download_and_extract_wheel(package_name, runtime_package_root, spec)
+
         raise RuntimeError(f"Cannot resolve packaged dependency: {package_name}")
 
     if source_root == dest_root:
