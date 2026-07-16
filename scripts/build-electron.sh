@@ -97,17 +97,19 @@ done
 
 OPTIONAL_DATA_DIRS=()
 
-for entry in "${OPTIONAL_DATA_DIRS[@]}"; do
-  src_rel="${entry%%:*}"
-  dest_rel="${entry##*:}"
-  src_abs="$ROOT_DIR/$src_rel"
+if ((${#OPTIONAL_DATA_DIRS[@]} > 0)); then
+  for entry in "${OPTIONAL_DATA_DIRS[@]}"; do
+    src_rel="${entry%%:*}"
+    dest_rel="${entry##*:}"
+    src_abs="$ROOT_DIR/$src_rel"
 
-  if [[ -e "$src_abs" ]]; then
-    PYINSTALLER_ARGS+=(--add-data "$src_abs${DATA_SEPARATOR}$dest_rel")
-  else
-    echo "Skipping missing optional path: $src_rel"
-  fi
-done
+    if [[ -e "$src_abs" ]]; then
+      PYINSTALLER_ARGS+=(--add-data "$src_abs${DATA_SEPARATOR}$dest_rel")
+    else
+      echo "Skipping missing optional path: $src_rel"
+    fi
+  done
+fi
 
 echo "[1/3] Building frontend web app"
 node "$ROOT_DIR/scripts/sync-app-version.mjs"
