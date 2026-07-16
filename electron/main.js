@@ -1,7 +1,6 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const { spawn, execFile } = require("child_process");
 const path = require("path");
-const isDev = require("electron-is-dev");
 const http = require("http");
 const { exec } = require("child_process");
 
@@ -333,6 +332,7 @@ function waitForBackend(url, retries = 120, delay = 500) {
 
 // ─── BrowserWindow 생성 ──────────────────────────────────────
 function createWindow() {
+  const isDev = !app.isPackaged;
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -398,6 +398,7 @@ app.on("second-instance", (_event, argv) => {
 });
 
 app.whenReady().then(async () => {
+  const isDev = !app.isPackaged;
   if (process.defaultApp && process.argv.length >= 2) {
     app.setAsDefaultProtocolClient(
       DEEP_LINK_PROTOCOL,
