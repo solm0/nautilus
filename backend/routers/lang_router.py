@@ -13,7 +13,7 @@ from services.installer import (
 
 router = APIRouter(prefix="/api/lang", tags=["lang"])
 
-CENTRAL_API = os.getenv("CENTRAL_API")
+CENTRAL_API = (os.getenv("CENTRAL_API") or "https://nautilus.solmi.wiki/api").rstrip("/")
 
 
 # -----------------------------
