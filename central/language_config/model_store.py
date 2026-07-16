@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import bootstrap_paths  # noqa: F401
 from shared.manifests import get_model_provider
 
 BASE_DIR = Path(__file__).resolve().parent.parent

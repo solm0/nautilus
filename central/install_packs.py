@@ -3,6 +3,7 @@ import shutil
 import zipfile
 from pathlib import Path
 
+import bootstrap_paths  # noqa: F401
 import requests
 from packaging.version import Version
 

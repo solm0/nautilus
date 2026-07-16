@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import bootstrap_paths  # noqa: F401
 from sqlalchemy import text
 
 from db import engine, Base

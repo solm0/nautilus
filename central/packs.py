@@ -1,3 +1,5 @@
+import bootstrap_paths  # noqa: F401
+
 from shared.manifests.language_packs import (
     HF_PACK_REPO_ID,
     HF_PACK_REPO_TYPE,
