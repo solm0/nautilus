@@ -65,7 +65,9 @@ PYINSTALLER_ARGS=(
   --workpath "$PYINSTALLER_WORK_DIR/work"
   --specpath "$PYINSTALLER_WORK_DIR/spec"
   --paths "$ROOT_DIR"
+  --paths "$ROOT_DIR/backend"
   --collect-submodules shared
+  --collect-submodules language_config
 )
 
 OPTIONAL_DATA_DIRS=(
