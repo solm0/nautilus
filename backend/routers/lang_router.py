@@ -60,7 +60,8 @@ def install(data: dict, bg: BackgroundTasks):
             data["version"],
             data.get("filename"),
             data.get("asset_kind", "lemma"),
-            task_id
+            task_id,
+            data.get("download_url"),
         )
 
     bg.add_task(job)

@@ -239,6 +239,7 @@ export default function LanguageSelect({
           lang={installingPack.lang}
           version={installingPack.version}
           filename={installingPack.ngram_filename}
+          downloadUrl={installingPack.ngram_download_url}
           assetKind="ngram"
           onClose={() => setInstallingPack(null)}
           onInstalled={async () => {

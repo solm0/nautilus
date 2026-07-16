@@ -3,6 +3,7 @@ import { signup } from "../../api"
 import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
 import { useI18n } from "../../i18n"
+import { resolveAuthMessage } from "./errorMessages"
 
 export default function Signup(){
   const [name, setName] = useState("")
@@ -16,10 +17,7 @@ export default function Signup(){
       const res=await signup(email,password,name);
 
       if (res.detail) {
-        const errMsg = Array.isArray(res.detail)
-          ? res.detail[0].msg
-          : res.detail || "error"
-        setMsg(errMsg)
+        setMsg(t(resolveAuthMessage(res.detail)))
       } else setMsg("email sent.")
     } else {
       setMsg("enter your name, email, and password.")
@@ -31,7 +29,7 @@ export default function Signup(){
       <div className="flex flex-col items-start gap-4 w-full text-lg">
         <input
           type="text"
-          placeholder="name"
+          placeholder={t("name")}
           value={name}
           onChange={e => setName(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
@@ -40,7 +38,7 @@ export default function Signup(){
 
         <input
           type="text"
-          placeholder="email"
+          placeholder={t("email")}
           value={email}
           onChange={e=>setEmail(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
@@ -48,7 +46,7 @@ export default function Signup(){
 
         <input
           type="password"
-          placeholder="password"
+          placeholder={t("password")}
           value={password}
           onChange={e=>setPassword(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-50 transition-opacity"

@@ -24,10 +24,6 @@ dist
 dist-ssr
 *.local
 
-.build/
-backend-dist
-dist-electron
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -38,3 +34,10 @@ dist-electron
 *.njsproj
 *.sln
 *.sw?
+
+.build/
+backend-dist
+dist-electron
+
+.build-check/
+.build-check-2/

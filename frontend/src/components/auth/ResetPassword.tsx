@@ -3,6 +3,7 @@ import { resetPassword } from "../../api"
 import SystemMessage from "./SystemMessage"
 import Button, { LinkButton } from "../../components/util/Button"
 import { useI18n } from "../../i18n"
+import { resolveAuthMessage } from "./errorMessages"
 
 export default function ResetPassword(){
 
@@ -18,10 +19,7 @@ export default function ResetPassword(){
       const res=await resetPassword(token,pw);
 
       if (res.detail) {
-        const errMsg = Array.isArray(res.detail)
-          ? res.detail[0].msg
-          : res.detail || "error"
-        setMsg(errMsg)
+        setMsg(t(resolveAuthMessage(res.detail)))
       } else setMsg("your password was reset.")
     } else {
       setMsg('enter your new password.')

@@ -74,6 +74,15 @@ class ResetPassword(BaseModel):
 # helpers
 # -----------------------------
 
+def api_error(status_code: int, code: str, message: str) -> HTTPException:
+  return HTTPException(
+    status_code=status_code,
+    detail={
+      "code": code,
+      "message": message,
+    },
+  )
+
 def hash_password(password: str):
   return pwd_context.hash(password)
 
@@ -90,9 +99,9 @@ def create_token(user_id: int):
 async def send_email(email: str, link: str):
 
   message = MessageSchema(
-    subject="Account action",
+    subject="[Nautilus] Account action",
     recipients=[email],
-    body=f"Click this link:\n{link}",
+    body=f"To reset your password, click the link below.\n아래 링크를 클릭하여 비밀번호를 재설정하세요.\n{link}",
     subtype="plain"
   )
 
@@ -245,7 +254,6 @@ def render_reset_page(token: str) -> HTMLResponse:
       <p>Enter a new password for your Nautilus account.</p>
       <form id="reset-form">
         <label>
-          New password
           <input id="password" type="password" minlength="1" autocomplete="new-password" required />
         </label>
         <button id="submit-button" type="submit">Change password</button>
@@ -324,7 +332,7 @@ async def signup(data: SignupRequest, db: Session = Depends(get_db)):
   existing = db.query(User).filter(User.email == data.email).first()
 
   if existing:
-    raise HTTPException(400, "email already registered")
+    raise api_error(400, "email_already_registered", "email already registered")
 
   token = secrets.token_urlsafe(32)
 
@@ -381,13 +389,13 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
   user = db.query(User).filter(User.email == data.email).first()
 
   if not user:
-      raise HTTPException(400, "invalid credentials")
+      raise api_error(400, "invalid_credentials", "invalid credentials")
 
   if not verify_password(data.password, user.password_hash):
-      raise HTTPException(400, "invalid credentials")
+      raise api_error(400, "invalid_credentials", "invalid credentials")
 
   if not user.email_verified:
-      raise HTTPException(400, "email not verified")
+      raise api_error(400, "email_not_verified", "email not verified")
 
   token = create_token(user.id)
 
@@ -434,7 +442,7 @@ def reset_password(data: ResetPassword, db: Session = Depends(get_db)):
   user = db.query(User).filter(User.reset_token == data.token).first()
 
   if not user:
-    raise HTTPException(400, "invalid token")
+    raise api_error(400, "invalid_token", "invalid token")
 
   user.password_hash = hash_password(data.new_password)
   user.reset_token = None
@@ -455,13 +463,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
         if not user_id:
-            raise HTTPException(401, "invalid token")
+            raise api_error(401, "invalid_token", "invalid token")
     except JWTError:
-        raise HTTPException(401, "invalid token")
+        raise api_error(401, "invalid_token", "invalid token")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(401, "user not found")
+        raise api_error(401, "user_not_found", "user not found")
     return user
 
 security_optional = HTTPBearer(auto_error=False)

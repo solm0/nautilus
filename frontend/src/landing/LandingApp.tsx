@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Annotation, LemmaData, TextAnalysisResult } from "../components/pageTypes";
 import type { SidePanelState } from "../components/pageview/PageView";
+import { CENTRAL_API } from "../api";
 import Desk from "../components/lemma_expansions/Desk";
 import PageContent from "../components/pageview/PageContent";
 import NgramToggleInput from "../components/pageview/NgramToggleInput";
@@ -17,23 +18,172 @@ type DemoPayload = {
 };
 
 const fixedLanguageOptions = [{ lang: "en" }];
-const desktopDownloads = [
-  {
-    label: "macOS",
-    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-macos/Nautilus-1.0.0-arm64.dmg",
-  },
-  {
-    label: "Linux",
-    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-linux/Nautilus-1.0.0-arm64.dmg",
-  },
-  {
-    label: "Windows",
-    href: "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-windows/Nautilus-1.0.0-arm64.dmg",
-  },
-] as const;
 
-const androidDownload =
-  "https://huggingface.co/datasets/solm0/nautilus-releases/resolve/main/releases/android/app-android-v1.0.0/Nautilus-1.0.0-android.apk";
+type DesktopPlatform = "macOS" | "Linux" | "Windows";
+type DesktopVersion = {
+  version: string;
+  platforms: Record<DesktopPlatform, string>;
+};
+
+type AndroidVersion = {
+  version: string;
+  href: string;
+};
+
+type ReleaseCatalog = {
+  desktop: DesktopVersion[];
+  android: AndroidVersion[];
+};
+
+type MutableDesktopVersion = {
+  version: string;
+  platforms: Partial<Record<DesktopPlatform, string>>;
+};
+
+const HF_REPO_ID = "solm0/nautilus-releases";
+const HF_API_TREE_URL = `https://huggingface.co/api/datasets/${HF_REPO_ID}/tree/main/releases?recursive=1&expand=0`;
+const HF_RESOLVE_BASE = `https://huggingface.co/datasets/${HF_REPO_ID}/resolve/main`;
+
+type HfTreeEntry = {
+  path?: string;
+  type?: string;
+};
+
+async function readJsonOrThrow<T>(response: Response, fallbackMessage: string) {
+  if (!response.ok) {
+    throw new Error(fallbackMessage);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    const bodyPreview = (await response.text()).slice(0, 120);
+    throw new Error(
+      `${fallbackMessage} Expected JSON but received ${contentType || "unknown content type"}: ${bodyPreview}`,
+    );
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function compareVersionsDesc(a: string, b: string) {
+  return b.localeCompare(a, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function buildHfResolveUrl(pathInRepo: string) {
+  return `${HF_RESOLVE_BASE}/${pathInRepo}`;
+}
+
+function buildReleaseCatalogFromHfTree(entries: HfTreeEntry[]): ReleaseCatalog {
+  const desktopReleases = new Map<string, MutableDesktopVersion>();
+  const androidReleases = new Map<string, AndroidVersion>();
+
+  for (const entry of entries) {
+    if (entry.type !== "file" || typeof entry.path !== "string") {
+      continue;
+    }
+
+    const parts = entry.path.split("/");
+    if (parts.length < 4 || parts[0] !== "releases") {
+      continue;
+    }
+
+    const platform = parts[1];
+    const tag = parts[2];
+    const versionMatch = tag.match(/^app-(desktop|android)-v(\d+\.\d+\.\d+)$/);
+
+    if (!versionMatch) {
+      continue;
+    }
+
+    const version = versionMatch[2];
+
+    if (platform === "desktop" && parts.length >= 5) {
+      const artifactFolder = parts[3];
+      const filename = parts[parts.length - 1];
+      const platformKey = {
+        "nautilus-electron-macos": "macOS",
+        "nautilus-electron-linux": "Linux",
+        "nautilus-electron-windows": "Windows",
+      }[artifactFolder] as DesktopPlatform | undefined;
+
+      if (!platformKey) {
+        continue;
+      }
+
+      if (platformKey === "macOS" && !filename.endsWith(".dmg")) {
+        continue;
+      }
+
+      if (platformKey === "Linux" && !filename.endsWith(".AppImage")) {
+        continue;
+      }
+
+      if (platformKey === "Windows" && !filename.endsWith(".exe")) {
+        continue;
+      }
+
+      const release: MutableDesktopVersion = desktopReleases.get(version) ?? {
+        version,
+        platforms: {},
+      };
+
+      release.platforms[platformKey] = buildHfResolveUrl(entry.path);
+      desktopReleases.set(version, release);
+    }
+
+    if (platform === "android") {
+      const filename = parts[parts.length - 1];
+
+      if (!filename.endsWith(".apk")) {
+        continue;
+      }
+
+      androidReleases.set(version, {
+        version,
+        href: buildHfResolveUrl(entry.path),
+      });
+    }
+  }
+
+  return {
+    desktop: Array.from(desktopReleases.values())
+      .filter((release) => Object.keys(release.platforms).length > 0)
+      .sort((a, b) => compareVersionsDesc(a.version, b.version))
+      .map((release) => ({
+        version: release.version,
+        platforms: release.platforms as Record<DesktopPlatform, string>,
+      })),
+    android: Array.from(androidReleases.values())
+      .sort((a, b) => compareVersionsDesc(a.version, b.version)),
+  };
+}
+
+async function loadReleaseCatalog() {
+  const apiResponse = await fetch(`${CENTRAL_API}/releases`);
+
+  if (apiResponse.ok) {
+    return readJsonOrThrow<ReleaseCatalog>(
+      apiResponse,
+      "Could not load release catalog.",
+    );
+  }
+
+  if (apiResponse.status !== 404) {
+    throw new Error("Could not load release catalog.");
+  }
+
+  const hfResponse = await fetch(HF_API_TREE_URL);
+  const tree = await readJsonOrThrow<HfTreeEntry[]>(
+    hfResponse,
+    "Could not load release catalog.",
+  );
+
+  return buildReleaseCatalogFromHfTree(tree);
+}
 
 function LandingApp() {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
@@ -42,19 +192,21 @@ function LandingApp() {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [composerValue, setComposerValue] = useState("language opens a sentence");
   const [selectedLemma, setSelectedLemma] = useState<LemmaData | null>(null);
+  const [releaseCatalog, setReleaseCatalog] = useState<ReleaseCatalog>({
+    desktop: [],
+    android: [],
+  });
 
   useEffect(() => {
     let cancelled = false;
 
     const loadDemo = async () => {
       try {
-        const response = await fetch("/api/demo/landing/en");
-
-        if (!response.ok) {
-          throw new Error("Could not load demo data.");
-        }
-
-        const payload = (await response.json()) as DemoPayload;
+        const response = await fetch(`${CENTRAL_API}/demo/landing/en`);
+        const payload = await readJsonOrThrow<DemoPayload>(
+          response,
+          "Could not load demo data.",
+        );
 
         if (cancelled) {
           return;
@@ -79,6 +231,34 @@ function LandingApp() {
     };
 
     void loadDemo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchReleaseCatalog = async () => {
+      try {
+        const payload = await loadReleaseCatalog();
+
+        if (cancelled) {
+          return;
+        }
+
+        setReleaseCatalog(payload);
+      } catch (fetchError) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(fetchError);
+      }
+    };
+
+    void fetchReleaseCatalog();
 
     return () => {
       cancelled = true;
@@ -123,32 +303,50 @@ function LandingApp() {
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-neutral-600">Desktop App</p>
-                  <div className="flex flex-wrap gap-3 items-center">
-                    {desktopDownloads.map((download) => (
-                      <a
-                        key={download.label}
-                        href={download.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
-                      >
-                        {download.label}
-                      </a>
+                  <div className="flex flex-col gap-3">
+                    {releaseCatalog.desktop.map((desktopVersion) => (
+                      <div key={desktopVersion.version} className="flex flex-col gap-1.5">
+                        <p className="text-xs font-medium text-neutral-500">
+                          v{desktopVersion.version}
+                        </p>
+                        <div className="flex flex-wrap gap-3 items-center">
+                          {Object.entries(desktopVersion.platforms).map(([label, href]) => (
+                            <a
+                              key={`${desktopVersion.version}-${label}`}
+                              href={href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
+                            >
+                              {label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-neutral-600">Android App</p>
-                  <div className="flex flex-wrap gap-3 items-center">
-                    <a
-                      href={androidDownload}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
-                    >
-                      APK Download
-                    </a>
+                  <div className="flex flex-col gap-3">
+                    {releaseCatalog.android.map((androidVersion) => (
+                      <div key={androidVersion.version} className="flex flex-col gap-1.5">
+                        <p className="text-xs font-medium text-neutral-500">
+                          v{androidVersion.version}
+                        </p>
+                        <div className="flex flex-wrap gap-3 items-center">
+                          <a
+                            href={androidVersion.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
+                          >
+                            APK Download
+                          </a>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

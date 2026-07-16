@@ -22,6 +22,7 @@ type Props = {
   lang: string;
   version: string;
   filename: string;
+  downloadUrl: string;
   assetKind: "lemma" | "ngram";
   onClose: () => void;
   onInstalled: () => Promise<void> | void;
@@ -50,6 +51,7 @@ export default function PackModal({
   lang,
   version,
   filename,
+  downloadUrl,
   assetKind,
   onClose,
   onInstalled,
@@ -92,6 +94,7 @@ export default function PackModal({
         lang,
         version,
         filename,
+        download_url: downloadUrl,
         asset_kind: assetKind,
       });
 

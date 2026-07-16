@@ -15,6 +15,8 @@ export type Pack = {
   version: string;
   lemma_filename: string;
   ngram_filename: string;
+  lemma_download_url: string;
+  ngram_download_url: string;
   tag: string;
   corpus: {
     "Data source"?: string;
@@ -26,6 +28,7 @@ type SelectedInstall = {
   lang: string;
   version: string;
   filename: string;
+  downloadUrl: string;
   assetKind: "lemma" | "ngram";
 };
 
@@ -164,6 +167,7 @@ export default function PackTable() {
         lang: pack.lang,
         version: pack.version,
         filename: pack.lemma_filename,
+        download_url: pack.lemma_download_url,
         asset_kind: "lemma",
       });
 
@@ -238,6 +242,8 @@ export default function PackTable() {
       lang: pack.lang,
       version: pack.version,
       filename: assetKind === "lemma" ? pack.lemma_filename : pack.ngram_filename,
+      downloadUrl:
+        assetKind === "lemma" ? pack.lemma_download_url : pack.ngram_download_url,
       assetKind,
     });
   }
@@ -434,6 +440,7 @@ export default function PackTable() {
           lang={selectedInstall.lang}
           version={selectedInstall.version}
           filename={selectedInstall.filename}
+          downloadUrl={selectedInstall.downloadUrl}
           assetKind={selectedInstall.assetKind}
           onClose={() => setSelectedInstall(null)}
           onInstalled={async () => {

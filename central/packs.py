@@ -1,14 +1,30 @@
+HF_PACK_REPO_ID = "solm0/nautilus-releases"
+HF_PACK_REPO_TYPE = "dataset"
+
+
+def build_pack_download_url(lang: str, version: str, filename: str):
+    return (
+        f"https://huggingface.co/datasets/{HF_PACK_REPO_ID}/resolve/main/"
+        f"language-packs/{lang}/{version}/{filename}"
+    )
+
+
 def build_pack(
     lang: str,
     version: str,
     corpus: list[dict[str, str]],
 ):
+    lemma_filename = f"{lang}-v{version}-lemma.zip"
+    ngram_filename = f"{lang}-v{version}-ngram.zip"
+
     return {
         "lang": lang,
         "version": version,
         "tag": f"v{version}",
-        "lemma_filename": f"{lang}-v{version}-lemma.zip",
-        "ngram_filename": f"{lang}-v{version}-ngram.zip",
+        "lemma_filename": lemma_filename,
+        "ngram_filename": ngram_filename,
+        "lemma_download_url": build_pack_download_url(lang, version, lemma_filename),
+        "ngram_download_url": build_pack_download_url(lang, version, ngram_filename),
         "corpus": corpus,
     }
 

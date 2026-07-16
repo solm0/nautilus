@@ -3,8 +3,8 @@ import os
 import sys
 from pathlib import Path
 
-import requests
 from dotenv import load_dotenv
+from huggingface_hub import HfApi, hf_hub_url
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -16,32 +16,21 @@ from central.packs import PACKS
 
 BACKEND_ENV_PATH = ROOT_DIR / "backend" / ".env"
 RELEASES_DIR = ROOT_DIR / "releases"
+DEFAULT_HF_REPO_ID = "solm0/nautilus-releases"
+DEFAULT_HF_REPO_TYPE = "dataset"
 
 
 def load_env():
     load_dotenv(BACKEND_ENV_PATH)
 
-    token = os.getenv("GITHUB_TOKEN")
-    repo = os.getenv("GITHUB_REPO")
+    token = os.getenv("HF_TOKEN")
+    repo_id = os.getenv("HF_REPO_ID") or DEFAULT_HF_REPO_ID
+    repo_type = os.getenv("HF_REPO_TYPE") or DEFAULT_HF_REPO_TYPE
 
     if not token:
-        raise RuntimeError(f"GITHUB_TOKEN is missing in {BACKEND_ENV_PATH}")
+        raise RuntimeError(f"HF_TOKEN is missing in {BACKEND_ENV_PATH}")
 
-    if not repo:
-        raise RuntimeError(f"GITHUB_REPO is missing in {BACKEND_ENV_PATH}")
-
-    return token, repo
-
-
-def github_headers(token: str, *, json_accept: bool = True):
-    headers = {
-        "Authorization": f"Bearer {token}",
-    }
-
-    if json_accept:
-        headers["Accept"] = "application/vnd.github+json"
-
-    return headers
+    return token, repo_id, repo_type
 
 
 def get_pack_map():
@@ -59,105 +48,45 @@ def resolve_release_artifacts(lang: str, version: str):
             f"Missing release artifacts for {lang} v{version}: {', '.join(missing)}"
         )
 
-    return release_dir, {
+    return {
         "lemma": lemma_zip,
         "ngram": ngram_zip,
     }
 
 
-def get_release_by_tag(repo: str, token: str, tag_name: str):
-    url = f"https://api.github.com/repos/{repo}/releases/tags/{tag_name}"
-    response = requests.get(url, headers=github_headers(token), timeout=30)
-
-    if response.status_code == 404:
-        return None
-
-    response.raise_for_status()
-    return response.json()
-
-
-def create_release(repo: str, token: str, tag_name: str, version: str):
-    url = f"https://api.github.com/repos/{repo}/releases"
-    payload = {
-        "tag_name": tag_name,
-        "name": tag_name,
-        "draft": False,
-        "prerelease": False,
-        "generate_release_notes": False,
-        "body": f"Split language-pack assets for v{version}.",
-    }
-
-    response = requests.post(
-        url,
-        headers=github_headers(token),
-        json=payload,
-        timeout=30,
+def upload_asset(api: HfApi, repo_id: str, repo_type: str, lang: str, version: str, asset_path: Path):
+    path_in_repo = f"language-packs/{lang}/{version}/{asset_path.name}"
+    api.upload_file(
+        path_or_fileobj=str(asset_path),
+        path_in_repo=path_in_repo,
+        repo_id=repo_id,
+        repo_type=repo_type,
+        commit_message=f"Upload {lang} {version} {asset_path.name}",
     )
-    response.raise_for_status()
-    return response.json()
+    return hf_hub_url(
+        repo_id=repo_id,
+        repo_type=repo_type,
+        revision="main",
+        filename=path_in_repo,
+    )
 
 
-def delete_asset(repo: str, token: str, asset_id: int):
-    url = f"https://api.github.com/repos/{repo}/releases/assets/{asset_id}"
-    response = requests.delete(url, headers=github_headers(token), timeout=30)
-    response.raise_for_status()
+def publish_language(api: HfApi, repo_id: str, repo_type: str, lang: str, version: str):
+    assets = resolve_release_artifacts(lang, version)
+    urls = {}
 
+    for asset_kind, asset_path in assets.items():
+        print(f"Uploading {asset_path.name} -> language-packs/{lang}/{version}/")
+        urls[asset_kind] = upload_asset(api, repo_id, repo_type, lang, version, asset_path)
 
-def upload_asset(upload_url: str, token: str, asset_path: Path):
-    upload_endpoint = upload_url.split("{", 1)[0]
-    params = {"name": asset_path.name}
-
-    with open(asset_path, "rb") as f:
-        response = requests.post(
-            upload_endpoint,
-            params=params,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/vnd.github+json",
-                "Content-Type": "application/zip",
-            },
-            data=f,
-            timeout=300,
-        )
-
-    response.raise_for_status()
-    return response.json()
-
-
-def ensure_release(repo: str, token: str, lang: str, version: str):
-    tag_name = f"{lang}-v{version}"
-    release = get_release_by_tag(repo, token, tag_name)
-
-    if release is not None:
-        return release
-
-    print(f"Creating release {tag_name}")
-    return create_release(repo, token, tag_name, version)
-
-
-def replace_assets(repo: str, token: str, release: dict, assets: dict[str, Path]):
-    existing_assets = {asset["name"]: asset for asset in release.get("assets", [])}
-
-    for asset_path in assets.values():
-        existing = existing_assets.get(asset_path.name)
-        if existing is not None:
-            print(f"Deleting existing asset {asset_path.name}")
-            delete_asset(repo, token, existing["id"])
-
-        print(f"Uploading {asset_path.name}")
-        upload_asset(release["upload_url"], token, asset_path)
-
-
-def publish_language(repo: str, token: str, lang: str, version: str):
-    _, assets = resolve_release_artifacts(lang, version)
-    release = ensure_release(repo, token, lang, version)
-    replace_assets(repo, token, release, assets)
     print(f"Published {lang} v{version}")
+    for asset_kind, url in urls.items():
+        print(f"  {asset_kind}: {url}")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Upload split lemma/ngram zip assets to GitHub Releases.",
+        description="Upload split lemma/ngram zip assets to Hugging Face.",
     )
     parser.add_argument(
         "--lang",
@@ -174,8 +103,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    token, repo = load_env()
+    token, repo_id, repo_type = load_env()
     pack_map = get_pack_map()
+    api = HfApi(token=token)
+    api.create_repo(repo_id=repo_id, repo_type=repo_type, private=False, exist_ok=True)
 
     langs = args.langs or list(pack_map.keys())
 
@@ -186,7 +117,7 @@ def main():
             raise KeyError(f"Unknown language: {lang}")
 
         version = args.version or pack["version"]
-        publish_language(repo, token, lang, version)
+        publish_language(api, repo_id, repo_type, lang, version)
 
 
 if __name__ == "__main__":

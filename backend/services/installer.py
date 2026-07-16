@@ -26,9 +26,6 @@ load_dotenv()
 
 DATA_DIR = get_backend_root() / "data" / "static"
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPO")
-
 progress_map = {}
 ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 TQDM_PERCENT_RE = re.compile(r"(?P<percent>\d{1,3})%\|")
@@ -238,6 +235,7 @@ def install_pack(
     filename: str | None,
     asset_kind: str,
     task_id: str,
+    download_url: str | None = None,
 ):
     set_progress(task_id, 0.0, "downloading_pack", phase="pack")
 
@@ -256,34 +254,11 @@ def install_pack(
 
         clear_existing_install_target(lang, version, asset_kind)
 
-        api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{lang}-v{version}"
+        if not download_url:
+            raise Exception("download_url is required")
 
-        headers_api = {
-            "Authorization": f"token {GITHUB_TOKEN}"
-        }
-
-        headers_download = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/octet-stream"
-        }
-
-        # 1. release 조회
-        res = requests.get(api_url, headers=headers_api)
-
-        if res.status_code != 200:
-            raise Exception(f"GitHub API error: {res.status_code} {res.text}")
-
-        release = res.json()
-
-        asset = next((a for a in release["assets"] if a["name"] == filename), None)
-
-        if not asset:
-            raise Exception(f"asset not found: {filename}")
-
-        # 2. download
-        download_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/assets/{asset['id']}"
-
-        r = requests.get(download_url, headers=headers_download, stream=True)
+        # 1. download
+        r = requests.get(download_url, stream=True)
 
         if r.status_code != 200:
             raise Exception(f"download failed: {r.status_code}")
@@ -323,7 +298,7 @@ def install_pack(
             phase="pack",
         )
 
-        # 3. unzip
+        # 2. unzip
         extract_path = DATA_DIR / lang / version
         os.makedirs(extract_path, exist_ok=True)
 

@@ -72,6 +72,17 @@ export const LOCAL_API = resolveLocalApi(CENTRAL_API);
 
 export type LatestVersionPlatform = "desktop" | "android";
 
+type ApiErrorDetailObject = {
+  code?: string;
+  message?: string;
+};
+
+export type ApiErrorDetail =
+  | string
+  | ApiErrorDetailObject
+  | Array<{ msg?: string }>
+  | undefined;
+
 function resolveLatestVersionPlatform(): LatestVersionPlatform {
   return getAppPlatform() === "mobile" ? "android" : "desktop";
 }
@@ -142,6 +153,32 @@ export async function resetPassword(token:string,new_password:string){
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({token,new_password})
   }).then(r=>r.json())
+}
+
+export function parseApiErrorDetail(detail: ApiErrorDetail): {
+  code?: string;
+  message: string;
+} | null {
+  if (!detail) {
+    return null;
+  }
+
+  if (Array.isArray(detail)) {
+    return {
+      message: detail[0]?.msg || "error",
+    };
+  }
+
+  if (typeof detail === "string") {
+    return {
+      message: detail,
+    };
+  }
+
+  return {
+    code: detail.code,
+    message: detail.message || "error",
+  };
 }
 
 export function authHeaders() {
@@ -883,6 +920,7 @@ export async function installPack(pack: {
   lang: string;
   version: string;
   filename: string;
+  download_url?: string;
   asset_kind?: "lemma" | "ngram";
 }) {
   if (isCapacitorApp()) {

@@ -23,85 +23,41 @@ from packs import PACKS
 # 6. zip 다운로드
 # 7. ./data/static/{lang}/{version}/ 에 압축 해제
 
-GITHUB_REPO = "solm0/nautilus"
-
 CENTRAL_DIR = Path(__file__).resolve().parent
 BASE_DIR = CENTRAL_DIR / "data" / "static"
 TMP_DIR = CENTRAL_DIR / "tmp_packs"
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-
-
-def github_headers():
-    headers = {
-        "Accept": "application/vnd.github+json",
-    }
-
-    if GITHUB_TOKEN:
-        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
-
-    return headers
-
 
 def get_latest_release_asset(lang: str):
-    """
-    Fetch latest release metadata for a language pack.
-    Example tag:
-        ru-v1.1.0
-    """
-
-    releases_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
-
-    res = requests.get(releases_url, headers=github_headers(), timeout=30)
-    res.raise_for_status()
-
-    releases = res.json()
-
-    prefix = f"{lang}-v"
     matched = []
 
-    for release in releases:
-        tag_name = release.get("tag_name", "")
-
-        if not tag_name.startswith(prefix):
+    for pack in PACKS:
+        if pack["lang"] != lang:
             continue
 
-        version_str = tag_name.replace(prefix, "")
-
         try:
-            version = Version(version_str)
+            version = Version(pack["version"])
         except Exception:
             continue
 
-        assets = release.get("assets", [])
-        lemma_name = f"{lang}-v{version}-lemma.zip"
-        ngram_name = f"{lang}-v{version}-ngram.zip"
-        assets_by_name = {asset["name"]: asset for asset in assets}
-
-        if lemma_name not in assets_by_name or ngram_name not in assets_by_name:
-            continue
-
-        matched.append((version, assets_by_name))
+        matched.append((version, pack))
 
     if not matched:
         return None
 
-    matched.sort(key=lambda x: x[0], reverse=True)
-
-    latest_version, assets_by_name = matched[0]
-    lemma_name = f"{lang}-v{latest_version}-lemma.zip"
-    ngram_name = f"{lang}-v{latest_version}-ngram.zip"
+    matched.sort(key=lambda item: item[0], reverse=True)
+    latest_version, latest_pack = matched[0]
 
     return {
         "version": str(latest_version),
         "assets": {
             "lemma": {
-                "download_url": assets_by_name[lemma_name]["browser_download_url"],
-                "filename": lemma_name,
+                "download_url": latest_pack["lemma_download_url"],
+                "filename": latest_pack["lemma_filename"],
             },
             "ngram": {
-                "download_url": assets_by_name[ngram_name]["browser_download_url"],
-                "filename": ngram_name,
+                "download_url": latest_pack["ngram_download_url"],
+                "filename": latest_pack["ngram_filename"],
             },
         },
     }
@@ -155,7 +111,7 @@ def remove_old_versions(lang: str, keep_version: str):
 
 
 def download_file(url: str, target: Path):
-    with requests.get(url, headers=github_headers(), stream=True, timeout=120) as r:
+    with requests.get(url, stream=True, timeout=120) as r:
         r.raise_for_status()
 
         with open(target, "wb") as f:

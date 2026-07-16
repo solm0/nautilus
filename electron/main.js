@@ -364,6 +364,32 @@ function waitForUrl(url, retries = 10, delay = 250) {
   });
 }
 
+async function ensureBackendReady() {
+  const backendUrl = `http://localhost:${DEV_BACKEND_PORT}/`;
+
+  try {
+    await waitForUrl(backendUrl, 1, 100);
+    backendReady = true;
+    return true;
+  } catch {
+    // Ignore and attempt a fresh backend start below.
+  }
+
+  await startBackend();
+
+  try {
+    await waitForBackend(backendUrl);
+    return true;
+  } catch (e) {
+    dialog.showErrorBox(
+      "Backend 오류",
+      `FastAPI 서버를 시작할 수 없습니다.\n${e.message || "백엔드 로그를 확인하세요."}`
+    );
+    app.quit();
+    return false;
+  }
+}
+
 // ─── BrowserWindow 생성 ──────────────────────────────────────
 async function createWindow() {
   const isDev = !app.isPackaged;
@@ -450,16 +476,7 @@ app.whenReady().then(async () => {
     app.setAsDefaultProtocolClient(DEEP_LINK_PROTOCOL);
   }
 
-  await startBackend();
-
-  try {
-    await waitForBackend(`http://localhost:${DEV_BACKEND_PORT}/`);
-  } catch (e) {
-    dialog.showErrorBox(
-      "Backend 오류",
-      `FastAPI 서버를 시작할 수 없습니다.\n${e.message || "백엔드 로그를 확인하세요."}`
-    );
-    app.quit();
+  if (!(await ensureBackendReady())) {
     return;
   }
 
@@ -473,8 +490,13 @@ app.whenReady().then(async () => {
 
   dispatchDeepLink(extractDeepLink(process.argv));
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  app.on("activate", async () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      if (!(await ensureBackendReady())) {
+        return;
+      }
+      await createWindow();
+    }
   });
   if (process.platform === "darwin" && !app.isPackaged) {
     app.dock.setIcon(path.join(__dirname, "resources", "icon.png"));
@@ -485,6 +507,8 @@ app.on("window-all-closed", () => {
   // FastAPI 프로세스 종료
   if (backendProcess) {
     backendProcess.kill();
+    backendProcess = null;
+    backendReady = false;
   }
   if (process.platform !== "darwin") {
     app.quit();
@@ -494,5 +518,7 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   if (backendProcess) {
     backendProcess.kill();
+    backendProcess = null;
+    backendReady = false;
   }
 });
