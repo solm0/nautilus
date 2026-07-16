@@ -5,6 +5,9 @@ preprocess/*/*.txt
 venv
 models
 classla_models
+data_runtime/
+backend/data_runtime/
+central/data_runtime/
 .env*
 *.db
 *.keystore
