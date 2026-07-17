@@ -28,7 +28,7 @@ def get_nlp():
 
         _nlp = stanza.Pipeline(
             lang="en",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             use_gpu=False,
             dir=str(get_model_dir("en")),
             download_method=None,

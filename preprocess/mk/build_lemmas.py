@@ -32,6 +32,7 @@ LANG = "mk"
 VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = (BASE_DIR / "../../backend/classla_models").resolve()
 
 RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 
@@ -108,11 +109,12 @@ def valid_lemma(lemma: str) -> bool:
 # 최초 1회만:
 #
 # import classla
-# classla.download("mk")
+# classla.download("mk", dir=str(MODEL_DIR), processors="tokenize,pos,lemma")
 
 nlp = classla.Pipeline(
     lang="mk",
     processors="tokenize,pos,lemma",
+    dir=str(MODEL_DIR),
     use_gpu=False,
 )
 
@@ -162,7 +164,7 @@ line_id = 0
 # PARSE
 # =====================
 
-batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
+batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
 for batch_start in range(
     0,
     len(lines_raw),

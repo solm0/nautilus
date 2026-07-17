@@ -91,12 +91,12 @@ def ensure_model_installed(lang: str) -> Path:
     if get_model_provider(lang) == "classla":
         import classla
 
-        classla.download(lang, dir=str(local_dir))
+        classla.download(lang, dir=str(local_dir), processors="tokenize,pos,lemma")
         return local_dir
 
     import stanza
 
-    stanza.download(lang, model_dir=str(local_dir))
+    stanza.download(lang, model_dir=str(local_dir), processors="tokenize,pos,lemma")
     return local_dir
 
 

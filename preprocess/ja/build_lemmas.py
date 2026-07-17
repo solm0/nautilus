@@ -89,6 +89,7 @@ def ensure_model():
         stanza.download(
             lang="ja",
             model_dir=str(MODEL_DIR),
+            processors="tokenize,pos,lemma",
         )
 
 
@@ -96,7 +97,7 @@ ensure_model()
 
 nlp = stanza.Pipeline(
     lang="ja",
-    processors="tokenize,pos,lemma,depparse",
+    processors="tokenize,pos,lemma",
     use_gpu=False,
     dir=str(MODEL_DIR),
     download_method=None,
@@ -113,7 +114,6 @@ def _tokens_from_sentence(sent):
                 "surface": word.text,
                 "lemma": normalize(word.lemma),
                 "pos": word.upos,
-                "dep": (word.deprel or "").lower() or None,
             }
             for word in words
         ]
@@ -125,11 +125,6 @@ def _tokens_from_sentence(sent):
             "surface": token.text,
             "lemma": main.get("lemma") if main else None,
             "pos": main.get("pos") if main else (fallback.get("pos") if fallback else None),
-            "dep": (
-                main.get("dep")
-                if main and main.get("dep")
-                else (fallback.get("dep") if fallback else None)
-            ),
             "morphs": morphs,
         })
 
@@ -199,7 +194,7 @@ lemma_lines = defaultdict(set)
 contexts = defaultdict(Counter)
 line_id = 0
 
-batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
+batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
 for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     batch = lines_raw[batch_start: batch_start + BATCH_SIZE]
     analyzed_batch = analyze_batch(batch)

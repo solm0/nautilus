@@ -50,7 +50,7 @@ def get_nlp():
 
         _nlp = classla.Pipeline(
             lang="sr",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             use_gpu=False,
             dir=str(get_model_dir("sr")),
             download_method=None,

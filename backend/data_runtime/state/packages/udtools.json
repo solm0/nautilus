@@ -1,6 +1,7 @@
 {
   "id": "udtools",
   "consumers": [
-    "mk"
+    "de",
+    "en"
   ]
 }

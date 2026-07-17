@@ -30,6 +30,7 @@ LANG = "sq"
 VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = (BASE_DIR / "../../backend/models").resolve()
 
 RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 
@@ -82,6 +83,8 @@ nlp = stanza.Pipeline(
     lang="sq",
     processors="tokenize,pos,lemma,depparse",
     use_gpu=False,
+    dir=str(MODEL_DIR),
+    download_method=None,
 )
 
 
@@ -112,7 +115,7 @@ contexts = defaultdict(Counter)
 
 line_id = 0
 
-batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
+batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
 for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     batch = lines_raw[
         batch_start : batch_start + BATCH_SIZE
@@ -152,7 +155,6 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
                 "surface": surface,
                 "lemma": lemma if valid else None,
                 "pos": pos,
-                "dep": (word.deprel or "").lower() or None,
             })
 
         for word in sent.words:

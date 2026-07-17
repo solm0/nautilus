@@ -116,7 +116,7 @@ lemma_lines = defaultdict(set)
 contexts = defaultdict(Counter)
 line_id = 0
 
-doc_progress = ProgressLogger("lemma parse", every=500, total=len(lines_raw), unit="docs")
+doc_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="docs")
 for doc_id, doc in enumerate(nlp.pipe(lines_raw, batch_size=64)):
     for sent in doc.sents:
         tokens = []
@@ -146,7 +146,6 @@ for doc_id, doc in enumerate(nlp.pipe(lines_raw, batch_size=64)):
                 "surface": token.text,
                 "lemma": lemma if valid else None,
                 "pos": pos,
-                "dep": token.dep_.lower() if token.dep_ else None,
             })
 
         for token in sent:

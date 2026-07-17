@@ -54,7 +54,7 @@ def get_nlp():
 
         _nlp = stanza.Pipeline(
             lang="ja",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             use_gpu=False,
             dir=str(get_model_dir("ja")),
             download_method=None,
@@ -106,7 +106,6 @@ def analyze_text(text: str):
                     "surface": word.text,
                     "lemma": normalize_lemma(word.lemma),
                     "pos": word.upos,
-                    "dep": (word.deprel or "").lower() or None,
                 }
                 for word in words
             ]
@@ -118,11 +117,6 @@ def analyze_text(text: str):
                 "surface": token.text,
                 "lemma": representative["lemma"] if representative else None,
                 "pos": representative["pos"] if representative else (fallback["pos"] if fallback else None),
-                "dep": (
-                    representative["dep"]
-                    if representative and representative.get("dep")
-                    else (fallback["dep"] if fallback else None)
-                ),
                 "morphs": morphs,
             })
 

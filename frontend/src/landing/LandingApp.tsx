@@ -598,7 +598,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
             </ul>
             <h3 className="mt-7">Lemma 사전 생성</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
-              <li>문장 코퍼스를 형태소 분석해 각 토큰의 surface, lemma, 품사, 의존관계를 추출합니다.</li>
+              <li>문장 코퍼스를 형태소 분석해 각 토큰의 surface, lemma, 품사를 추출합니다.</li>
               <li>불용 품사와 지나치게 일반적인 lemma를 제거하고, `lemma + POS`를 하나의 key로 삼아 빈도와 등장 문장 id를 누적합니다.</li>
               <li>문장 안에서 서로 연결된 lemma들을 모아 co-occurrence graph를 만들고, 빈도 보정을 거쳐 관련 lemma 후보를 계산합니다.</li>
               <li>각 lemma key에 대해 관련어 목록, 등장 빈도, 예문으로 쓸 수 있는 line id 집합을 저장합니다.</li>
@@ -617,8 +617,8 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
     {
       "text": "Language opens a sentence.",
       "tokens": [
-        { "surface": "Language", "lemma": "language", "pos": "NOUN", "dep": "nsubj" },
-        { "surface": "opens", "lemma": "open", "pos": "VERB", "dep": "root" }
+        { "surface": "Language", "lemma": "language", "pos": "NOUN" },
+        { "surface": "opens", "lemma": "open", "pos": "VERB" }
       ]
     }
   ]
@@ -652,8 +652,8 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
       "line_id": 2,
       "match_indices": [2],
       "tokens": [
-        { "surface": "A", "lemma": "a", "pos": "DET", "dep": "det" },
-        { "surface": "language", "lemma": "language", "pos": "NOUN", "dep": "nsubj" }
+        { "surface": "A", "lemma": "a", "pos": "DET" },
+        { "surface": "language", "lemma": "language", "pos": "NOUN" }
       ]
     }
   ],

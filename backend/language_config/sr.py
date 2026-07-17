@@ -64,7 +64,7 @@ def get_nlp():
         model_dir = ensure_model_installed("sr")
         _nlp = classla.Pipeline(
             lang="sr",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             dir=str(model_dir),
             use_gpu=False,
         )

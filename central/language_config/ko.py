@@ -124,7 +124,6 @@ def build_display_morphs(surface: str, kiwi_tokens, token_start: int):
             "surface": display_surface,
             "lemma": lemma,
             "pos": pos,
-            "dep": None,
             "_start": indices[0],
             "_end": indices[-1] + 1,
         })
@@ -134,7 +133,6 @@ def build_display_morphs(surface: str, kiwi_tokens, token_start: int):
             "surface": surface,
             "lemma": None,
             "pos": None,
-            "dep": None,
         })
         return morphs
 
@@ -228,7 +226,7 @@ def get_nlp():
 
         _nlp = stanza.Pipeline(
             lang="ko",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             use_gpu=False,
             dir=str(get_model_dir("ko")),
             download_method=None,
@@ -277,7 +275,6 @@ def analyze_text(text: str):
                 "surface": surface,
                 "lemma": main.get("lemma") if main else None,
                 "pos": main.get("pos") if main else None,
-                "dep": (first_word.deprel or "").lower() if first_word and first_word.deprel else None,
                 "morphs": morphs,
             })
 

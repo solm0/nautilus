@@ -1,6 +1,7 @@
 {
   "id": "torch",
   "consumers": [
-    "mk"
+    "de",
+    "en"
   ]
 }

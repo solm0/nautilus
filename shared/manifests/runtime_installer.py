@@ -73,7 +73,6 @@ def _validate_udtools() -> None:
         [
             "data/data.json",
             "data/upos.json",
-            "data/udeprels.json",
         ],
     )
 

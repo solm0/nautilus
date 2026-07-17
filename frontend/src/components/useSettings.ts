@@ -13,20 +13,12 @@ const STORAGE_KEY = "nautilus_settings";
 export type AppSettings = {
   lemma_info: boolean;
   system_language: "en" | "ko";
-
-  highlight_nsubj: boolean;
-  highlight_root: boolean;
-  highlight_obj: boolean;
   now_playing_notifications: boolean;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
   lemma_info: false,
   system_language: "en",
-
-  highlight_nsubj: true,
-  highlight_root: true,
-  highlight_obj: true,
   now_playing_notifications: true,
 };
 

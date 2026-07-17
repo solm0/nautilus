@@ -60,7 +60,6 @@ def _align_korean_tokens(sent):
                 "surface": word.text,
                 "lemma": normalize_lemma(word.lemma),
                 "pos": word.upos,
-                "dep": (word.deprel or "").lower() or None,
             }
             for word in words
         ]
@@ -72,11 +71,6 @@ def _align_korean_tokens(sent):
             "surface": token.text,
             "lemma": representative["lemma"] if representative else None,
             "pos": representative["pos"] if representative else (fallback["pos"] if fallback else None),
-            "dep": (
-                representative["dep"]
-                if representative and representative.get("dep")
-                else (fallback["dep"] if fallback else None)
-            ),
             "morphs": morphs,
         })
 
@@ -112,14 +106,12 @@ def align_tokens(sent, language: str):
                 "surface": split_tok,
                 "lemma": normalize_lemma(main.lemma),
                 "pos": main.upos,
-                "dep": (main.deprel or "").lower() or None,
             })
         else:
             tokens.append({
                 "surface": split_tok,
                 "lemma": None,
                 "pos": None,
-                "dep": None,
             })
 
     return tokens

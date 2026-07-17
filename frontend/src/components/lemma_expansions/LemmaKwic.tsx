@@ -83,8 +83,8 @@ interface KwicRowProps {
   language: string;
   onSelect: (tokenKey: string) => void;
   canSelectKey?: (tokenKey: string) => boolean;
-  hovered: { pos: string | null; dep: string | null, x: number, y: number };
-  setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; dep: string | null, x: number, y: number }>>
+  hovered: { pos: string | null; x: number, y: number };
+  setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; x: number, y: number }>>
 }
 
 interface KwicRowHandle {
@@ -136,12 +136,11 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
       onMouseEnter={(e) =>
         setHovered({
           pos: t.pos,
-          dep: t.dep,
           x: e.clientX,
           y: e.clientY,
         })
       }
-      onMouseLeave={() => setHovered({ pos: null, dep: null,  x: 0, y: 0  })}
+      onMouseLeave={() => setHovered({ pos: null, x: 0, y: 0 })}
       onMouseMove={(e) =>
         setHovered((prev) => ({
           ...prev,
@@ -219,12 +218,10 @@ export default function LemmaKwic({
   const { t } = useI18n();
   const [hovered, setHovered] = useState<{
     pos: string | null;
-    dep: string | null;
     x: number;
     y: number;
   }>({
     pos: null,
-    dep: null,
     x: 0,
     y: 0,
   });

@@ -68,7 +68,7 @@ def parse_args():
 
 
 def resolve_languages(selected_langs: list[str] | None):
-    ordered_langs = [pack["lang"] for pack in PACKS]
+    ordered_langs = list(dict.fromkeys(pack["lang"] for pack in PACKS))
 
     if not selected_langs:
         return ordered_langs

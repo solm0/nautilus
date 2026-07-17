@@ -27,9 +27,9 @@ from progress import ProgressLogger, log
 
 LANG = "sr"
 VERSION = get_version("1.1.0")
-classla.download("sr")
 
 BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = (BASE_DIR / "../../backend/classla_models").resolve()
 RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 
 INPUT_FILE = BASE_DIR / "srp_wikipedia_2021_300K-sentences.txt"
@@ -152,6 +152,9 @@ def normalize(text: str) -> str:
 def valid_lemma(lemma: str) -> bool:
     return bool(VALID_RE.fullmatch(lemma))
 
+# Keep preprocess using the repo-local model cache rather than home-dir resources.
+classla.download("sr", dir=str(MODEL_DIR), processors="tokenize,pos,lemma,depparse")
+
 # =====================
 # NLP
 # =====================
@@ -159,6 +162,7 @@ def valid_lemma(lemma: str) -> bool:
 nlp = classla.Pipeline(
     lang="sr",
     processors="tokenize,pos,lemma,depparse",
+    dir=str(MODEL_DIR),
     use_gpu=False,
 )
 
@@ -203,7 +207,7 @@ line_id = 0
 # PARSE
 # =====================
 
-batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
+batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
 for batch_start in range(0, len(lines_raw), BATCH_SIZE):
 
     batch = lines_raw[
@@ -217,7 +221,6 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     for sent in doc.sentences:
 
         tokens = []
-
         token_keys = {}
 
         for word in sent.words:
@@ -247,17 +250,13 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
                 lemma_freq[key] += 1
 
                 lemma_lines[key].add(line_id)
-
                 token_keys[idx] = key
 
             tokens.append({
                 "surface": surface,
                 "lemma": lemma if valid else None,
                 "pos": pos,
-                "dep": (word.deprel or "").lower() or None,
             })
-
-        # dependency graph
 
         for word in sent.words:
 

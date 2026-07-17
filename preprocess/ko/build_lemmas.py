@@ -28,6 +28,7 @@ LANG = "ko"
 VERSION = get_version("1.1.0")
 
 BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = (BASE_DIR / "../../backend/models").resolve()
 RELEASE_DIR = get_release_dir(BASE_DIR, LANG, VERSION)
 INPUT_FILE = BASE_DIR / "kor_wikipedia_2021_300K-sentences.txt"
 OUTPUT_DB = RELEASE_DIR / LEMMA_DB_FILENAME
@@ -150,7 +151,6 @@ def build_display_morphs(surface: str, kiwi_tokens, token_start: int):
             "surface": display_surface,
             "lemma": lemma or None,
             "pos": pos,
-            "dep": None,
             "_start": indices[0],
             "_end": indices[-1] + 1,
         })
@@ -160,7 +160,6 @@ def build_display_morphs(surface: str, kiwi_tokens, token_start: int):
             "surface": surface,
             "lemma": None,
             "pos": None,
-            "dep": None,
         })
         return morphs
 
@@ -249,8 +248,9 @@ def merge_punctuation_tokens(tokens: list[dict]):
 
 nlp = stanza.Pipeline(
     lang="ko",
-    processors="tokenize,pos,lemma,depparse",
+    processors="tokenize,pos,lemma",
     use_gpu=False,
+    dir=str(MODEL_DIR),
     download_method=None,
 )
 
@@ -277,13 +277,10 @@ def _tokens_from_sentence(sent, raw_line: str):
 
         morphs = build_display_morphs(surface, matched, start or 0)
         main = representative_morph(morphs)
-        first_word = token.words[0] if token.words else None
-
         tokens.append({
             "surface": surface,
             "lemma": main.get("lemma") if main else None,
             "pos": main.get("pos") if main else None,
-            "dep": (first_word.deprel or "").lower() if first_word and first_word.deprel else None,
             "morphs": morphs,
         })
 
@@ -338,7 +335,7 @@ lemma_lines = defaultdict(set)
 contexts = defaultdict(Counter)
 line_id = 0
 
-batch_progress = ProgressLogger("lemma parse", every=5000, total=len(lines_raw), unit="lines")
+batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
 for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     batch = lines_raw[
         batch_start : batch_start + BATCH_SIZE

@@ -28,7 +28,6 @@ class TokenInput(BaseModel):
     surface: str
     lemma: str | None = None
     pos: str | None = None
-    dep: str | None = None
     ipa: str | None = None
 
 

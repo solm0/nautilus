@@ -30,7 +30,7 @@ def get_nlp():
         model_dir = ensure_model_installed("sq")
         _nlp = stanza.Pipeline(
             lang="sq",
-            processors="tokenize,pos,lemma,depparse",
+            processors="tokenize,pos,lemma",
             use_gpu=False,
             dir=str(model_dir),
             download_method=None,

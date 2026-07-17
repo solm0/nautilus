@@ -36,9 +36,9 @@ def download_model(lang: str):
     if get_model_provider(lang) == "classla":
         import classla
 
-        classla.download(lang, dir=str(model_dir))
+        classla.download(lang, dir=str(model_dir), processors="tokenize,pos,lemma")
         return
 
     import stanza
 
-    stanza.download(lang, model_dir=str(model_dir))
+    stanza.download(lang, model_dir=str(model_dir), processors="tokenize,pos,lemma")

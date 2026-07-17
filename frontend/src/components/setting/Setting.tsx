@@ -384,30 +384,6 @@ export default function Setting() {
                 toggleSetting={toggleSetting}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span>nsubj</span>
-              <SettingToggle
-                settingKey="highlight_nsubj"
-                value={settings.highlight_nsubj}
-                toggleSetting={toggleSetting}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span>root</span>
-              <SettingToggle
-                settingKey="highlight_root"
-                value={settings.highlight_root}
-                toggleSetting={toggleSetting}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span>obj</span>
-              <SettingToggle
-                settingKey="highlight_obj"
-                value={settings.highlight_obj}
-                toggleSetting={toggleSetting}
-              />
-            </div>
           </div>
         </div>
 

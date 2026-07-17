@@ -13,7 +13,7 @@ import type {
   RefObject,
 } from "react";
 import type { Token, TextBlock, LemmaData } from "./pageTypes";
-import { useSettings, type AppSettings } from "./useSettings";
+import { useSettings } from "./useSettings";
 import { Check, Ellipsis, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { MiniPopup } from "./util/MiniPopup";
 import { IconButton } from "./util/Button";
@@ -57,11 +57,6 @@ type TokenRenderProps = HTMLAttributes<HTMLSpanElement> & {
   style?: CSSProperties;
 };
 
-type HighlightPalette = {
-  fill: string;
-  edge: string;
-};
-
 type HighlightBlob = {
   key: string;
   fill: string;
@@ -76,51 +71,6 @@ type HighlightBlob = {
   blockIndex: number;
   syncOpacity: number;
 };
-
-const POS_HIGHLIGHTS: Record<string, HighlightPalette> = {
-  root: { fill: "var(--color-nt-blue)", edge: "var(--color-nt-blue)" },
-  nsubj: { fill: "var(--color-nt-teal)", edge: "var(--color-nt-teal)" },
-  obj: { fill: "var(--color-nt-coral)", edge: "var(--color-nt-coral)" },
-  iobj: { fill: "var(--color-nt-coral)", edge: "var(--color-nt-coral)" },
-};
-
-const DEP_SETTING_MAP = {
-  nsubj: "highlight_nsubj",
-  root: "highlight_root",
-  obj: "highlight_obj",
-  iobj: "highlight_obj",
-} as const;
-
-function getHighlightPalette(
-  dep: string | null | undefined,
-  settings: AppSettings
-) {
-  if (!dep) return null;
-
-  const settingKey =
-    DEP_SETTING_MAP[
-      dep as keyof typeof DEP_SETTING_MAP
-    ];
-
-  if (!settingKey) return null;
-
-  if (!settings[settingKey]) {
-    return null;
-  }
-
-  return POS_HIGHLIGHTS[dep] ?? null;
-}
-
-function hashSeed(value: string) {
-  let hash = 2166136261;
-
-  for (let i = 0; i < value.length; i += 1) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return Math.abs(hash >>> 0);
-}
 
 function noise(seed: number, offset: number) {
   const value =
@@ -301,8 +251,6 @@ function TokenHighlightOverlay({
     width: 0,
     height: 0,
   });
-  const { settings } = useSettings();
-
   const [highlights, setHighlights] = useState<
     HighlightBlob[]
   >([]);
@@ -319,80 +267,7 @@ function TokenHighlightOverlay({
       const containerRect =
         container.getBoundingClientRect();
 
-      const nextHighlights = mergeHighlights(
-        Array.from(
-          container.querySelectorAll<HTMLSpanElement>(
-            "[data-token-highlight='true']"
-          )
-        ).flatMap((node) => {
-          const palette = getHighlightPalette(
-            node.dataset.tokenDep,
-            settings
-          );
-
-          if (!palette) return [];
-
-          const rect = node.getBoundingClientRect();
-          const blockNode = node.closest<HTMLElement>(
-            "[data-block-index]"
-          );
-          const blockIndex = Number(
-            blockNode?.dataset.blockIndex ?? -1
-          );
-
-          const index = Number(
-            node.dataset.idx ?? -1
-          );
-
-          if (
-            rect.width <= 0 ||
-            rect.height <= 0 ||
-            index < 0 ||
-            blockIndex < 0
-          ) {
-            return [];
-          }
-
-          const visualState = getLyricLineVisualState(
-            blockIndex,
-            activeLyricBlockIndex,
-            syncPlaybackActive
-          );
-
-          return [
-            {
-              key: `${index}`,
-              fill: palette.fill,
-              edge: palette.edge,
-              x:
-                rect.left -
-                containerRect.left +
-                container.scrollLeft,
-
-              y:
-                rect.top -
-                containerRect.top +
-                container.scrollTop,
-              width: rect.width,
-              height: rect.height,
-              seed: hashSeed(
-                `${index}:${node.dataset.tokenDep}`
-              ),
-              lineCenter:
-                rect.top -
-                containerRect.top +
-                rect.height / 2,
-              right:
-                rect.left -
-                containerRect.left +
-                rect.width,
-              blockIndex,
-              syncOpacity:
-                visualState.highlightOpacity,
-            },
-          ];
-        })
-      );
+      const nextHighlights = mergeHighlights([]);
 
       setHighlights(nextHighlights);
 
@@ -483,7 +358,7 @@ function TokenHighlightOverlay({
         );
       }
     };
-  }, [pageId, blocks, containerRef.current, settings, activeLyricBlockIndex, syncPlaybackActive]);
+  }, [pageId, blocks, containerRef.current, activeLyricBlockIndex, syncPlaybackActive]);
 
   return (
     <svg
@@ -1002,14 +877,12 @@ export default function PageCore({
                     ...restTokenProps
                   } = tokenProps;
 
-                  const highlightPalette =
-                    getHighlightPalette(token.dep, settings);
+                  const highlightPalette = null;
 
                   return (
                     <span
                       key={tokenIndex}
                       data-idx={tokenIndex}
-                      data-token-dep={token.dep ?? ""}
                       data-token-highlight={
                         highlightPalette
                           ? "true"
@@ -1064,13 +937,12 @@ export default function PageCore({
                           ${settings.lemma_info
                             ? "flex w-max opacity-80 transition-opacity duration-700"
                             : "max-h-0 w-0 opacity-0 transition-opacity duration-700"}
-                          ${(token.pos === "X" || token.dep === "flat") ? "opacity-0" : ""}
+                          ${token.pos === "X" ? "opacity-0" : ""}
                           ${!pageId ? "hidden" : ""}
                         `}
                       >
                         <span>{token.lemma}</span>
                         <span>{token.pos}</span>
-                        <span>{token.dep}</span>
                       </div>
                       {lemmaInfo && lemmaInfo[`${token.lemma}_${token.pos}`]?.is_favorite === true &&
                         <div className="absolute right-0 -top-1">
