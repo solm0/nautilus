@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import type { Annotation, LemmaData, TextAnalysisResult } from "../components/pageTypes";
 import type { SidePanelState } from "../components/pageview/PageView";
 import { CENTRAL_API } from "../api";
@@ -185,7 +186,7 @@ async function loadReleaseCatalog() {
   return buildReleaseCatalogFromHfTree(tree);
 }
 
-function LandingApp() {
+function LandingApp({ privacyHref }: { privacyHref: string }) {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<SidePanelState>(null);
@@ -279,6 +280,12 @@ function LandingApp() {
           <div className="w-46">
             <Logotype className="fill-nt-blue stroke-0"/>
           </div>
+          <Link
+            to={privacyHref}
+            className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+          >
+            개인정보처리방침
+          </Link>
         </header>
 
         <div className="flex flex-col gap-21 h-auto overflow-y-scroll no-scrollbar pb-21">

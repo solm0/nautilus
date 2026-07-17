@@ -31,7 +31,10 @@ export default defineConfig({
     outDir: "../central/static/landing",
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, "landing/index.html"),
+      input: {
+        landing: resolve(__dirname, "landing/index.html"),
+        chromeExtensionPrivacy: resolve(__dirname, "landing/chrome-extension-privacy/index.html"),
+      },
     },
   },
 });
