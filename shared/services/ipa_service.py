@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import logging
+import os
 import re
+import shutil
 import subprocess
 import unicodedata
 from functools import lru_cache
 from typing import Any
 
 from language_config.sr import CYR_MAP
+
+logger = logging.getLogger(__name__)
 
 
 ESPEAK_VOICE_MAP = {
@@ -155,6 +160,44 @@ SERBIAN_LAT_TO_CYR_PATTERN = re.compile(
     )
 )
 
+ESPEAK_COMMAND_CANDIDATES = (
+    "espeak-ng",
+    "/opt/homebrew/bin/espeak-ng",
+    "/usr/local/bin/espeak-ng",
+    "/opt/local/bin/espeak-ng",
+)
+ESPEAK_TIMEOUT_SECONDS = 3.0
+
+
+@lru_cache(maxsize=1)
+def resolve_espeak_command() -> str | None:
+    override = os.getenv("NAUTILUS_ESPEAK_NG_BIN")
+    if override:
+        return override
+
+    search_path_entries = [
+        os.getenv("PATH", ""),
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+        "/opt/local/bin",
+        "/usr/bin",
+        "/bin",
+    ]
+    search_path = os.pathsep.join(entry for entry in search_path_entries if entry)
+
+    for candidate in ESPEAK_COMMAND_CANDIDATES:
+        if os.path.isabs(candidate):
+            if os.path.exists(candidate):
+                return candidate
+            continue
+
+        resolved = shutil.which(candidate, path=search_path)
+        if resolved:
+            return resolved
+
+    logger.warning("espeak-ng binary could not be resolved; skipping IPA generation")
+    return None
+
 
 def resolve_espeak_voice(language: str) -> str:
     language = (language or "en").strip().lower()
@@ -252,16 +295,33 @@ def surface_to_ipa(surface: str, language: str) -> str | None:
     if language == "sr":
         surface = preprocess_serbian_surface(surface)
 
+    espeak_command = resolve_espeak_command()
+    if not espeak_command:
+        return None
+
     voice = resolve_espeak_voice(language)
 
-    proc = subprocess.run(
-        ["espeak-ng", "--ipa", "-q", "-v", voice, surface],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        proc = subprocess.run(
+            [espeak_command, "--ipa", "-q", "-v", voice, surface],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=ESPEAK_TIMEOUT_SECONDS,
+        )
+    except FileNotFoundError:
+        logger.warning("espeak-ng command disappeared during IPA generation: %s", espeak_command)
+        return None
+    except subprocess.TimeoutExpired:
+        logger.warning("espeak-ng timed out during IPA generation for language=%s surface=%r", language, surface)
+        return None
 
     if proc.returncode != 0:
+        logger.warning(
+            "espeak-ng exited with code %s during IPA generation for language=%s",
+            proc.returncode,
+            language,
+        )
         return None
 
     ipa = strip_espeak_language_tags(proc.stdout.strip())

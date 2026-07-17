@@ -12,6 +12,18 @@ const DEEP_LINK_PROTOCOL = "nautilus";
 const pendingDeepLinks = [];
 const DEV_BACKEND_PORT = 8010;
 
+function mergeSearchPath(existingPath, extraEntries) {
+  const delimiter = process.platform === "win32" ? ";" : ":";
+  const merged = [];
+
+  for (const entry of [existingPath, ...extraEntries]) {
+    if (!entry || merged.includes(entry)) continue;
+    merged.push(entry);
+  }
+
+  return merged.join(delimiter);
+}
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!gotSingleInstanceLock) {
@@ -272,6 +284,16 @@ async function startBackend() {
       ? path.join(backendCwd, "frontend")
       : path.join(__dirname, "..", "frontend", "dist"),
   };
+
+  if (isPackaged && process.platform === "darwin") {
+    env.PATH = mergeSearchPath(process.env.PATH, [
+      "/opt/homebrew/bin",
+      "/usr/local/bin",
+      "/opt/local/bin",
+      "/usr/bin",
+      "/bin",
+    ]);
+  }
 
   backendProcess = spawn(backendExecutable, args, {
     cwd: backendCwd,

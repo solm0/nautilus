@@ -1,3 +1,33 @@
+const ALLOWED_REMOTE_ORIGINS = new Set([
+  "https://nautilus.solmi.wiki",
+  "http://localhost:8010",
+  "http://127.0.0.1:8010",
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+]);
+
+function parseUrl(rawUrl: string) {
+  try {
+    return new URL(rawUrl);
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedFetchUrl(rawUrl: string) {
+  const parsed = parseUrl(rawUrl);
+  if (!parsed) return false;
+  if (!/^https?:$/.test(parsed.protocol)) return false;
+  return ALLOWED_REMOTE_ORIGINS.has(parsed.origin);
+}
+
+function isAllowedOpenUrl(rawUrl: string) {
+  const parsed = parseUrl(rawUrl);
+  if (!parsed) return false;
+  if (parsed.protocol === "nautilus:") return true;
+  return isAllowedFetchUrl(rawUrl);
+}
+
 type RequestMessage = {
   type: "nautilus:request";
   input: {
@@ -26,6 +56,10 @@ type ExtensionMessage =
   | OpenUrlMessage;
 
 async function proxyRequest(url: string, init?: RequestInit) {
+  if (!isAllowedFetchUrl(url)) {
+    throw new Error("blocked request URL");
+  }
+
   const response = await fetch(url, init);
   const text = await response.text();
 
@@ -37,11 +71,22 @@ async function proxyRequest(url: string, init?: RequestInit) {
 }
 
 async function probeLocal(localApi: string) {
+  if (!isAllowedFetchUrl(localApi)) {
+    return { ok: false };
+  }
+
   try {
-    await fetch(localApi, {
+    const response = await fetch(`${localApi}/lang/installed`, {
       method: "GET",
     });
-    return { ok: true };
+
+    if (!response.ok) {
+      return { ok: false };
+    }
+
+    const text = await response.text();
+    const parsed = JSON.parse(text);
+    return { ok: Array.isArray(parsed) };
   } catch {
     return { ok: false };
   }
@@ -81,6 +126,11 @@ chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   }
 
   if (message.type === "nautilus:open-url") {
+    if (!isAllowedOpenUrl(message.input.url)) {
+      sendResponse({ ok: false, error: "blocked open URL" });
+      return false;
+    }
+
     void chrome.tabs.create({ url: message.input.url }).then(() => sendResponse({ ok: true }));
     return true;
   }

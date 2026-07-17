@@ -1,4 +1,6 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { TextAnalysisResult, TextBlock } from "../src/components/pageTypes";
@@ -33,6 +35,11 @@ type SelectionDragState = {
   pointerMoved: boolean;
 };
 
+type OverlayRect = {
+  id: string;
+  rect: DOMRect;
+};
+
 type AuthIntent = "save" | null;
 
 function inferLanguage() {
@@ -60,6 +67,11 @@ function isAuthTokenError(error: unknown) {
     message.includes("401") ||
     message === "unauthorized"
   );
+}
+
+function isMethodNotAllowedError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.message.toLowerCase().includes("method not allowed");
 }
 
 function normalizeTextPreservingBreaks(text: string) {
@@ -223,8 +235,8 @@ function makeOverlayStyle(rect: DOMRect, kind: "hover" | "selected"): CSSPropert
     width: `${Math.max(0, rect.width + 4)}px`,
     height: `${Math.max(0, rect.height + 4)}px`,
     borderRadius: "12px",
-    border: kind === "hover" ? "2px solid rgba(245, 158, 11, 0.9)" : "2px solid rgba(249, 115, 22, 0.95)",
-    background: kind === "hover" ? "rgba(253, 230, 138, 0.18)" : "rgba(251, 146, 60, 0.16)",
+    border: kind === "hover" ? "2px solid rgba(59, 130, 246, 0.9)" : "2px solid rgba(37, 99, 235, 0.95)",
+    background: kind === "hover" ? "rgba(96, 165, 250, 0.18)" : "rgba(59, 130, 246, 0.16)",
     boxShadow: kind === "hover" ? "0 0 0 1px rgba(255,255,255,0.5)" : "0 0 0 1px rgba(255,255,255,0.72)",
     pointerEvents: "none",
     zIndex: 2147483646,
@@ -250,6 +262,23 @@ function tryWakeDesktopApp() {
   } catch {
     return false;
   }
+}
+
+async function waitForLocalApiReady() {
+  if (await probeLocalApi()) {
+    return true;
+  }
+
+  tryWakeDesktopApp();
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    if (await probeLocalApi()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function AuthModal({
@@ -384,7 +413,7 @@ function OverlayApp() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<SelectedEntry[]>([]);
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
-  const [layoutTick, setLayoutTick] = useState(0);
+  const [hoveredRect, setHoveredRect] = useState<DOMRect | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
@@ -400,6 +429,8 @@ function OverlayApp() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreviewElements, setDragPreviewElements] = useState<HTMLElement[]>([]);
+  const [selectedRects, setSelectedRects] = useState<OverlayRect[]>([]);
+  const [dragPreviewRects, setDragPreviewRects] = useState<OverlayRect[]>([]);
 
   const getElementId = (element: HTMLElement) => {
     const existing = elementIdsRef.current.get(element);
@@ -411,15 +442,21 @@ function OverlayApp() {
     return nextId;
   };
 
-  const syncAuthState = useEffectEvent(async () => {
-    setAuthed(await isAuthenticated());
-  });
-
   useEffect(() => {
     hostRef.current = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
     rootRef.current = hostRef.current?.shadowRoot ?? null;
-    void syncAuthState();
-  }, [syncAuthState]);
+
+    let active = true;
+    void isAuthenticated().then((nextAuthed) => {
+      if (active) {
+        setAuthed(nextAuthed);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -428,7 +465,21 @@ function OverlayApp() {
       setLanguagesLoading(true);
 
       try {
-        const installed = await getInstalledLanguages();
+        let installed: InstalledPack[] | null = null;
+
+        try {
+          installed = await getInstalledLanguages();
+        } catch {
+          const localReady = await waitForLocalApiReady();
+          if (localReady) {
+            installed = await getInstalledLanguages();
+          }
+        }
+
+        if (!installed) {
+          throw new Error("local api unavailable");
+        }
+
         if (!active) return;
 
         const normalized = installed
@@ -460,31 +511,18 @@ function OverlayApp() {
     };
   }, []);
 
-  useEffect(() => {
-    const handleScrollOrResize = () => {
-      setLayoutTick((value) => value + 1);
-    };
-
-    window.addEventListener("scroll", handleScrollOrResize, true);
-    window.addEventListener("resize", handleScrollOrResize);
-    return () => {
-      window.removeEventListener("scroll", handleScrollOrResize, true);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    setSelectedEntries((current) => current.filter((entry) => document.contains(entry.element)));
-  }, [layoutTick]);
-
-  const clearSelection = useEffectEvent(() => {
+  const clearSelection = () => {
     setSelectedEntries([]);
     setHoveredElement(null);
+    setHoveredRect(null);
     setMessage(null);
     setTitle("");
-  });
+    setDragPreviewElements([]);
+    setDragPreviewRects([]);
+    setSelectedRects([]);
+  };
 
-  const toggleElementSelection = useEffectEvent((element: HTMLElement) => {
+  const toggleElementSelection = useCallback((element: HTMLElement) => {
     const id = getElementId(element);
 
     setSelectedEntries((current) => {
@@ -495,9 +533,9 @@ function OverlayApp() {
 
       return [...current, { id, element }];
     });
-  });
+  }, []);
 
-  const appendSelectionElements = useEffectEvent((elements: HTMLElement[]) => {
+  const appendSelectionElements = useCallback((elements: HTMLElement[]) => {
     const deduped = elements.filter((element, index) => elements.indexOf(element) === index);
 
     setSelectedEntries((current) => {
@@ -509,15 +547,10 @@ function OverlayApp() {
       if (nextEntries.length === 0) return current;
       return [...current, ...nextEntries];
     });
-  });
+  }, []);
 
   useEffect(() => {
-    if (!selectionMode) {
-      setHoveredElement(null);
-      pageDragRef.current = null;
-      setDragPreviewElements([]);
-      return;
-    }
+    if (!selectionMode) return;
 
     const handlePointerMove = (event: MouseEvent) => {
       const next = findLeafTextElementFromPoint(event.clientX, event.clientY, hostRef.current);
@@ -617,6 +650,84 @@ function OverlayApp() {
   }, [appendSelectionElements, selectionMode, toggleElementSelection]);
 
   useEffect(() => {
+    const refreshOverlayRects = () => {
+      setSelectedRects(
+        selectedEntries
+          .filter((entry) => document.contains(entry.element))
+          .map((entry) => ({ id: entry.id, rect: entry.element.getBoundingClientRect() }))
+          .filter(({ rect }) => rect.width > 0 && rect.height > 0),
+      );
+
+      setDragPreviewRects(
+        dragPreviewElements
+          .filter((element) => document.contains(element))
+          .map((element) => ({ id: getElementId(element), rect: element.getBoundingClientRect() }))
+          .filter(({ rect }) => rect.width > 0 && rect.height > 0),
+      );
+
+      if (!selectionMode || !hoveredElement || !document.contains(hoveredElement)) {
+        setHoveredRect(null);
+        return;
+      }
+
+      const isSelected = selectedEntries.some((entry) => entry.element === hoveredElement);
+      if (isSelected) {
+        setHoveredRect(null);
+        return;
+      }
+
+      const rect = hoveredElement.getBoundingClientRect();
+      setHoveredRect(rect.width > 0 && rect.height > 0 ? rect : null);
+    };
+
+    const frame = window.requestAnimationFrame(refreshOverlayRects);
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [dragPreviewElements, hoveredElement, selectedEntries, selectionMode]);
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      window.requestAnimationFrame(() => {
+        setSelectedRects(
+          selectedEntries
+            .filter((entry) => document.contains(entry.element))
+            .map((entry) => ({ id: entry.id, rect: entry.element.getBoundingClientRect() }))
+            .filter(({ rect }) => rect.width > 0 && rect.height > 0),
+        );
+
+        setDragPreviewRects(
+          dragPreviewElements
+            .filter((element) => document.contains(element))
+            .map((element) => ({ id: getElementId(element), rect: element.getBoundingClientRect() }))
+            .filter(({ rect }) => rect.width > 0 && rect.height > 0),
+        );
+
+        if (!selectionMode || !hoveredElement || !document.contains(hoveredElement)) {
+          setHoveredRect(null);
+          return;
+        }
+
+        const isSelected = selectedEntries.some((entry) => entry.element === hoveredElement);
+        if (isSelected) {
+          setHoveredRect(null);
+          return;
+        }
+
+        const rect = hoveredElement.getBoundingClientRect();
+        setHoveredRect(rect.width > 0 && rect.height > 0 ? rect : null);
+      });
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [dragPreviewElements, hoveredElement, selectedEntries, selectionMode]);
+
+  useEffect(() => {
     if (!selectionMode) return;
 
     const previousUserSelect = document.body.style.userSelect;
@@ -641,49 +752,14 @@ function OverlayApp() {
         };
       })
       .filter((entry) => entry.text.trim().length > 0 && document.contains(entry.element));
-  }, [selectedEntries, layoutTick]);
-
-  const selectedRects = useMemo(() => {
-    return selectedBlocks
-      .map((entry) => ({ id: entry.id, rect: entry.element.getBoundingClientRect() }))
-      .filter(({ rect }) => rect.width > 0 && rect.height > 0);
-  }, [selectedBlocks, layoutTick]);
-
-  const dragPreviewRects = useMemo(() => {
-    return dragPreviewElements
-      .map((element) => ({ id: getElementId(element), rect: element.getBoundingClientRect() }))
-      .filter(({ rect }) => rect.width > 0 && rect.height > 0);
-  }, [dragPreviewElements, getElementId, layoutTick]);
-
-  const hoveredRect = useMemo(() => {
-    if (!selectionMode || !hoveredElement || !document.contains(hoveredElement)) return null;
-
-    const isSelected = selectedEntries.some((entry) => entry.element === hoveredElement);
-    if (isSelected) return null;
-
-    const rect = hoveredElement.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 ? rect : null;
-  }, [hoveredElement, layoutTick, selectedEntries, selectionMode]);
+  }, [selectedEntries]);
 
   const combinedText = useMemo(
     () => selectedBlocks.map((entry) => entry.formattedText).join("\n\n"),
     [selectedBlocks],
   );
 
-  useEffect(() => {
-    if (title.trim()) return;
-    if (selectedBlocks.length === 0) return;
-
-    setTitle(selectedBlocks[0].preview);
-  }, [selectedBlocks, title]);
-
-  useEffect(() => {
-    if (selectionMode || selectedBlocks.length > 0 || message || authOpen) {
-      setUiCollapsed(false);
-    }
-  }, [authOpen, message, selectedBlocks.length, selectionMode]);
-
-  const moveSelectedEntry = useEffectEvent((sourceId: string, targetId: string) => {
+  const moveSelectedEntry = (sourceId: string, targetId: string) => {
     if (sourceId === targetId) return;
 
     setSelectedEntries((current) => {
@@ -696,7 +772,7 @@ function OverlayApp() {
       next.splice(targetIndex, 0, moved);
       return next;
     });
-  });
+  };
 
   useEffect(() => {
     if (!draggingId) return;
@@ -720,21 +796,17 @@ function OverlayApp() {
     };
   }, [draggingId]);
 
-  const ensureLocalAppAvailable = useEffectEvent(async () => {
-    if (await probeLocalApi()) return true;
-
-    tryWakeDesktopApp();
-
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 500));
-      if (await probeLocalApi()) return true;
-    }
+  const ensureLocalAppAvailable = async () => {
+    const ready = await waitForLocalApiReady();
+    if (ready) return true;
 
     await openInstallPage();
     return false;
-  });
+  };
 
-  const runSaveFlow = useEffectEvent(async (skipAuthCheck = false) => {
+  const runSaveFlow = async (skipAuthCheck = false) => {
+    setUiCollapsed(false);
+
     if (selectedBlocks.length === 0) {
       setMessage("Select one or more text regions first.");
       return;
@@ -772,11 +844,20 @@ function OverlayApp() {
       );
 
       setMessage("Attaching IPA...");
-      const ipaData = await enrichBlocksWithIpa(analyzed.blocks, language);
+      let blocksForSave = analyzed.blocks;
+
+      try {
+        const ipaData = await enrichBlocksWithIpa(analyzed.blocks, language);
+        blocksForSave = ipaData.blocks;
+      } catch (error) {
+        if (!isMethodNotAllowedError(error)) {
+          throw error;
+        }
+      }
 
       setMessage("Saving page...");
       const page = await saveAnalyzedPage(
-        makeResult(combinedText, ipaData.blocks),
+        makeResult(combinedText, blocksForSave),
         title.trim() || selectedBlocks[0]?.preview || "Web Clip",
         language,
         window.location.href,
@@ -802,9 +883,9 @@ function OverlayApp() {
     } finally {
       setSaveBusy(false);
     }
-  });
+  };
 
-  const handleLogin = useEffectEvent(async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     if (!email.trim() || !password.trim()) {
       setAuthMessage("Enter your email and password.");
       return;
@@ -826,9 +907,9 @@ function OverlayApp() {
     } finally {
       setAuthBusy(false);
     }
-  });
+  };
 
-  const handleSignup = useEffectEvent(async (name: string, email: string, password: string) => {
+  const handleSignup = async (name: string, email: string, password: string) => {
     if (!name.trim() || !email.trim() || !password.trim()) {
       setAuthMessage("Enter your name, email, and password.");
       return;
@@ -845,9 +926,9 @@ function OverlayApp() {
     } finally {
       setAuthBusy(false);
     }
-  });
+  };
 
-  const handleLogout = useEffectEvent(async () => {
+  const handleLogout = async () => {
     setAuthBusy(true);
     setAuthMessage(null);
     try {
@@ -860,7 +941,7 @@ function OverlayApp() {
     } finally {
       setAuthBusy(false);
     }
-  });
+  };
 
   return (
     <>
@@ -910,6 +991,9 @@ function OverlayApp() {
                   setUiCollapsed(true);
                   setSelectionMode(false);
                   setHoveredElement(null);
+                  setHoveredRect(null);
+                  setDragPreviewElements([]);
+                  setDragPreviewRects([]);
                 }}
                 style={iconGhostButtonStyle}
                 title="Hide"
@@ -919,7 +1003,19 @@ function OverlayApp() {
               <button
                 type="button"
                 onClick={() => {
-                  setSelectionMode((current) => !current);
+                  setSelectionMode((current) => {
+                    const next = !current;
+                    if (!next) {
+                      pageDragRef.current = null;
+                      setHoveredElement(null);
+                      setHoveredRect(null);
+                      setDragPreviewElements([]);
+                      setDragPreviewRects([]);
+                    } else {
+                      setUiCollapsed(false);
+                    }
+                    return next;
+                  });
                   setHoveredElement(null);
                   setMessage(null);
                 }}
@@ -952,7 +1048,7 @@ function OverlayApp() {
             <input
               id="nautilus-title-input"
               type="text"
-              value={title}
+              value={title || selectedBlocks[0]?.preview || ""}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Web Clip"
               style={panelInputStyle}
@@ -1175,8 +1271,8 @@ const collapsedDotStyle: CSSProperties = {
   width: "7px",
   height: "7px",
   borderRadius: "999px",
-  background: "rgba(251, 146, 60, 0.92)",
-  boxShadow: "0 0 0 4px rgba(251, 146, 60, 0.12)",
+  background: "rgba(59, 130, 246, 0.92)",
+  boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.14)",
 };
 
 const collapsedLabelStyle: CSSProperties = {
@@ -1230,8 +1326,6 @@ const fieldStackStyle: CSSProperties = {
 
 const fieldLabelStyle: CSSProperties = {
   fontSize: "11px",
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
   color: "rgba(255,255,255,0.58)",
 };
 
@@ -1300,16 +1394,16 @@ const selectionItemStyle: CSSProperties = {
 
 const draggingSelectionItemStyle: CSSProperties = {
   opacity: 0.55,
-  background: "rgba(249, 115, 22, 0.18)",
-  border: "1px solid rgba(253, 186, 116, 0.4)",
+  background: "rgba(37, 99, 235, 0.18)",
+  border: "1px solid rgba(96, 165, 250, 0.4)",
 };
 
 const selectionIndexStyle: CSSProperties = {
   width: "20px",
   height: "20px",
   borderRadius: "999px",
-  background: "rgba(249, 115, 22, 0.2)",
-  color: "#fed7aa",
+  background: "rgba(37, 99, 235, 0.2)",
+  color: "#dbeafe",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1370,7 +1464,7 @@ const iconGhostButtonStyle: CSSProperties = {
 const linkButtonStyle: CSSProperties = {
   border: "none",
   background: "transparent",
-  color: "#f5d0fe",
+  color: "#bfdbfe",
   padding: 0,
   fontSize: "12px",
   cursor: "pointer",

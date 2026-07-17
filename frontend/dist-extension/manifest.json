@@ -20,5 +20,12 @@
     "service_worker": "assets/background.js",
     "type": "module"
   },
-  "action": {}
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "action": {
+    "default_icon": {
+      "128": "icon-128.png"
+    }
+  }
 }
