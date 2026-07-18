@@ -649,7 +649,7 @@ export default function PageCore({
             <div className={`flex flex-col gap-2 text-sm ${pageSource === 'lrclib' ? 'items-start' : 'items-center'} `}>
               {pageSource && pageSource !== 'user' ? (
                 <div className="flex flex-col gap-1 pb-6">
-                  <span className="text-xs">{t("Source")}</span>
+                  <span className="text-xs font-pretendard text-neutral-400">{t("Source")}</span>
                   <span className="uppercase">{pageSource}</span>
                 </div>
               ) : null}
@@ -788,14 +788,14 @@ export default function PageCore({
                   className="flex items-center gap-2 border border-dashed border-neutral-300 px-3 py-2 text-neutral-400 transition-colors hover:border-neutral-400 hover:text-neutral-700"
                 >
                   <Plus size={14} />
-                  <span>{t("Add metadata")}</span>
+                  <span className="font-pretendard text-xs">{t("Add metadata")}</span>
                 </button>
               ) : null}
 
               {canManageMetadata && editingMetadataIndex === -1 ? (
                 <div className={`flex flex-col gap-2 bg-neutral-200/50 px-3 py-2 w-105 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                   <textarea
-                    className={`min-w-[12em] focus:outline-none w-full ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
+                    className={`min-w-[12em] focus:outline-none w-full placeholder:font-pretendard placeholder:text-xs ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
                     placeholder={t("Add metadata")}
                     value={draftMetadata}
                     onChange={(event) => setDraftMetadata(event.target.value)}

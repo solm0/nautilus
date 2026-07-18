@@ -72,7 +72,7 @@ function AppVersionSection() {
 
   return (
     <section className="w-full flex flex-col gap-4 pt-8 md:pt-12 items-start">
-      <h2>{t("App version")}</h2>
+      <h2 className="font-semibold!">{t("App version")}</h2>
       <div className="flex items-center gap-2 text-sm">
         <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
@@ -211,8 +211,8 @@ export function UserProfile() {
 
   return (
     <>
-      <div className="flex flex-col gap-2 mb-14 items-start">
-        <div className="flex flex-col gap-2 items-start mb-7">
+      <div className="flex flex-col gap-7 mb-14 items-start">
+        <div className="flex flex-col gap-2 items-start">
           <div className="w-full flex items-center gap-3">
 
             <UserIcon user={user} />
@@ -242,8 +242,10 @@ export function UserProfile() {
               />
             )}
           </div>
+          <p className="text-sm pt-1 pb-2">{user?.email}</p>
+        </div>
 
-          <p className="text-sm pt-1 pb-2">E-mail: {user?.email}</p>
+        <div className="flex gap-2">
           <MyCommentsModal />
           <Button onClick={() => setOpenLogoutModal(true)} text={t("Logout")} />
         </div>
@@ -370,7 +372,7 @@ export default function Setting() {
     <>
       <div className="w-full h-full overflow-y-scroll overflow-x-hidden flex flex-col gap-7 pr-3 z-30 pl-3 md:pl-6 bg-neutral-50 pb-7">
         <AppVersionSection />
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Preferences")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Preferences")}</h2>
         <section className="w-full h-auto mb-14 flex flex-col gap-7">
         <div className="flex flex-col gap-4">
           <h3>{t("Page view")}</h3>
@@ -467,7 +469,7 @@ export default function Setting() {
         </div>
         </section>
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Language packs")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Language packs")}</h2>
         <p className="text-sm">
           {mobileApp
             ? t("Activate only the languages you want to use on this device.")
@@ -477,10 +479,10 @@ export default function Setting() {
           <PackTable />
         </section>
         
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Mutuals")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Mutuals")}</h2>
         <Mutuals />
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50">{t("Profile")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Profile")}</h2>
         <UserProfile />
       </div>
 
