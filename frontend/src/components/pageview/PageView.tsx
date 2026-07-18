@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import PageContent from "./PageContent";
 import {
-  authHeaders,
-  CENTRAL_API,
   addPageMetadata,
   deletePageMetadata,
+  fetchPageDetail,
+  getFavorites,
   getInstalled,
   lemmaLookup,
   setFavorite,
@@ -66,6 +66,7 @@ export default function PageView() {
   const [pageName, setPageName] = useState("");
   const [pageSource, setPageSource] = useState("user");
   const [pageMetadata, setPageMetadata] = useState<string[]>([]);
+  const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set());
 
   const [panel, setPanel] = useState<SidePanelState>(null);
   const [panelPlacement, setPanelPlacement] = useState<
@@ -135,64 +136,34 @@ export default function PageView() {
       if (fetchedRef.current) return;
       fetchedRef.current = true;
 
-      const headers = authHeaders();
-
-      if (!headers) {
-        setLoadingPage(false);
-        return;
-      }
-
       setLoadingPage(true);
       setOffline(false);
-
-      let res: Response;
+      let lang = "";
 
       try {
-        res = await fetch(`${CENTRAL_API}/pages/${id}`, {
-          headers,
-        });
+        const detail = await fetchPageDetail(Number(id));
+        const resultData: TextAnalysisResult = detail.result;
+        lang = detail.language;
+
+        setResult(resultData);
+        setPageName(detail.name ?? "");
+        setPageSource(detail.source ?? "user");
+        setPageMetadata(Array.isArray(detail.metadata) ? detail.metadata : []);
+        setLanguage(lang);
+        setAnnotations(Array.isArray(detail.annotations) ? detail.annotations : []);
+        setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
+        const favorites = await getFavorites();
+        setFavoriteKeys(new Set(favorites));
       } catch (error) {
         setOffline(isNetworkError(error));
         setLoadingPage(false);
         return;
       }
-
-      if (!res.ok) {
-        setLoadingPage(false);
-        return;
-      }
-
-      const data = await res.json();
-      const resultData: TextAnalysisResult = data.result;
-      const lang = data.language;
-
-      setResult(resultData);
-      setPageName(data.name ?? "");
-      setPageSource(data.source ?? "user");
-      setPageMetadata(Array.isArray(data.metadata) ? data.metadata : []);
-      setLanguage(lang);
 
       const lemmaCacheKey = `${id}:${lang}`;
       const cachedLemmaInfo = lemmaInfoCache.get(lemmaCacheKey);
       if (cachedLemmaInfo) {
         setLemmaInfo(cachedLemmaInfo);
-      }
-
-      let annRes: Response;
-
-      try {
-        annRes = await fetch(`${CENTRAL_API}/pages/${id}/annotations`, {
-          headers,
-        });
-      } catch (error) {
-        setOffline(isNetworkError(error));
-        setLoadingPage(false);
-        return;
-      }
-
-      if (annRes.ok) {
-        const annData = await annRes.json();
-        setAnnotations(annData);
       }
 
       setLoadingPage(false);
@@ -205,8 +176,8 @@ export default function PageView() {
       }
     };
 
-    run();
-  }, [id]);
+    void run();
+  }, [id, reloadTick]);
 
   useEffect(() => {
     activeLemmaPageKeyRef.current =
@@ -301,6 +272,7 @@ export default function PageView() {
 
   const onFavoriteClick = async (key: string, next: boolean) => {
     await setFavorite(key, next);
+    setFavoriteKeys(new Set(await getFavorites()));
   };
 
   const trackReference = result?.track_ref ?? null;
@@ -365,6 +337,12 @@ export default function PageView() {
         }} />
       ) : null}
 
+      {offline && result ? (
+        <div className="absolute left-3 top-3 z-40 text-xs text-neutral-400 md:left-6">
+          {t("You're offline.")}
+        </div>
+      ) : null}
+
       <LanguagePackRequiredModal
         language={language ?? ""}
         open={noPack && language !== null}
@@ -404,15 +382,16 @@ export default function PageView() {
               pageName={pageName}
               pageSource={pageSource}
               pageMetadata={pageMetadata}
-              onAddMetadata={handleAddMetadata}
-              onUpdateMetadata={handleUpdateMetadata}
-              onDeleteMetadata={handleDeleteMetadata}
+              onAddMetadata={offline || Number(id) < 0 ? undefined : handleAddMetadata}
+              onUpdateMetadata={offline || Number(id) < 0 ? undefined : handleUpdateMetadata}
+              onDeleteMetadata={offline || Number(id) < 0 ? undefined : handleDeleteMetadata}
               pageId={Number(id)}
               panelData={panel}
               language={language ?? ""}
               setPanelData={setPanel}
               scrollRef={(fn) => (scrollRef.current = fn)}
               setAnnotations={setAnnotations}
+              offline={offline}
               horizontalAlign={
                 panelPlacement === "left"
                   ? "right"
@@ -436,6 +415,7 @@ export default function PageView() {
                 onToggleFavorite={onFavoriteClick}
                 language={panel.language ?? language}
                 lemmaInfo={lemmaInfo}
+                favoriteKeys={favoriteKeys}
               />
             )}
 
@@ -445,6 +425,7 @@ export default function PageView() {
                 setPanel={setPanel}
                 setAnnotations={setAnnotations}
                 pageLanguage={language}
+                offline={offline}
               />
             )}
 

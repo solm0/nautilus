@@ -3,6 +3,7 @@ const { spawn, execFile } = require("child_process");
 const path = require("path");
 const http = require("http");
 const { exec } = require("child_process");
+const fs = require("fs/promises");
 
 let mainWindow;
 let backendProcess;
@@ -11,6 +12,32 @@ let backendStartError = null;
 const DEEP_LINK_PROTOCOL = "nautilus";
 const pendingDeepLinks = [];
 const DEV_BACKEND_PORT = 8010;
+
+function getOfflineStatePath() {
+  return path.join(app.getPath("userData"), "offline", "offline-state.json");
+}
+
+async function readOfflineStateFile() {
+  const filePath = getOfflineStatePath();
+
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function writeOfflineStateFile(value) {
+  const filePath = getOfflineStatePath();
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(value), "utf8");
+  return true;
+}
 
 function mergeSearchPath(existingPath, extraEntries) {
   const delimiter = process.platform === "win32" ? ";" : ":";
@@ -525,6 +552,8 @@ app.whenReady().then(async () => {
     app.relaunch();
     app.exit(0);
   });
+  ipcMain.handle("offline-state:read", async () => readOfflineStateFile());
+  ipcMain.handle("offline-state:write", async (_event, value) => writeOfflineStateFile(value));
 
   dispatchDeepLink(extractDeepLink(process.argv));
 

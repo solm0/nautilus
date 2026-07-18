@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SidePanelState } from "./PageView";
 import type { Annotation } from "../pageTypes";
 import { deleteAnnotation, updateAnnotation } from "../../api";
+import { deletePendingAnnotation, updatePendingAnnotation } from "../../offlineData";
 import { isValidUrl } from "./AnnotationNew";
 import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInput";
 import { ResponsiveModal } from "../util/ResponsiveModal";
@@ -13,18 +14,22 @@ export default function AnnotationView({
   panel,
   setPanel,
   setAnnotations,
-  pageLanguage
+  pageLanguage,
+  offline,
 }: {
   panel: SidePanelState;
   setPanel: React.Dispatch<React.SetStateAction<SidePanelState | null>>
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   pageLanguage: string;
+  offline: boolean;
 }) {
   const { t } = useI18n();
   const annotationPanel =
     panel?.type === "annotation:view" ? panel : null;
 
   if (!annotationPanel || !annotationPanel.data.id) return;
+  const isLocalAnnotation = annotationPanel.data.id < 0;
+  const canMutate = isLocalAnnotation || !offline;
 
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(annotationPanel.data.content);
@@ -58,7 +63,11 @@ export default function AnnotationView({
     setMsg(null);
 
     try {
-      await deleteAnnotation(id);
+      if (isLocalAnnotation) {
+        await deletePendingAnnotation(id);
+      } else {
+        await deleteAnnotation(id);
+      }
       setAnnotations(prev => prev.filter(a => a.id !== id));
       setOpenModal(false);
       setPanel(null);
@@ -86,7 +95,9 @@ export default function AnnotationView({
     }
 
     try {
-      const updated = await updateAnnotation(id, nextValue);
+      const updated = isLocalAnnotation
+        ? await updatePendingAnnotation(id, nextValue)
+        : await updateAnnotation(id, nextValue);
       setValue(updated.content);
 
       // 1. 리스트 업데이트
@@ -115,7 +126,7 @@ export default function AnnotationView({
     <div className="w-full h-full pt-2 px-2 flex flex-col gap-2 overflow-hidden">
 
       {/* buttons */}
-      {!editing &&
+      {!editing && canMutate &&
         <div className="w-full h-auto flex items-center justify-between">
           <p className="text-xs text-neutral-400">{t("Created:")} {annotationPanel.data.created_at?.slice(0,10)}</p>
           <div className="flex gap-1">
@@ -190,7 +201,7 @@ export default function AnnotationView({
       
 
       {/* delete modal */}
-      <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
+      <ResponsiveModal open={openModal && canMutate} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7">
           <h2 className="pr-6">{t("Delete this annotation?")}</h2>
           <Button text={t("Delete")} onClick={handleDelete} fit red/>

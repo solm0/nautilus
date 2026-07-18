@@ -253,12 +253,6 @@ export default function LanguageSelect({
             {t("Install Writing Assistant")} {selectedPack.lang}
           </button>
         ) : null}
-
-        {offline ? (
-          <p className="text-sm text-neutral-400">
-            {t("Connect to the internet to see installable languages.")}
-          </p>
-        ) : null}
       </div>
 
       {installingPack ? (

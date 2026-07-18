@@ -8,6 +8,7 @@ import {
   analyzeBlocks,
   lemmaLookup,
   savePage,
+  type SavePageProgress,
 } from "../../api";
 import {
   buildTrackReference,
@@ -231,6 +232,9 @@ export default function LyricPage() {
 
   const [anyLangInstalled, setAnyLangInstalled] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<
+    SavePageProgress | "analyzing" | "fetching-lemmas" | null
+  >(null);
   const [savedPageId, setSavedPageId] = useState<number | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
@@ -269,6 +273,7 @@ export default function LyricPage() {
     if (!language || !track?.track || blocks.length === 0) return;
 
     setSaving(true);
+    setSaveProgress("analyzing");
     setSaveError(null);
 
     try {
@@ -287,6 +292,7 @@ export default function LyricPage() {
         {
           source: "lrclib",
           metadata: track.track.name ? [track.track.name] : [],
+          onProgress: setSaveProgress,
         },
       );
 
@@ -296,6 +302,7 @@ export default function LyricPage() {
         .filter((item): item is { lemma: string; pos: string } => item !== null);
 
       if (items.length > 0) {
+        setSaveProgress("fetching-lemmas");
         const uniqueItems = Array.from(
           new Map(items.map((item) => [`${item.lemma}_${item.pos}`, item])).values(),
         );
@@ -312,8 +319,19 @@ export default function LyricPage() {
       setSaveError("Saving lyrics failed.");
     } finally {
       setSaving(false);
+      setSaveProgress(null);
     }
   };
+
+  const saveButtonText = saveProgress === "analyzing"
+    ? t("Analyzing selected text...")
+    : saveProgress === "attaching-ipa"
+      ? t("Attaching IPA...")
+      : saveProgress === "fetching-lemmas"
+        ? t("Fetching lemmas...")
+        : saveProgress === "saving"
+          ? t("Saving...")
+          : t("Save");
 
   const isSaveDisabled =
     saving ||
@@ -456,7 +474,7 @@ export default function LyricPage() {
             />
           ) : (
             <Button
-              text={saving ? t("Saving...") : t("Save")}
+              text={saveButtonText}
               onClick={handleSave}
               disabled={isSaveDisabled}
               fit

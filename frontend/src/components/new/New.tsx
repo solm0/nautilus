@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PagePreview from "./PagePreview";
-import { fetchNotebooks, savePage } from "../../api";
+import { fetchNotebooks, savePage, type SavePageProgress } from "../../api";
 import { useLocation, useNavigate } from "react-router-dom";
 import PasteReader from "./PasteReader";
 import Button from "../util/Button";
@@ -24,6 +24,7 @@ export default function New() {
   const [selectedRanges, setSelectedRanges] = useState<SelectionRange[]>([]);
 
   const [openModal, setOpenModal] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<SavePageProgress | null>(null);
   const [pageName, setPageName] = useState("");
   const [notebooks, setNotebooks] = useState<any[]>([]);
   const [anyLangInstalled, setAnyLangInstalled] = useState(false);
@@ -64,7 +65,7 @@ export default function New() {
   }, [openModal]);
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result || saveProgress) return;
 
     const resultToSave =
       selectedRanges.length > 0
@@ -82,6 +83,7 @@ export default function New() {
         {
           source: "user",
           metadata: [],
+          onProgress: setSaveProgress,
         },
       );
       navigate(`/page/${pageId}`);
@@ -89,12 +91,19 @@ export default function New() {
       if (e instanceof Error && e.message === "unauthorized") {
         navigate("/login");
       }
+    } finally {
+      setSaveProgress(null);
     }
   };
 
   const statusText = analyzing
-    ? t("Running Stanza analysis...")
+    ? t("Analyzing selected text...")
     : null;
+  const saveButtonText = saveProgress === "attaching-ipa"
+    ? t("Attaching IPA...")
+    : saveProgress === "saving"
+      ? t("Saving...")
+      : t("Save");
 
   const handleReset = () => {
     setResult(null);
@@ -211,7 +220,12 @@ export default function New() {
         )}
       </div>
 
-      <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
+      <ResponsiveModal
+        open={openModal}
+        onClose={() => {
+          if (!saveProgress) setOpenModal(false);
+        }}
+      >
         <div className="flex flex-col gap-7">
           <h2>{t("Save Page")}</h2>
 
@@ -224,25 +238,34 @@ export default function New() {
           />
 
           {/* notebook select */}
-          <select
-            value={selectedNotebook ?? ""}
-            onChange={(e) =>
-              setSelectedNotebook(
-                e.target.value ? Number(e.target.value) : null
-              )
-            }
-            className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
-          >
-            <option value="">{t("root (folder option)")}</option>
-            {notebooks.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col w-full gap-1">
+            <p className="text-xs text-neutral-400">{t("Notebook")}</p>
+            <select
+              value={selectedNotebook ?? ""}
+              onChange={(e) =>
+                setSelectedNotebook(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
+            >
+              <option value="">{t("root")}</option>
+              {notebooks.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* save */}
-          <Button text={t("Save")} onClick={handleSave} black fit />
+          <Button
+            text={saveButtonText}
+            onClick={handleSave}
+            disabled={Boolean(saveProgress)}
+            black
+            fit
+          />
         </div>
       </ResponsiveModal>
     </div>

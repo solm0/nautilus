@@ -20,6 +20,7 @@ export default function LemmaExpansionWrapper({
   onToggleFavorite,
   language,
   lemmaInfo,
+  favoriteKeys,
 }: {
   activeNode: D3Node | null;
   lemmaDatas: LemmaData[] ;
@@ -32,6 +33,7 @@ export default function LemmaExpansionWrapper({
   onToggleFavorite: (key: string, next:boolean) => Promise<void>;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
+  favoriteKeys?: Set<string>;
 }) {
   const { t } = useI18n();
   const inflightRef = useRef(new Set<string>());
@@ -114,6 +116,7 @@ export default function LemmaExpansionWrapper({
         onToggleFavorite={onToggleFavorite}
         language={language}
         lemmaInfo={lemmaInfo}
+        favoriteKeys={favoriteKeys}
       />
     );
   }

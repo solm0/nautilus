@@ -12,15 +12,19 @@ import { isValidUrl } from "../pageview/AnnotationNew";
 import NgramToggleInput, { type NgramToggleInputHandle } from "../pageview/NgramToggleInput";
 import { UserIcon } from "../setting/Setting";
 import { useI18n } from "../../i18n";
+import PendingSyncBadge from "../util/PendingSyncBadge";
 
 export default function AnnotationCard({
-  item, autoOpenComments, pinned = false, onUpdate, onDelete
+  item, autoOpenComments, pinned = false, onUpdate, onDelete, readonlySnapshotActions = false,
+  disablePageLink = false,
 }: {
   item: TimelineItem;
   autoOpenComments: boolean;
   pinned?: boolean;
   onUpdate?: (item: TimelineItem) => void;
   onDelete?: (id: number) => void;
+  readonlySnapshotActions?: boolean;
+  disablePageLink?: boolean;
 }) {
   const { locale, t } = useI18n();
   const [openModal, setOpenModal] = useState(false);
@@ -36,6 +40,10 @@ export default function AnnotationCard({
   const [expanded, setExpanded] = useState(false);
   const [canSave, setCanSave] = useState(item.content.trim().length > 0);
   const inputRef = useRef<NgramToggleInputHandle>(null);
+  const isPendingAnnotation = item.pending_sync || item.id < 0;
+  const effectiveUser = item.user ?? (isPendingAnnotation ? user : null);
+  const disableSnapshotActions = readonlySnapshotActions && !isPendingAnnotation;
+  const disableCommentButton = readonlySnapshotActions;
   
   useEffect(() => {
     verifyToken().then(setUser);
@@ -167,24 +175,27 @@ export default function AnnotationCard({
         sticky bg-neutral-50 flex w-full gap-2 py-3 text-sm items-center z-30
         ${pinned ? 'top-0 pt-10' : 'top-16 md:top-20'}
         `}>
-        <UserIcon user={item.user} />
+        <UserIcon user={effectiveUser} />
         <div className="flex gap-2">
           <span>
-            {item.user?.id === user?.id
+            {effectiveUser?.id === user?.id || isPendingAnnotation
               ? t("Me")
-              : (item.user?.name ?? t("Unknown"))}
+              : (effectiveUser?.name ?? t("Unknown"))}
           </span>
           <span className="text-neutral-400">
             {formatRelative(item.created_at, locale)}
           </span>
         </div>
+        {isPendingAnnotation ? <PendingSyncBadge /> : null}
 
-        {item.user?.id === user?.id && item.type && !editing && !autoOpenComments && (
+        {(effectiveUser?.id === user?.id || isPendingAnnotation) && item.type && !editing && !autoOpenComments && (
           <div className="gap-1 ml-auto hidden group-hover:flex">
             {item.type !== 'emoji' &&
               <IconButton
                 icon={<Pencil size={14} />}
+                disabled={disableSnapshotActions}
                 onClick={() => {
+                  if (disableSnapshotActions) return;
                   setEditing(true);
                   setValue(item.content)
                 }}
@@ -192,6 +203,7 @@ export default function AnnotationCard({
             }
             <IconButton
               icon={<Trash2 className="text-red-600" size={14} />}
+              disabled={disableSnapshotActions}
               onClick={() => setOpenModal(true)}
             />
           </div>
@@ -206,14 +218,20 @@ export default function AnnotationCard({
         
         {/* source */}
         <div className="flex-1 flex flex-col gap-2 items-end">
-          <Link
-            to={`/page/${item.page_id}`}
-            state={{ annotationId: item.id }}
-            className="w-auto text-sm bg-neutral-200 px-2 py-1 rounded-sm hover:bg-neutral-300 transition-colors flex gap-2 items-center"
-          >
-            <p>{item.page_name}</p>
-            <ArrowUpRight size={15} />
-          </Link>
+          {disablePageLink ? (
+            <div className="w-auto rounded-sm bg-neutral-200 px-2 py-1 text-sm">
+              {item.page_name}
+            </div>
+          ) : (
+            <Link
+              to={`/page/${item.page_id}`}
+              state={{ annotationId: item.id }}
+              className="flex w-auto items-center gap-2 rounded-sm bg-neutral-200 px-2 py-1 text-sm transition-colors hover:bg-neutral-300"
+            >
+              <p>{item.page_name}</p>
+              <ArrowUpRight size={15} />
+            </Link>
+          )}
           <div className="w-full bg-neutral-200 p-2 rounded-sm">
             <p className="max-w-[33em]">{item.source}</p>
           </div>
@@ -296,8 +314,16 @@ export default function AnnotationCard({
 
       {/* comments */}
       <button
-        onClick={toggleComments}
-        className="flex items-center gap-1 px-2 py-1 rounded-full bg-neutral-200 self-start z-10 text-sm hover:bg-neutral-300 transition-colors"
+        disabled={disableCommentButton}
+        onClick={() => {
+          if (disableCommentButton) return;
+          void toggleComments();
+        }}
+        className={`flex items-center gap-1 px-2 py-1 rounded-full self-start z-10 text-sm transition-colors ${
+          disableCommentButton
+            ? "bg-neutral-200 opacity-50 pointer-events-none"
+            : "bg-neutral-200 hover:bg-neutral-300"
+        }`}
       >
         <MessageCircle size={13} />
         {commentCount}

@@ -24,16 +24,18 @@ export default function PasteReader({
   const handlePasteAnalyze = useCallback(async () => {
     setAnalyzing(true);
 
-    const blocks = textToBlocks(pasteText);
-    const data = await analyzeBlocks(blocks, language);
+    try {
+      const blocks = textToBlocks(pasteText);
+      const data = await analyzeBlocks(blocks, language);
 
-    setResult({
-      text: pasteText,
-      blocks: data.blocks
-    });
-
-    setAnalyzing(false);
-  }, [pasteText, setAnalyzing, setResult]);
+      setResult({
+        text: pasteText,
+        blocks: data.blocks
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [language, pasteText, setAnalyzing, setResult]);
 
   useEffect(() => {
     setFooterAction({

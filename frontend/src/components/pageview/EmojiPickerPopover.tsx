@@ -1,6 +1,7 @@
-import EmojiPicker, { Theme } from "emoji-picker-react";
+import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import type { Annotation } from "../pageTypes";
-import { authHeaders, CENTRAL_API } from "../../api";
+import { createAnnotation, updateAnnotation } from "../../api";
+import { updatePendingAnnotation } from "../../offlineData";
 import { useTheme } from "../useTheme";
 
 export default function EmojiPickerPopover({
@@ -9,6 +10,7 @@ export default function EmojiPickerPopover({
   pageId,
   selection,
   annotation,
+  offline,
   setAnnotations,
   close,
 }: {
@@ -23,6 +25,7 @@ export default function EmojiPickerPopover({
   };
 
   annotation?: Annotation;
+  offline: boolean;
 
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
 
@@ -45,38 +48,21 @@ export default function EmojiPickerPopover({
   async function createEmoji(emoji: string) {
     if (!selection || !pageId) return;
 
-    const optimistic: Annotation = {
+    const created = await createAnnotation({
       page_id: pageId,
       type: "emoji",
       content: emoji,
       start_index: selection.start,
       end_index: selection.end,
-    };
-
-    setAnnotations(prev => [...prev, optimistic]);
-
-    const headers = authHeaders()
-    if (!headers) throw new Error("no token")
-
-    const response = await fetch(`${CENTRAL_API}/annotations`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(optimistic),
     });
 
-    if (!response.ok) return;
-
-    const saved = await response.json();
-
-    setAnnotations(prev =>
-      prev.map(a =>
-        a === optimistic ? saved : a
-      )
-    );
+    setAnnotations(prev => [...prev, created]);
   }
 
   async function updateEmoji(emoji: string) {
     if (!annotation?.id) return;
+    const isPending = annotation.id < 0;
+    if (offline && !isPending) return;
 
     const prevEmoji = annotation.content;
 
@@ -88,21 +74,13 @@ export default function EmojiPickerPopover({
       )
     );
 
-    const headers = authHeaders()
-    if (!headers) throw new Error("no token")
-
-    const response = await fetch(
-      `${CENTRAL_API}/annotations/${annotation.id}`,
-      {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({
-          content: emoji,
-        }),
+    try {
+      if (isPending) {
+        await updatePendingAnnotation(annotation.id, emoji);
+      } else {
+        await updateAnnotation(annotation.id, emoji);
       }
-    );
-
-    if (!response.ok) {
+    } catch {
       setAnnotations(prev =>
         prev.map(a =>
           a.id === annotation.id
@@ -119,6 +97,7 @@ export default function EmojiPickerPopover({
       style={{ left, top }}
     >
       <EmojiPicker
+        emojiStyle={EmojiStyle.NATIVE}
         theme={
           theme === "dark"
             ? Theme.DARK
@@ -132,13 +111,10 @@ export default function EmojiPickerPopover({
         height={400}
         reactionsDefaultOpen={false}
         onEmojiClick={(e) => {
-          if (annotation) {
-            updateEmoji(e.emoji);
-          } else {
-            createEmoji(e.emoji);
-          }
-
-          close();
+          const action = annotation
+            ? updateEmoji(e.emoji)
+            : createEmoji(e.emoji);
+          void action.catch(() => null).finally(close);
         }}
       />
     </div>

@@ -4,6 +4,7 @@ import type { Notebook } from "./PageLayout";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import Button from "../util/Button";
 import { CENTRAL_API, authHeaders } from "../../api";
+import { centralFetch } from "../../network";
 import { useI18n } from "../../i18n";
 
 function buildNotebookOptions(
@@ -34,6 +35,7 @@ export default function MoveModal({
   pageLabel,
   notebooks,
   reload,
+  offline,
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,6 +43,7 @@ export default function MoveModal({
   pageLabel?: string;
   notebooks: Notebook[];
   reload: () => Promise<void>;
+  offline: boolean;
 }) {
   const { t } = useI18n();
   const [selectedNotebook, setSelectedNotebook] = useState<number | null>(null);
@@ -53,10 +56,12 @@ export default function MoveModal({
   if (pageIds.length === 0) return null;
 
   const movePages = async (notebookId: number | null) => {
+    if (offline) return;
+
     const headers = authHeaders();
     if (!headers) throw new Error("unauthorized");
 
-    await fetch(CENTRAL_API + "/pages/move", {
+    await centralFetch(CENTRAL_API + "/pages/move", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -99,6 +104,7 @@ export default function MoveModal({
         <Button
           text={t("Move")}
           onClick={() => movePages(selectedNotebook)}
+          disabled={offline}
           fit
           black
         />

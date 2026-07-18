@@ -4,13 +4,16 @@ import { useState, useEffect } from "react";
 import { File, MessageSquareMore, Settings2, Star } from "lucide-react";
 import type { User } from "../types";
 import { clearStoredSession, getOfflineSessionUser } from "../authSession";
+import { syncOfflineOutbox } from "../offlineData";
 import { IconButton } from "./util/Button";
 import { MiniPopup } from "./util/MiniPopup";
 import { SettingToggle } from "./util/ToggleButton";
 import { useSettings } from "./useSettings";
 import { useI18n } from "../i18n";
+import { CENTRAL_RESTORED_EVENT } from "../network";
 
 const LAST_PAGE_PATH_STORAGE_KEY = "last-page-path";
+const ONLINE_RECONNECT_GRACE_MS = 3000;
 
 export function Side() {
   const navigate = useNavigate();
@@ -139,8 +142,10 @@ export default function HomeLayout() {
 
   useEffect(() => {
     let cancelled = false;
+    let reconnectTimer: number | null = null;
 
     const loadUser = async () => {
+      await syncOfflineOutbox().catch(() => false);
       const nextUser = await verifyToken();
 
       if (cancelled) {
@@ -153,14 +158,29 @@ export default function HomeLayout() {
     void loadUser();
 
     const handleOnline = () => {
-      void loadUser();
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        void loadUser();
+      }, ONLINE_RECONNECT_GRACE_MS);
+    };
+
+    const handleCentralRestored = () => {
+      void syncOfflineOutbox();
     };
 
     window.addEventListener("online", handleOnline);
+    window.addEventListener(CENTRAL_RESTORED_EVENT, handleCentralRestored);
 
     return () => {
       cancelled = true;
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener(CENTRAL_RESTORED_EVENT, handleCentralRestored);
     };
   }, []);
 

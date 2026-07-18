@@ -1,5 +1,5 @@
 import type { TimelineItem } from "./components/setting/Mutuals";
-import type { PageSource, TextAnalysisResult, Token } from "./components/pageTypes"
+import type { Annotation, PageSource, TextAnalysisResult, Token } from "./components/pageTypes"
 import type { User } from "./types";
 import {
   clearStoredSession,
@@ -13,12 +13,28 @@ import {
   readPackCatalogSnapshot,
   writePackCatalogSnapshot,
 } from "./packCatalogSnapshot";
+import {
+  cacheAnnotationsSnapshot,
+  cacheFavoriteLemmaKeys,
+  cacheNotebooksSnapshot,
+  cachePageDetailSnapshot,
+  cachePagesSnapshot,
+  getOfflineAnnotationsFeed,
+  getOfflineFavoriteKeys,
+  getOfflineNotebooks,
+  getOfflinePageDetail,
+  getOfflinePages,
+  queueOfflineAnnotationCreate,
+  queueOfflineFavoriteToggle,
+  queueOfflinePageCreate,
+} from "./offlineData";
 import { getAppPlatform, isCapacitorApp } from "./platform";
 import {
   disableMobileLanguage,
   enableMobileLanguage,
   getEnabledMobileLanguages,
 } from "./mobilePacks";
+import { centralFetch } from "./network";
 
 const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
 const DEFAULT_ELECTRON_LOCAL_API = "http://localhost:8010/api";
@@ -125,7 +141,7 @@ export type LatestVersionInfo = {
 
 export async function getLatestVersionInfo() {
   const platform = resolveLatestVersionPlatform();
-  const res = await fetch(`${CENTRAL_API}/latest-version?platform=${platform}`);
+  const res = await centralFetch(`${CENTRAL_API}/latest-version?platform=${platform}`);
 
   if (!res.ok) {
     throw new Error(`latest version fetch failed (${res.status})`);
@@ -135,7 +151,7 @@ export async function getLatestVersionInfo() {
 }
 
 export async function signup(email: string, password: string, name: string) {
-  const res = await fetch(CENTRAL_API+"/signup", {
+  const res = await centralFetch(CENTRAL_API+"/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, name })
@@ -144,7 +160,7 @@ export async function signup(email: string, password: string, name: string) {
 }
 
 export async function login(email:string,password:string){
-  return fetch(CENTRAL_API+"/login",{
+  return centralFetch(CENTRAL_API+"/login",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({email,password})
@@ -152,7 +168,7 @@ export async function login(email:string,password:string){
 }
 
 export async function requestReset(email:string){
-  return fetch(CENTRAL_API+"/request-password-reset",{
+  return centralFetch(CENTRAL_API+"/request-password-reset",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({email})
@@ -160,7 +176,7 @@ export async function requestReset(email:string){
 }
 
 export async function resetPassword(token:string,new_password:string){
-  return fetch(CENTRAL_API+"/reset-password",{
+  return centralFetch(CENTRAL_API+"/reset-password",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({token,new_password})
@@ -222,7 +238,7 @@ export async function verifyToken() {
   }
 
   try {
-    const res = await fetch(CENTRAL_API + "/me", {
+    const res = await centralFetch(CENTRAL_API + "/me", {
       headers,
     });
 
@@ -247,7 +263,7 @@ export async function updateName(name: string) {
   const headers = authHeaders()
   if (!headers) return false
 
-  const res = await fetch(CENTRAL_API+"/me/name", {
+  const res = await centralFetch(CENTRAL_API+"/me/name", {
     method: "PUT",
     headers,
     body: JSON.stringify({ name })
@@ -262,7 +278,7 @@ export async function deleteAccount() {
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(CENTRAL_API + "/me", {
+  const res = await centralFetch(CENTRAL_API + "/me", {
     method: "DELETE",
     headers,
   });
@@ -359,6 +375,8 @@ async function enrichBlocksWithIpa(
 
 // ----------- pages_router -------------
 
+export type SavePageProgress = "attaching-ipa" | "saving";
+
 export async function savePage(
   result: TextAnalysisResult,
   name: string,
@@ -367,6 +385,7 @@ export async function savePage(
   options?: {
     source?: PageSource;
     metadata?: string[];
+    onProgress?: (stage: SavePageProgress) => void;
   },
 ) {
   const headers = authHeaders();
@@ -374,24 +393,41 @@ export async function savePage(
     throw new Error("unauthorized");
   }
 
+  options?.onProgress?.("attaching-ipa");
   const ipaData = await enrichBlocksWithIpa(result.blocks, language);
   const resultWithIpa: TextAnalysisResult = {
     ...result,
     blocks: ipaData.blocks,
   };
 
-  const res = await fetch(CENTRAL_API + "/pages", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
+  const payload = {
+    result: resultWithIpa,
+    name,
+    notebook_id: notebookId,
+    language,
+    source: options?.source ?? "user",
+    metadata: options?.metadata ?? [],
+  };
+
+  let res: Response;
+
+  try {
+    options?.onProgress?.("saving");
+    res = await centralFetch(CENTRAL_API + "/pages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return queueOfflinePageCreate({
       result: resultWithIpa,
       name,
-      notebook_id: notebookId,
+      notebookId,
       language,
       source: options?.source ?? "user",
       metadata: options?.metadata ?? [],
-    }),
-  });
+    });
+  }
 
   if (res.status === 401) {
     throw new Error("unauthorized");
@@ -463,7 +499,7 @@ export async function addPageMetadata(pageId: number, value: string) {
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(`${CENTRAL_API}/pages/${pageId}/metadata`, {
+  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata`, {
     method: "POST",
     headers,
     body: JSON.stringify({ value }),
@@ -486,7 +522,7 @@ export async function updatePageMetadata(
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
+  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({ value }),
@@ -505,7 +541,7 @@ export async function deletePageMetadata(pageId: number, metadataIndex: number) 
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
+  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
     method: "DELETE",
     headers,
   });
@@ -523,11 +559,20 @@ export async function fetchPages () {
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(CENTRAL_API + "/pages", { headers });
-  const data = await res.json();
+  try {
+    const res = await centralFetch(CENTRAL_API + "/pages", { headers });
+    const data = await res.json();
 
-  if (!Array.isArray(data)) return [];
-  return data;
+    if (!Array.isArray(data)) {
+      return await getOfflinePages();
+    }
+
+    await cachePagesSnapshot(data);
+    const offlinePages = await getOfflinePages();
+    return offlinePages;
+  } catch {
+    return getOfflinePages();
+  }
 };
 
 export async function fetchNotebooks() {
@@ -536,11 +581,62 @@ export async function fetchNotebooks() {
     throw new Error("unauthorized");
   }
 
-  const res = await fetch(CENTRAL_API + "/notebooks", { headers });
-  const data = await res.json();
+  try {
+    const res = await centralFetch(CENTRAL_API + "/notebooks", { headers });
+    const data = await res.json();
 
-  if (!Array.isArray(data)) return [];
-  return data;
+    if (!Array.isArray(data)) {
+      return await getOfflineNotebooks();
+    }
+
+    await cacheNotebooksSnapshot(data);
+    return data;
+  } catch {
+    return getOfflineNotebooks();
+  }
+}
+
+export async function fetchPageDetail(pageId: number) {
+  const headers = authHeaders();
+  if (!headers) {
+    throw new Error("unauthorized");
+  }
+
+  try {
+    const [pageRes, annRes] = await Promise.all([
+      centralFetch(`${CENTRAL_API}/pages/${pageId}`, { headers }),
+      centralFetch(`${CENTRAL_API}/pages/${pageId}/annotations`, { headers }),
+    ]);
+
+    if (!pageRes.ok) {
+      throw new Error("page fetch failed");
+    }
+
+    const pageData = await pageRes.json();
+    const annotations = annRes.ok ? await annRes.json() : [];
+    const detail = {
+      id: pageId,
+      name: pageData.name ?? "",
+      created_at: pageData.created_at ?? new Date().toISOString(),
+      notebook_id: pageData.notebook_id ?? null,
+      language: pageData.language,
+      source: pageData.source ?? "user",
+      metadata: Array.isArray(pageData.metadata) ? pageData.metadata : [],
+      result: pageData.result as TextAnalysisResult,
+      annotations: Array.isArray(annotations) ? annotations : [],
+    };
+
+    await cachePageDetailSnapshot(detail);
+    return detail;
+  } catch {
+    const offlineDetail = await getOfflinePageDetail(pageId);
+
+    if (!offlineDetail) {
+      throw new Error("page fetch failed");
+    }
+
+    return offlineDetail;
+  }
 }
 
 const CYR_TO_LAT_MAP: Record<string, string> = {
@@ -621,11 +717,18 @@ export async function setFavorite(
     throw new Error("not authenticated");
   }
 
-  const res = await fetch(`${CENTRAL_API}/lemma/favorite`, {
-    method: next ? "POST" : "DELETE",
-    headers,
-    body: JSON.stringify({ key })
-  });
+  let res: Response;
+
+  try {
+    res = await centralFetch(`${CENTRAL_API}/lemma/favorite`, {
+      method: next ? "POST" : "DELETE",
+      headers,
+      body: JSON.stringify({ key })
+    });
+  } catch {
+    await queueOfflineFavoriteToggle(key, next);
+    return { ok: true, offline: true };
+  }
 
   if (!res.ok) {
     throw new Error("favorite request failed");
@@ -638,22 +741,28 @@ export async function getFavorites(): Promise<string[]> {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/lemma/favorites`, {
-    method: "GET",
-    headers
-  })
+  try {
+    const res = await centralFetch(`${CENTRAL_API}/lemma/favorites`, {
+      method: "GET",
+      headers
+    })
 
-  if (!res.ok) throw new Error("fetch favorites failed")
+    if (!res.ok) throw new Error("fetch favorites failed")
 
-  const data = await res.json()
-  return data.items as string[]
+    const data = await res.json()
+    const items = data.items as string[];
+    await cacheFavoriteLemmaKeys(items);
+    return getOfflineFavoriteKeys();
+  } catch {
+    return getOfflineFavoriteKeys();
+  }
 }
 
 export async function deleteAnnotation(id: number) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/annotations/${id}`, {
+  const res = await centralFetch(`${CENTRAL_API}/annotations/${id}`, {
     method: "DELETE",
     headers,
   });
@@ -665,7 +774,7 @@ export async function updateAnnotation(id: number, content: string) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/annotations/${id}`, {
+  const res = await centralFetch(`${CENTRAL_API}/annotations/${id}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({ content }),
@@ -704,16 +813,61 @@ export async function fetchAnnotations(cursor: AnnotationCursor) {
     params.append("cursor_id", String(cursor.id));
   }
 
-  const res = await fetch(`${CENTRAL_API}/annotations?${params.toString()}`, {
-    headers,
-  });
+  try {
+    const res = await centralFetch(`${CENTRAL_API}/annotations?${params.toString()}`, {
+      headers,
+    });
 
-  if (!res.ok) throw new Error("fetch failed");
+    if (!res.ok) throw new Error("fetch failed");
 
-  return res.json() as Promise<{
-    items: TimelineItem[];
-    next_cursor: AnnotationCursor;
-  }>;
+    const data = await res.json() as {
+      items: TimelineItem[];
+      next_cursor: AnnotationCursor;
+    };
+
+    if (!cursor) {
+      await cacheAnnotationsSnapshot(data.items);
+    } else {
+      await cacheAnnotationsSnapshot([
+        ...(await getOfflineAnnotationsFeed()),
+        ...data.items,
+      ]);
+    }
+
+    return {
+      ...data,
+      offline: false,
+    };
+  } catch {
+    return {
+      items: await getOfflineAnnotationsFeed(),
+      next_cursor: null,
+      offline: true,
+    };
+  }
+}
+
+export async function createAnnotation(annotation: Annotation) {
+  const headers = authHeaders();
+  if (!headers) {
+    throw new Error("unauthorized");
+  }
+
+  try {
+    const response = await centralFetch(`${CENTRAL_API}/annotations`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(annotation),
+    });
+
+    if (!response.ok) {
+      throw new Error("annotation create failed");
+    }
+
+    return await response.json() as Annotation;
+  } catch {
+    return queueOfflineAnnotationCreate(annotation);
+  }
 }
 
 // ===== mutual =====
@@ -721,7 +875,7 @@ export async function requestMutual(email: string) {
   const headers = authHeaders()
   if (!headers) throw new Error("unauthorized")
 
-  const res = await fetch(`${CENTRAL_API}/mutuals/request`, {
+  const res = await centralFetch(`${CENTRAL_API}/mutuals/request`, {
     method: "POST",
     headers,
     body: JSON.stringify({ email })
@@ -746,7 +900,7 @@ export async function fetchMutuals() {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/mutuals`, { headers })
+  const res = await centralFetch(`${CENTRAL_API}/mutuals`, { headers })
   if (!res.ok) throw new Error("fetch failed")
 
   return res.json() as Promise<{ items: User[] }>
@@ -756,7 +910,7 @@ export async function fetchReceived() {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/mutuals/requests`, { headers })
+  const res = await centralFetch(`${CENTRAL_API}/mutuals/requests`, { headers })
   if (!res.ok) throw new Error("fetch failed")
 
   return res.json() as Promise<{
@@ -769,7 +923,7 @@ export async function fetchSent() {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/mutuals/sent`, { headers })
+  const res = await centralFetch(`${CENTRAL_API}/mutuals/sent`, { headers })
   if (!res.ok) throw new Error("fetch failed")
 
   return res.json() as Promise<{ items: User[] }>
@@ -779,7 +933,7 @@ export async function acceptMutual(id: number) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
-  const res = await fetch(`${CENTRAL_API}/mutuals/${id}/accept`, {
+  const res = await centralFetch(`${CENTRAL_API}/mutuals/${id}/accept`, {
     method: "POST",
     headers
   })
@@ -800,7 +954,7 @@ export async function fetchTimeline(cursor: AnnotationCursor) {
     params.append("cursor_id", String(cursor.id))
   }
 
-  const res = await fetch(`${CENTRAL_API}/mutuals/timeline?${params.toString()}`, {
+  const res = await centralFetch(`${CENTRAL_API}/mutuals/timeline?${params.toString()}`, {
     headers
   })
 
@@ -818,7 +972,7 @@ export async function fetchTimeline(cursor: AnnotationCursor) {
 export async function getComments(annotationId: number) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
-  const res = await fetch(`${CENTRAL_API}/annotations/${annotationId}/comments`, {
+  const res = await centralFetch(`${CENTRAL_API}/annotations/${annotationId}/comments`, {
     headers,
   });
   if (!res.ok) throw new Error();
@@ -831,7 +985,7 @@ export async function createComment(annotationId: number, payload: {
 }) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
-  const res = await fetch(`${CENTRAL_API}/annotations/${annotationId}/comments`, {
+  const res = await centralFetch(`${CENTRAL_API}/annotations/${annotationId}/comments`, {
     method: "POST",
     headers,
     body: JSON.stringify(payload),
@@ -843,7 +997,7 @@ export async function createComment(annotationId: number, payload: {
 export async function updateComment(id: number, content: string) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
-  const res = await fetch(`${CENTRAL_API}/comments/${id}`, {
+  const res = await centralFetch(`${CENTRAL_API}/comments/${id}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({ content }),
@@ -854,7 +1008,7 @@ export async function updateComment(id: number, content: string) {
 export async function deleteComment(id: number) {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
-  const res = await fetch(`${CENTRAL_API}/comments/${id}`, {
+  const res = await centralFetch(`${CENTRAL_API}/comments/${id}`, {
     method: "DELETE",
     headers,
   });
@@ -865,7 +1019,7 @@ export async function fetchAnnotationById(id: number) {
   const headers = authHeaders();
   if (!headers) throw new Error("unauthorized");
 
-  const res = await fetch(`${CENTRAL_API}/annotations/${id}`, {
+  const res = await centralFetch(`${CENTRAL_API}/annotations/${id}`, {
     headers,
   });
 
@@ -877,7 +1031,7 @@ export async function fetchAnnotationById(id: number) {
 export async function fetchNotifications() {
   const headers = authHeaders();
   if (!headers) throw new Error("unauthorized");
-  const res = await fetch(`${CENTRAL_API}/notifications`, {
+  const res = await centralFetch(`${CENTRAL_API}/notifications`, {
     headers,
   });
   return res.json();
@@ -886,7 +1040,7 @@ export async function fetchNotifications() {
 export async function fetchUnreadFlag() {
   const headers = authHeaders();
   if (!headers) throw new Error("unauthorized");
-  const res = await fetch(`${CENTRAL_API}/notifications/unread`, {
+  const res = await centralFetch(`${CENTRAL_API}/notifications/unread`, {
     headers,
   });
   return res.json();
@@ -895,7 +1049,7 @@ export async function fetchUnreadFlag() {
 export async function readNotification(id: number) {
   const headers = authHeaders();
   if (!headers) throw new Error("unauthorized");
-  await fetch(`${CENTRAL_API}/notifications/${id}/read`, {
+  await centralFetch(`${CENTRAL_API}/notifications/${id}/read`, {
     method: "POST",
     headers,
   });
@@ -911,7 +1065,7 @@ export async function fetchMyComments(cursor?: any) {
     params.append("cursor_id", cursor.id);
   }
 
-  const res = await fetch(`${CENTRAL_API}/me/comments?${params.toString()}`, {
+  const res = await centralFetch(`${CENTRAL_API}/me/comments?${params.toString()}`, {
     method: "GET",
     headers,
   });
@@ -920,7 +1074,7 @@ export async function fetchMyComments(cursor?: any) {
 
 // packs 목록
 export async function getPacks() {
-  const res = await fetch(`${CENTRAL_API}/lang/packs`);
+  const res = await centralFetch(`${CENTRAL_API}/lang/packs`);
 
   if (!res.ok) {
     throw new Error("pack fetch failed");

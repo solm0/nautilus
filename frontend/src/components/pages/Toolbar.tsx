@@ -5,6 +5,9 @@ import { MiniPopup } from "../util/MiniPopup";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useState } from "react";
 import { authHeaders, CENTRAL_API } from "../../api";
+import { centralFetch } from "../../network";
+import { isNetworkError } from "../../network";
+import { queueOfflineNotebookCreate } from "../../offlineData";
 import { isCapacitorApp } from "../../platform";
 import { useI18n } from "../../i18n";
 
@@ -74,11 +77,19 @@ export function Toolbar({
       return;
     }
 
-    await fetch(CENTRAL_API + "/notebooks", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ name })
-    });
+    try {
+      await centralFetch(CENTRAL_API + "/notebooks", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name })
+      });
+    } catch (error) {
+      if (!isNetworkError(error)) {
+        throw error;
+      }
+
+      await queueOfflineNotebookCreate(name);
+    }
 
     await reload();
   };

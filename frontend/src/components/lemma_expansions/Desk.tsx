@@ -9,11 +9,13 @@ export default function Desk({
   onToggleFavorite,
   language,
   lemmaInfo,
+  favoriteKeys,
 }: {
   initialLemma: LemmaData;
   onToggleFavorite: (key: string, next:boolean) => Promise<void>;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
+  favoriteKeys?: Set<string>;
 }) {
   const breadcrumbRef = useRef<{ addNode: (parentLemma: string, newNode: TreeNode) => void }>(null);
   const [activeNode, setActiveNode] = useState<D3Node | null>(null);
@@ -63,7 +65,7 @@ export default function Desk({
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
+    <div className="relative w-full h-full flex flex-col overflow-hidden">
       <Breadcrumb
         ref={breadcrumbRef}
         initialLemmaKey={initialLemma.key}
@@ -99,6 +101,7 @@ export default function Desk({
         onToggleFavorite={onToggleFavorite}
         language={language}
         lemmaInfo={lemmaInfo}
+        favoriteKeys={favoriteKeys}
       />
     </div>
   )

@@ -11,6 +11,7 @@ export function Gutter({
   setPanelData,
   annotationId,
   setEmojiPicker,
+  offline = false,
 }: {
   annotations?: Annotation[];
   containerRef: RefObject<HTMLDivElement | null>;
@@ -18,6 +19,7 @@ export function Gutter({
   setPanelData?: (p: SidePanelState | null) => void;
   annotationId?: number;
   setEmojiPicker?: React.Dispatch<React.SetStateAction<any>>;
+  offline?: boolean;
 }) {
   const groups: { top: number; items: Annotation[] }[] = [];
   const container = containerRef.current;
@@ -81,14 +83,21 @@ export function Gutter({
           }}
           className="flex gap-0.5"
         >
-          {group.items.map((annotation, j) => (
-            <div
-              key={j}
-              className={`
-                h-6 w-6 rounded text-neutral-300 hover:text-neutral-500 transition-colors cursor-pointer flex items-center justify-center
-                ${annotationId === annotation.id ? 'bg-neutral-200' : 'bg-transparent'}
-                ${annotation.type !== 'emoji' && 'hover:bg-neutral-200'}
-              `}
+          {group.items.map((annotation, j) => {
+            const disableEmojiEdit =
+              annotation.type === "emoji" &&
+              offline &&
+              (annotation.id ?? 0) >= 0;
+
+            return (
+              <div
+                key={j}
+                className={`
+                  h-6 w-6 rounded text-neutral-300 transition-colors flex items-center justify-center
+                  ${disableEmojiEdit ? "pointer-events-none cursor-default opacity-50" : "cursor-pointer hover:text-neutral-500"}
+                  ${annotationId === annotation.id ? 'bg-neutral-200' : 'bg-transparent'}
+                  ${annotation.type !== 'emoji' && !disableEmojiEdit ? 'hover:bg-neutral-200' : ''}
+                `}
               onMouseEnter={() =>
                 setHoverRange({
                   start: annotation.start_index,
@@ -121,7 +130,7 @@ export function Gutter({
               }}
             >
               {annotation.type === "emoji" ? (
-                <span className="leading-none text-xl hover:scale-150 transition-transform ease-in-out">
+                <span className={`leading-none text-xl transition-transform ease-in-out ${disableEmojiEdit ? "" : "hover:scale-150"}`}>
                   {annotation.content}
                 </span>
               ) : annotation.type === "link" ? (
@@ -129,8 +138,9 @@ export function Gutter({
               ) : (
                 <MessageSquareMore size={14} className={`${annotationId === annotation.id && 'text-neutral-600'}`} />
               )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

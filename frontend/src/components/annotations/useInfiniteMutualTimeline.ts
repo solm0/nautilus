@@ -34,7 +34,6 @@ export function useInfiniteMutualTimeline() {
       setHasMore(!!data.next_cursor)
     } catch (error) {
       setOffline(isNetworkError(error))
-      throw error
     } finally {
       loadingRef.current = false
       setLoading(false)

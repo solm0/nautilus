@@ -35,6 +35,7 @@ export default function PageContent({
   pageId,
   scrollRef,
   setAnnotations,
+  offline = false,
   horizontalAlign = "center",
 }: {
   blocks: TextBlock[];
@@ -55,6 +56,7 @@ export default function PageContent({
   pageId?: number;
   scrollRef?: (fn: (startIndex: number) => void) => void;
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
+  offline?: boolean;
   horizontalAlign?: "left" | "right" | "center";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -160,7 +162,7 @@ export default function PageContent({
                 openLemmaPanelByKey(key);
               }}
               className={[
-                clickable ? "cursor-pointer text-neutral-700 hover:font-[500]" : "",
+                clickable ? "cursor-pointer text-neutral-700 hover:font-medium" : "",
                 clickable ? "" : "text-neutral-700",
               ].filter(Boolean).join(" ")}
             >
@@ -569,6 +571,7 @@ export default function PageContent({
           setHoverRange={setHoverRange}
           annotationId={(panelData?.data as Annotation)?.id}
           setEmojiPicker={setEmojiPicker}
+          offline={offline}
         />
       }
       overlay={
@@ -670,6 +673,7 @@ export default function PageContent({
               pageId={pageId}
               selection={emojiPicker.selection}
               annotation={emojiPicker.annotation}
+              offline={offline}
               setAnnotations={setAnnotations!}
               close={() => {
                 setEmojiPicker(null);

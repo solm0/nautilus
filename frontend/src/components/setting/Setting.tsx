@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   deleteAccount,
   getLatestVersionInfo,
@@ -10,7 +10,7 @@ import {
 import { Check, Pencil } from "lucide-react";
 import { type User } from "../../types";
 import Button, { IconButtonEvent } from "../util/Button";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Mutuals from "./Mutuals";
 import MyCommentsModal from "./MyCommentsModal";
 import PackTable from "./PackTable";
@@ -290,28 +290,30 @@ export function UserProfile() {
 
       <ResponsiveModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
         <div className="flex flex-col gap-7 md:pb-3">
-          {offline ? (
-            <p className="text-sm text-neutral-500">
-              {t("You're offline. Check your connection and try again.")}
-            </p>
-          ) : (
-            <>
-              <h2>{t("Delete account?")}</h2>
-              <p className="pr-8 text-sm text-neutral-500">
-                {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
+          <>
+          <h2>{t("Delete account?")}</h2>
+            {offline ? (
+              <p className="text-sm text-neutral-500">
+                {t("You're offline. Check your connection and try again.")}
               </p>
-              {deleteError && (
-                <p className="text-sm text-red-600">{deleteError}</p>
-              )}
-              <Button
-                text={deleting ? t("Deleting...") : t("Delete")}
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-                fit
-                red
-              />
-            </>
-          )}
+            ) : (
+                <>
+                  <p className="pr-8 text-sm text-neutral-500">
+                    {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
+                  </p>
+                  {deleteError && (
+                    <p className="text-sm text-red-600">{deleteError}</p>
+                  )}
+                  <Button
+                    text={deleting ? t("Deleting...") : t("Delete")}
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    fit
+                    red
+                  />
+                </>
+            )}
+          </>
         </div>
       </ResponsiveModal>
     </>
@@ -324,12 +326,15 @@ export default function Setting() {
   const [notificationPermission, setNotificationPermission] =
     useState<AppNotificationPermissionStatus | null>(null);
   const [openNotificationModal, setOpenNotificationModal] = useState(false);
+  const languagePacksRef = useRef<HTMLHeadingElement | null>(null);
   const {
     settings,
     toggleSetting,
     setSettings,
   } = useSettings();
   const pendingLanguageChange = settings.system_language !== locale;
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!mobileApp) return;
@@ -351,6 +356,15 @@ export default function Setting() {
       window.removeEventListener("focus", loadPermission);
     };
   }, [mobileApp]);
+
+  useEffect(() => {
+    if (location.state?.scrollTo !== "language-packs") return;
+
+    requestAnimationFrame(() => {
+      languagePacksRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      navigate(location.pathname, { replace: true, state: null });
+    });
+  }, [location.pathname, location.state, navigate, languagePacksRef]);
 
   async function handleNowPlayingNotificationsToggle() {
     const nextValue = !settings.now_playing_notifications;
@@ -492,7 +506,7 @@ export default function Setting() {
           )}
         </section>
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Language packs")}</h2>
+        <h2 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Language packs")}</h2>
         <p className="text-sm">
           {mobileApp
             ? t("Activate only the languages you want to use on this device.")

@@ -11,7 +11,7 @@ import Button from "../util/Button";
 import OfflineState from "../util/OfflineState";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useLayout } from "../RootLayout";
-import { isNetworkError } from "../../network";
+import { centralFetch, isNetworkError } from "../../network";
 
 import {
   CENTRAL_API,
@@ -19,6 +19,11 @@ import {
   fetchNotebooks,
   fetchPages,
 } from "../../api";
+import {
+  deletePendingNotebook,
+  deletePendingPage,
+  OFFLINE_SYNC_EVENT,
+} from "../../offlineData";
 
 const PINNED_STORAGE_KEY = "pages.sidebar.pinned";
 const LONG_PRESS_MS = 420;
@@ -37,6 +42,7 @@ export type Page = {
   language: string;
   source?: string;
   metadata?: string[];
+  pending_sync?: boolean;
 };
 
 export type Notebook = {
@@ -44,6 +50,7 @@ export type Notebook = {
   name: string;
   created_at: string;
   parent_id?: number | null;
+  pending_sync?: boolean;
 };
 
 export type SelectedItem = {
@@ -188,6 +195,7 @@ export default function PageLayout() {
 
       setPages(pagesData);
       setNotebooks(notebooksData);
+      setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
       hasLoadedOnceRef.current = true;
     } catch (error) {
       setOffline(isNetworkError(error));
@@ -198,6 +206,21 @@ export default function PageLayout() {
 
   useEffect(() => {
     reload();
+  }, []);
+
+  useEffect(() => {
+    const handleOfflineSync = (event: Event) => {
+      const { complete } = (event as CustomEvent<{ complete: boolean }>).detail;
+      if (!complete) {
+        setOffline(true);
+        return;
+      }
+
+      void reload();
+    };
+
+    window.addEventListener(OFFLINE_SYNC_EVENT, handleOfflineSync);
+    return () => window.removeEventListener(OFFLINE_SYNC_EVENT, handleOfflineSync);
   }, []);
 
   useEffect(() => {
@@ -579,10 +602,12 @@ export default function PageLayout() {
     pageIds: number[],
     notebookId: number | null
   ) => {
+    if (offline) return;
+
     const headers = authHeaders();
     if (!headers) throw new Error("unauthorized");
 
-    await fetch(CENTRAL_API + "/pages/move", {
+    await centralFetch(CENTRAL_API + "/pages/move", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -702,6 +727,7 @@ export default function PageLayout() {
     }, 0);
 
     if (
+      offline ||
       targetNotebookId === null ||
       (targetNotebookId === ROOT_DROP_ID && sourceNotebookId === null) ||
       (targetNotebookId !== ROOT_DROP_ID && targetNotebookId === sourceNotebookId)
@@ -778,6 +804,8 @@ export default function PageLayout() {
   };
 
   const openMoveForPage = (page: Page) => {
+    if (offline) return;
+
     setOpenPopupId(null);
     setMovePageIds([page.id]);
     setMovePageLabel(page.name);
@@ -785,6 +813,22 @@ export default function PageLayout() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
+     if (deleteTarget.type === "page" && deleteTarget.item.pending_sync) {
+      await deletePendingPage(deleteTarget.item.id);
+      setOpenPopupId(null);
+      setDeleteTarget(null);
+      await reload();
+      return;
+    }
+
+    if (deleteTarget.type === "notebook" && deleteTarget.item.pending_sync) {
+      await deletePendingNotebook(deleteTarget.item.id);
+      setOpenPopupId(null);
+      setDeleteTarget(null);
+      await reload();
+      return;
+    }
 
     const headers = authHeaders();
     if (!headers) throw new Error("unauthorized");
@@ -794,7 +838,7 @@ export default function PageLayout() {
         ? `/pages/${deleteTarget.item.id}`
         : `/notebooks/${deleteTarget.item.id}`;
 
-    await fetch(CENTRAL_API + endpoint, {
+    await centralFetch(CENTRAL_API + endpoint, {
       method: "DELETE",
       headers,
     });
@@ -947,6 +991,7 @@ export default function PageLayout() {
                   : undefined
               }
               dragging={item.type === "page" && dragState?.page.id === item.page.id}
+              offline={offline}
               openPopupId={openPopupId}
               setOpenPopupId={setOpenPopupId}
             />
@@ -977,6 +1022,7 @@ export default function PageLayout() {
               onOpenPage={handleOpenPage}
               consumeSuppressedClick={() => consumeSuppressedClick(page.id)}
               dragging={dragState?.page.id === page.id}
+              offline={offline}
               openPopupId={openPopupId}
               setOpenPopupId={setOpenPopupId}
             />
@@ -1018,6 +1064,7 @@ export default function PageLayout() {
                 onOpenPage={handleOpenPage}
                 consumeSuppressedClick={() => consumeSuppressedClick(page.id)}
                 dragging={dragState?.page.id === page.id}
+                offline={offline}
                 openPopupId={openPopupId}
                 setOpenPopupId={setOpenPopupId}
               />
@@ -1094,6 +1141,7 @@ export default function PageLayout() {
             onDelete={() => setDeleteTarget({ type: "notebook", item: notebook })}
             isDragTarget={false}
             dropFlashed={false}
+            offline={offline}
             openPopupId={openPopupId}
             setOpenPopupId={setOpenPopupId}
           />
@@ -1119,6 +1167,7 @@ export default function PageLayout() {
                   onOpenPage={handleOpenPage}
                   consumeSuppressedClick={() => consumeSuppressedClick(page.id)}
                   dragging={dragState?.page.id === page.id}
+                  offline={offline}
                   openPopupId={openPopupId}
                   setOpenPopupId={setOpenPopupId}
                 />
@@ -1235,6 +1284,7 @@ export default function PageLayout() {
         pageLabel={movePageLabel}
         notebooks={notebooks}
         reload={reload}
+        offline={offline}
       />
 
       <ResponsiveModal
@@ -1244,12 +1294,12 @@ export default function PageLayout() {
         <div className="flex flex-col gap-7">
           <h2>
             {t("Delete")}{" "}
-            {deleteTarget?.type === "page" ? t("page") : t("folder")}
+            {deleteTarget?.type === "page" ? t("page") : t("notebook")}
             {deleteTarget ? ` "${deleteTarget.item.name}"` : ""}?
           </h2>
 
           {deleteTarget?.type === "notebook" ? (
-            <p>{t("Deleting a folder will also delete the pages inside it.")}</p>
+            <p>{t("Deleting a notebook will also delete the pages inside it.")}</p>
           ) : null}
 
           <Button text={t("Delete")} onClick={handleDelete} fit red />

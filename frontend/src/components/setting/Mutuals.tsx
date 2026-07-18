@@ -14,6 +14,7 @@ export type TimelineItem = {
   id: number
   content: string
   created_at: string
+  pending_sync?: boolean
 
   user?: User;
 

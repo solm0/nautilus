@@ -30,6 +30,12 @@ export function useInfiniteAnnotations() {
 
         return Array.from(map.values());
       });
+      setOffline(data.offline === true);
+
+      if (data.offline) {
+        return;
+      }
+
       setCursor(data.next_cursor);
       setHasMore(!!data.next_cursor);
     } catch (error) {

@@ -44,7 +44,7 @@ export default function MyCommentsModal() {
 
       <ResponsiveModal open={open} onClose={() => setOpen(false)} big>
         <div className="flex flex-col gap-7 overflow-hidden">
-          <h2>{t("My Comments")}</h2>
+          <h2>{t("My comments")}</h2>
 
           {offline ? (
             <p className="text-sm text-neutral-500">

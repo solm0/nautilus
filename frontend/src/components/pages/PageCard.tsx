@@ -17,6 +17,9 @@ import { MiniPopup } from "../util/MiniPopup";
 import { IconButtonEvent } from "../util/Button";
 import { CENTRAL_API, authHeaders } from "../../api";
 import { useI18n } from "../../i18n";
+import { renamePendingNotebook, renamePendingPage } from "../../offlineData";
+import PendingSyncBadge from "../util/PendingSyncBadge";
+import { centralFetch } from "../../network";
 
 const LONG_PRESS_MS = 420;
 const MOVE_CANCEL_DISTANCE = 10;
@@ -30,11 +33,13 @@ function ActionButton({
   label,
   onClick,
   danger = false,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -42,10 +47,14 @@ function ActionButton({
       data-no-drag="true"
       onClick={(event) => {
         event.stopPropagation();
+        if (disabled) return;
         onClick();
       }}
+      disabled={disabled}
       className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
-        danger
+        disabled
+          ? "text-neutral-500 opacity-50"
+          : danger
           ? "text-red-600 hover:bg-red-50"
           : "text-neutral-700 hover:bg-neutral-100"
       }`}
@@ -78,6 +87,7 @@ export default function PageCard({
   registerNotebookTarget,
   openPopupId,
   setOpenPopupId,
+  offline,
 }: {
   item: PageCardItem;
   level: number;
@@ -100,6 +110,7 @@ export default function PageCard({
   registerNotebookTarget?: (element: HTMLDivElement | null) => void;
   openPopupId: string | null;
   setOpenPopupId: React.Dispatch<React.SetStateAction<string | null>>;
+  offline: boolean;
 }) {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -121,6 +132,8 @@ export default function PageCard({
   const createPageOpen = createPopupId ? openPopupId === createPopupId : false;
 
   const isActivePage = page?.id === currentPageId;
+  const isPendingItem = Boolean(page?.pending_sync || notebook?.pending_sync);
+  const disableServerActions = offline && !isPendingItem;
 
   const leftPadding = 4 + level * 24;
 
@@ -145,12 +158,28 @@ export default function PageCard({
         ) : null}
       </>
     ),
-    [isMobileLike, notebook]
+    [notebook, t]
   );
 
   const handleRename = async () => {
     const nextName = value.trim();
     if (!nextName) return;
+
+    if (item.type === "page" && item.page.pending_sync) {
+      await renamePendingPage(item.page.id, nextName);
+      setEditing(false);
+      setOpenPopupId(null);
+      await reload();
+      return;
+    }
+
+    if (item.type === "notebook" && item.notebook.pending_sync) {
+      await renamePendingNotebook(item.notebook.id, nextName);
+      setEditing(false);
+      setOpenPopupId(null);
+      await reload();
+      return;
+    }
 
     const headers = authHeaders();
     if (!headers) throw new Error("unauthorized");
@@ -160,7 +189,7 @@ export default function PageCard({
         ? `/pages/${item.page.id}`
         : `/notebooks/${item.notebook.id}`;
 
-    await fetch(CENTRAL_API + endpoint, {
+    await centralFetch(CENTRAL_API + endpoint, {
       method: "PATCH",
       headers,
       body: JSON.stringify({ name: nextName }),
@@ -220,11 +249,13 @@ export default function PageCard({
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (page && onPagePointerDown) {
+      if (offline && (!isPendingItem || !isMobileLike)) return;
       onPagePointerDown(event);
       return;
     }
 
     if (!notebook || !isMobileLike || editing || event.button !== 0) return;
+    if (disableServerActions) return;
 
     const target = event.target as HTMLElement;
     if (target.closest("[data-no-drag='true']")) return;
@@ -268,6 +299,7 @@ export default function PageCard({
         <ActionButton
           icon={<FilePlus2 size={13} />}
           label={t("Create page")}
+          disabled={offline && !notebook.pending_sync}
           onClick={() => {
             navigate("/new?mode=paste", { state: { notebookId: notebook.id } });
             setOpenPopupId(null);
@@ -278,6 +310,7 @@ export default function PageCard({
       <ActionButton
         icon={<Pencil size={13} />}
         label="Rename"
+        disabled={disableServerActions}
         onClick={() => {
           setEditing(true);
           setOpenPopupId(null);
@@ -288,6 +321,7 @@ export default function PageCard({
         <ActionButton
           icon={<Folder size={13} />}
           label={t("Move")}
+          disabled={offline}
           onClick={() => {
             onMove();
             setOpenPopupId(null);
@@ -299,6 +333,7 @@ export default function PageCard({
         <ActionButton
           icon={<Pin size={13} fill={isPinned ? "currentColor" : "transparent"} />}
           label={isPinned ? t("Unpin") : "Pin"}
+          disabled={offline}
           onClick={() => {
             onTogglePinned();
             setOpenPopupId(null);
@@ -310,6 +345,7 @@ export default function PageCard({
         icon={<Trash2 size={13} />}
         label={t("Delete")}
         danger
+        disabled={disableServerActions}
         onClick={() => {
           onDelete();
           setOpenPopupId(null);
@@ -379,6 +415,7 @@ export default function PageCard({
               <p className="truncate text-sm text-neutral-800 select-none">
                 {item.type === "page" ? item.page.name : item.notebook.name}
               </p>
+              {isPendingItem ? <PendingSyncBadge /> : null}
               {page ? (
                 <span className="shrink-0 text-[11px] text-neutral-400 select-none">
                   {page.language}
@@ -406,11 +443,13 @@ export default function PageCard({
                 icon={<FilePlus2 size={14} />}
                 onClick={(event) => {
                   event.stopPropagation();
+                  if (offline && !notebook?.pending_sync) return;
                   setOpenPopupId((current) =>
                     current === createPopupId ? null : createPopupId
                   );
                 }}
                 title={t("Create Page")}
+                disabled={offline && !notebook?.pending_sync}
               />
               <MiniPopup
                 open={createPageOpen}
@@ -427,11 +466,13 @@ export default function PageCard({
                 icon={<Ellipsis size={14} />}
                 onClick={(event) => {
                   event.stopPropagation();
+                  if (disableServerActions) return;
                   setOpenPopupId((current) =>
                     current === menuPopupId ? null : menuPopupId
                   );
                 }}
                 title={t("more")}
+                disabled={disableServerActions}
               />
               <MiniPopup open={menuOpen} onClose={() => setOpenPopupId(null)}>
                 {menuContent}

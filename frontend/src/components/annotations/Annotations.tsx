@@ -9,6 +9,7 @@ import type { TimelineItem } from "../setting/Mutuals";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
 import OfflineState from "../util/OfflineState";
 import { useI18n } from "../../i18n";
+import { CENTRAL_RESTORED_EVENT } from "../../network";
 
 export default function Annotations() {
   const { t } = useI18n();
@@ -46,6 +47,17 @@ export default function Annotations() {
       void mutual.load();
     }
   }, [my.items.length, my.load, my.offline, mutual.items.length, mutual.load, mutual.offline, tab]);
+
+  useEffect(() => {
+    if (!offline) return;
+
+    const handleCentralRestored = () => {
+      void load();
+    };
+
+    window.addEventListener(CENTRAL_RESTORED_EVENT, handleCentralRestored);
+    return () => window.removeEventListener(CENTRAL_RESTORED_EVENT, handleCentralRestored);
+  }, [load, offline]);
 
   // 알림에서 왔을 시 해당 annotation prepend
   useEffect(() => {
@@ -90,6 +102,8 @@ export default function Annotations() {
           pinned={true}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          readonlySnapshotActions={offline}
+          disablePageLink={tab === "mutuals"}
         />
       )}
 
@@ -116,6 +130,12 @@ export default function Annotations() {
         </span>
       </h2>
 
+      {offline && items.length > 0 ? (
+        <p className="text-xs text-neutral-400">
+          {t("You're offline. Check your connection and try again.")}
+        </p>
+      ) : null}
+
       {offline && items.length === 0 ? (
         <OfflineState onRetry={() => void load()} />
       ) : null}
@@ -128,6 +148,8 @@ export default function Annotations() {
             autoOpenComments={false}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            readonlySnapshotActions={offline}
+            disablePageLink={tab === "mutuals"}
           />
         ))}
 

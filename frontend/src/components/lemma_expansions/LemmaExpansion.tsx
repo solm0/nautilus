@@ -6,17 +6,17 @@ import { Star } from "lucide-react";
 import { useI18n } from "../../i18n";
 
 export default function LemmaExpansion({
-  data, onSelect, onToggleFavorite, language, lemmaInfo
+  data, onSelect, onToggleFavorite, language, lemmaInfo, favoriteKeys
 }: {
   data: LemmaData;
   onSelect: (tokenKey: string) => void;
   onToggleFavorite: (key: string, next: boolean) => Promise<void>;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
+  favoriteKeys?: Set<string>;
 }) {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
-  const [isFavoriteLocal, setIsFavoriteLocal] = useState(data.is_favorite);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -25,28 +25,12 @@ export default function LemmaExpansion({
 
   const modes = ['related', 'kwic'];
   const [idx, setIdx] = useState(0);
+  const globalKey = data.global_key ?? `${data.key.split("_").slice(0, -1).join("_")}/${data.key.split("_").slice(-1)[0]}/${language}`;
+  const isFavorite = favoriteKeys?.has(globalKey) ?? data.is_favorite;
 
-  useEffect(() => {
-    setIsFavoriteLocal(!!data.is_favorite);
-  }, [data.key, data.is_favorite]);
-
-  const onFavoriteClick = async (key: string) => {
-    const parts = key.split('_');
-    const pos = parts.pop()!;
-    const lemma = parts.join('_');
-
-    const globalKey = `${lemma}/${pos}/${language}`;
-
-    const next = !isFavoriteLocal;
-
-    setIsFavoriteLocal(next);
-
-    try {
-      await onToggleFavorite(globalKey, next);
-    } catch {
-      setIsFavoriteLocal(!next);
-    }
-  }
+  const onFavoriteClick = async () => {
+    await onToggleFavorite(globalKey, !isFavorite);
+  };
 
   let content;
   if (idx === 0) {
@@ -99,7 +83,15 @@ export default function LemmaExpansion({
 
       <div className="absolute top-1 left-1 flex gap-1.5 items-center z-80 px-2 py-0.5 bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
         {data.key.split('_')[0]}
-        <Star key={data.key} size={14} className="text-neutral-400 hover:text-neutral-500 cursor-pointer" fill={isFavoriteLocal ? "currentColor" : "transparent"} onClick={() => onFavoriteClick(data.key)} />
+        <Star
+          key={data.key}
+          size={14}
+          className="cursor-pointer text-neutral-400 hover:text-neutral-500"
+          fill={isFavorite ? "currentColor" : "transparent"}
+          onClick={() => {
+            void onFavoriteClick();
+          }}
+        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">

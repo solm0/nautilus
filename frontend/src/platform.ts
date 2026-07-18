@@ -24,6 +24,8 @@ declare global {
       getNowPlaying?: () => Promise<unknown>;
       onDeepLink?: (callback: (url: string) => void) => (() => void) | void;
       relaunchApp?: () => Promise<void>;
+      readOfflineState?: () => Promise<unknown>;
+      writeOfflineState?: (value: unknown) => Promise<boolean>;
     };
   }
 }

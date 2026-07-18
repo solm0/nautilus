@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SidePanelState } from "./PageView"
 import type { Annotation } from "../pageTypes";
-import { authHeaders, CENTRAL_API } from "../../api";
+import { createAnnotation as createAnnotationRequest } from "../../api";
 import Button from "../util/Button";
 import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInput";
 import { useI18n } from "../../i18n";
@@ -47,9 +47,7 @@ export default function AnnotationNew({
 
   const annotationData = annotationPanel.data;
 
-  async function createAnnotation() {
-    const headers = authHeaders()
-    if (!headers) return false;
+  async function handleCreateAnnotation() {
     const nextValue = annotationData.type === "memo"
       ? inputRef.current?.flushPendingInput() ?? inputValue
       : inputValue;
@@ -68,15 +66,7 @@ export default function AnnotationNew({
       content: nextValue,
     }
 
-    const response = await fetch(`${CENTRAL_API}/annotations`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) return;
-
-    const newAnnotation = await response.json();
+    const newAnnotation = await createAnnotationRequest(payload);
 
     setAnnotations?.((prev) => [...prev, newAnnotation]);
     setPanelData({ type: "annotation:view", data: newAnnotation });
@@ -111,7 +101,7 @@ export default function AnnotationNew({
       <div className="absolute bottom-2 left-0 px-2 w-full flex flex-col">
         <Button
           text={annotationData.type === "memo" ? t("Create new memo") : t("Create new link")}
-          onClick={createAnnotation}
+          onClick={handleCreateAnnotation}
           disabled={!canSave}
           fit black
         />

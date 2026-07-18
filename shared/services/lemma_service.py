@@ -49,9 +49,15 @@ def _load_language(lang: str):
     pack_db = None
 
     if lang_dir.exists():
-        version_path = get_latest_version_path(lang_dir)
-        db_path = find_pack_db(version_path)
-        pack_db = LanguagePackDB(db_path) if db_path else None
+        try:
+            version_path = get_latest_version_path(lang_dir)
+        except ValueError:
+            # Empty language directories are placeholders for uninstalled packs.
+            version_path = None
+
+        if version_path is not None:
+            db_path = find_pack_db(version_path)
+            pack_db = LanguagePackDB(db_path) if db_path else None
 
     data = {
         "pack_db": pack_db,

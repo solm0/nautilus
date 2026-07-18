@@ -20,11 +20,11 @@ export default function LanguagePackRequiredModal({
 
   const handleOpenSettings = () => {
     onClose();
-    navigate("/setting");
+    navigate("/setting", { state: { scrollTo: "language-packs" } });
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose}>
+    <ResponsiveModal open={open} onClose={onClose} usePortal={false}>
       <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50">
         <h2 className="pr-6">
           {mobileApp

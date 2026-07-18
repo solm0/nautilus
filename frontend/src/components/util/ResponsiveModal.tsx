@@ -9,6 +9,7 @@ type Props = {
   children: React.ReactNode;
   big?: boolean;
   closeOnBackdrop?: boolean;
+  usePortal?: boolean;
 };
 
 export function ResponsiveModal({
@@ -17,6 +18,7 @@ export function ResponsiveModal({
   children,
   big = false,
   closeOnBackdrop = true,
+  usePortal = true,
 }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(open);
@@ -106,8 +108,8 @@ export function ResponsiveModal({
     ? 0.4
     : 0;
 
-  return createPortal(
-    <div className={`fixed inset-0 z-60 ${big && !isMobile && 'p-20'}`}>
+  const modalContent = (
+    <div className={`${usePortal ? "fixed" : "absolute"} inset-0 z-60 ${big && !isMobile && usePortal ? 'p-20' : ''}`}>
       {/* overlay */}
       <div
         className="absolute inset-0 bg-neutral-700 transition-opacity duration-200"
@@ -159,7 +161,15 @@ export function ResponsiveModal({
 
         <div className="p-4 pt-0">{children}</div>
       </div>
-    </div>,
+    </div>
+  );
+
+  if (!usePortal) {
+    return modalContent;
+  }
+
+  return createPortal(
+    modalContent,
     document.body
   );
 }

@@ -67,9 +67,9 @@ export default function Lemmas(){
 
   // favorite lemmas 가져오기
   useEffect(() => {
-    getFavorites()
-      .then(res => {
-        setOffline(false);
+    void getFavorites()
+      .then((res) => {
+        setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
         setFavorites(new Set(res))
       })
       .catch((error) => {
@@ -111,7 +111,7 @@ export default function Lemmas(){
   }
 
   return (
-    <div className="w-full h-full flex pl-3 md:pl-6 bg-neutral-50">
+    <div className="relative w-full h-full flex pl-3 md:pl-6 bg-neutral-50">
       <LanguagePackRequiredModal
         language={missingPackLang ?? ""}
         open={missingPackLang !== null}
@@ -122,12 +122,18 @@ export default function Lemmas(){
 
         <h2 className="top-0 pt-8 md:pt-12 z-30">{t("My Lemmas")}</h2>
 
+        {offline && grouped.length > 0 ? (
+          <p className="text-xs text-neutral-400">
+            {t("You're offline.")}
+          </p>
+        ) : null}
+
         {offline && grouped.length === 0 ? (
           <OfflineState
             onRetry={() => {
               void getFavorites()
                 .then((res) => {
-                  setOffline(false);
+                  setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
                   setFavorites(new Set(res));
                 })
                 .catch((error) => {
@@ -162,9 +168,11 @@ export default function Lemmas(){
 
                       <Star
                         size={17}
-                        className="opacity-0 group-hover:opacity-100 transition cursor-pointer text-neutral-400 hover:text-neutral-500"
+                        className="cursor-pointer opacity-0 group-hover:opacity-100 transition text-neutral-400 hover:text-neutral-500"
                         fill={isFavorite ? "currentColor" : "transparent"}
-                        onClick={() => onFavoriteClick(key, !isFavorite)}
+                        onClick={() => {
+                          void onFavoriteClick(key, !isFavorite);
+                        }}
                       />
                     </div>
                   )
@@ -186,6 +194,7 @@ export default function Lemmas(){
             initialLemma={lemmaData}
             onToggleFavorite={onFavoriteClick}
             language={currentLang!}
+            favoriteKeys={favorites}
           />
         </ResponsiveSideLayout>
       }
