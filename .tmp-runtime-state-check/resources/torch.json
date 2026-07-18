@@ -1,7 +1,0 @@
-{
-  "id": "torch",
-  "consumers": [
-    "mk",
-    "sr"
-  ]
-}
