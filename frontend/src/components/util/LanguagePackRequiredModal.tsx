@@ -25,8 +25,8 @@ export default function LanguagePackRequiredModal({
 
   return (
     <ResponsiveModal open={open} onClose={onClose}>
-      <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50 px-7 py-6">
-        <p>
+      <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50">
+        <h2 className="pr-6">
           {mobileApp
             ? t("Activate {language} to continue.", {
                 language: t(LANG_MAP[language] ?? language),
@@ -34,8 +34,8 @@ export default function LanguagePackRequiredModal({
             : t("Install {language} pack to continue.", {
                 language: t(LANG_MAP[language] ?? language),
               })}
-        </p>
-        <Button text={t("settings")} onClick={handleOpenSettings} fit black />
+        </h2>
+        <Button text={t("Settings")} onClick={handleOpenSettings} fit black />
       </div>
     </ResponsiveModal>
   );

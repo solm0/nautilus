@@ -175,7 +175,6 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Select text to keep. Otherwise, all text will be used.": "유지할 텍스트를 선택하세요. 선택하지 않으면 전체 텍스트가 사용됩니다.",
     "Send request": "요청 보내기",
     "Sent": "보낸 요청",
-    "settings": "설정",
     "Settings": "설정",
     "Sign up": "회원가입",
     "synced": "싱크됨",

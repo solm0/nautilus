@@ -1,4 +1,6 @@
 {
   "id": "obeliks",
-  "consumers": []
+  "consumers": [
+    "mk"
+  ]
 }

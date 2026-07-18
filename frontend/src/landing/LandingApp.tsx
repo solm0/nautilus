@@ -292,7 +292,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
 
           {/* 개요, 설치 */}
           <section className="min-h-180 pt-21 flex flex-col gap-14">
-            <h1 className="font-serif max-w-[14em] text-[2.6rem] leading-[1.2] tracking-[-0.02em] text-neutral-900 md:text-5xl ">
+            <h1 className="font-source max-w-[14em] text-[2.6rem] leading-[1.2] tracking-[-0.02em] text-neutral-900 md:text-5xl ">
               You don’t have to wait until everything is perfect.
               <br/>Just dive into text and enjoy it.
             </h1>
@@ -380,7 +380,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
 
           {/* Demos */}
           <section id="demos" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl! pt-8">1. Demos</h2>
+            <h2 className="font-source text-4xl! pt-8">1. Demos</h2>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex-1 flex flex-col gap-4">
                 <img src="/landing/landing_2.png" className="grayscale brightness-120" />
@@ -506,7 +506,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
 
           {/* Objectives */}
           <section id="objectives" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl! pt-8">2. Objectives</h2>
+            <h2 className="font-source text-4xl! pt-8">2. Objectives</h2>
             <h3>중심 목표</h3>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex gap-4 flex-col md:flex-row">
@@ -536,7 +536,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
 
           {/* use */}
           <section id="use" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl! pt-8">3. How to use</h2>
+            <h2 className="font-source text-4xl! pt-8">3. How to use</h2>
             <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 같은 도구를 사용할 수 있습니다.</p>
 
             <h3>가능한 입력 경로</h3>
@@ -579,7 +579,7 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
 
           {/* works */}
           {/* <section id="works" className="flex flex-col gap-7">
-            <h2 className="font-serif text-4xl! pt-8">4. How it works</h2>
+            <h2 className="font-source text-4xl! pt-8">4. How it works</h2>
             <h3 className="mt-7">언어 팩</h3>
             <ul className="max-w-[44em] leading-[1.7em] pl-6 list-disc">
               <li>Wortschatz Leipzig에서 관리하는 언어별 위키피디아, 웹 코퍼스를 사용합니다.</li>

@@ -20,7 +20,7 @@ export default function NotificationPermissionModal({
   const { t } = useI18n();
   return (
     <ResponsiveModal open={open} onClose={onClose}>
-      <div className="flex flex-col gap-5 md:pb-3">
+      <div className="flex flex-col gap-7 md:pb-3">
         <h2>{t(title)}</h2>
         <p className="pr-8 text-sm text-neutral-500">
           {t(body)}

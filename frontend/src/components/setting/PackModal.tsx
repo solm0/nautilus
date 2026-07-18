@@ -176,9 +176,9 @@ export default function PackModal({
 
   return (
     <ResponsiveModal open={true} onClose={handleClose} closeOnBackdrop={false}>
-      <div className="flex flex-col gap-6 min-w-[320px]">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold pr-6">
+      <div className="flex flex-col gap-7 min-w-[320px]">
+        <div className="flex flex-col gap-7">
+          <h2 className="pr-6">
             {langName} {version} {assetLabel} {t("installing")}
           </h2>
 

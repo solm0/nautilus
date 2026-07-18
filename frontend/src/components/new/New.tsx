@@ -213,7 +213,7 @@ export default function New() {
 
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="text-lg font-medium">{t("Save Page")}</h2>
+          <h2>{t("Save Page")}</h2>
 
           {/* page name */}
           <input

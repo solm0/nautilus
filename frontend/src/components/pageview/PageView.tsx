@@ -349,13 +349,13 @@ export default function PageView() {
 
           <div
             className="relative flex h-full w-full min-h-0 overflow-hidden transition-[padding] duration-300 ease-out"
-            style={{
-              paddingLeft:
-                panelPlacement === "left" ? "min(18rem, 18vw)" : 0,
-              paddingRight:
-                panelPlacement === "right" ? "min(18rem, 18vw)" : 0,
-              boxSizing: "border-box",
-            }}
+            // style={{
+            //   paddingLeft:
+            //     panelPlacement === "left" ? PAGE_VIEW_PANEL_EDGE_PADDING : 0,
+            //   paddingRight:
+            //     panelPlacement === "right" ? PAGE_VIEW_PANEL_EDGE_PADDING : 0,
+            //   boxSizing: "border-box",
+            // }}
           >
             <PageContent
               key={id}
@@ -377,6 +377,13 @@ export default function PageView() {
               setPanelData={setPanel}
               scrollRef={(fn) => (scrollRef.current = fn)}
               setAnnotations={setAnnotations}
+              horizontalAlign={
+                panelPlacement === "left"
+                  ? "right"
+                  : panelPlacement === "right"
+                    ? "left"
+                    : "center"
+              }
             />
           </div>
 

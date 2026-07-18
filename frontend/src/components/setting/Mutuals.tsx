@@ -78,7 +78,7 @@ export default function Mutuals() {
       {/* modal */}
       <ResponsiveModal open={openSend} onClose={() => setOpenSend(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="text-lg font-semibold">{t("Send request")}</h2>
+          <h2>{t("Send request")}</h2>
 
           <input
             value={email}

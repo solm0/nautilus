@@ -25,7 +25,7 @@ function CreateNotebookContent({
 
   return (
     <div className="flex flex-col gap-7">
-      <h2 className="text-lg font-medium">{t("Create Notebook")}</h2>
+      <h2>{t("Create Notebook")}</h2>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

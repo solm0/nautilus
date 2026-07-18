@@ -142,8 +142,10 @@ p {
 h2 {
   font-size: var(--text-2xl);
   font-weight: var(--font-weight-medium);
-  line-height: var(--tw-leading, var(--text-2xl--line-height));
-  z-index: 50
+  line-height: var(--leading-tight);
+  z-index: 50;
+  word-break: keep-all;
+  font-family: var(--font-source);
 }
 
 h3 {

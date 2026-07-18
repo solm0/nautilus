@@ -1,4 +1,6 @@
 {
   "id": "reldi_tokeniser",
-  "consumers": []
+  "consumers": [
+    "mk"
+  ]
 }

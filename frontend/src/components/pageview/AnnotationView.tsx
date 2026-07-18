@@ -192,7 +192,7 @@ export default function AnnotationView({
       {/* delete modal */}
       <ResponsiveModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="flex flex-col gap-7">
-          <h2 className="pr-3">{t("Delete this annotation?")}</h2>
+          <h2 className="pr-6">{t("Delete this annotation?")}</h2>
           <Button text={t("Delete")} onClick={handleDelete} fit red/>
         </div>
       </ResponsiveModal>

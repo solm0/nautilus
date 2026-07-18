@@ -260,7 +260,7 @@ export function UserProfile() {
       </div>
 
       <ResponsiveModal open={openLogoutModal} onClose={() => setOpenLogoutModal(false)}>
-        <div className="flex flex-col gap-5 md:pb-3">
+        <div className="flex flex-col gap-7 md:pb-3">
           <h2>{t("Log out?")}</h2>
           <Button
             text={t("Yes")}
@@ -272,7 +272,7 @@ export function UserProfile() {
       </ResponsiveModal>
 
       <ResponsiveModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
-        <div className="flex flex-col gap-5 md:pb-3">
+        <div className="flex flex-col gap-7 md:pb-3">
           <h2>{t("Delete account?")}</h2>
           <p className="pr-8 text-sm text-neutral-500">
             {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}

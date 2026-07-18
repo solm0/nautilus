@@ -35,6 +35,7 @@ export default function PageContent({
   pageId,
   scrollRef,
   setAnnotations,
+  horizontalAlign = "center",
 }: {
   blocks: TextBlock[];
   lemmaInfo: Record<string, LemmaData>;
@@ -54,6 +55,7 @@ export default function PageContent({
   pageId?: number;
   scrollRef?: (fn: (startIndex: number) => void) => void;
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
+  horizontalAlign?: "left" | "right" | "center";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -501,6 +503,7 @@ export default function PageContent({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       wrapperStyle={{ touchAction: isSelecting ? "none" : "pan-y" }}
+      horizontalAlign={horizontalAlign}
       lemmaInfo={lemmaInfo}
       getTokenProps={({ token, index }) => {
         const key = getLookupKey(token, language);

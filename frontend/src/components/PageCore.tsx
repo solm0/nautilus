@@ -507,6 +507,7 @@ export default function PageCore({
   overlay,
   lemmaInfo,
   wrapperStyle,
+  horizontalAlign = "center",
 }: {
   pageId?: number;
   pageName?: string;
@@ -537,6 +538,7 @@ export default function PageCore({
   rightAside?: ReactNode;
   overlay?: ReactNode;
   wrapperStyle?: CSSProperties;
+  horizontalAlign?: "left" | "right" | "center";
 }) {
   let globalIndex = 0;
 
@@ -549,6 +551,12 @@ export default function PageCore({
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
   const longPressTimerRef = useRef<number | null>(null);
   const isLyricPage = pageSource === "lrclib";
+  const containerAlignClass =
+    horizontalAlign === "left"
+      ? "items-start"
+      : horizontalAlign === "right"
+        ? "items-end"
+        : "items-center";
 
   const safeMetadataItems = metadataItems ?? [];
   const canManageMetadata = Boolean(pageId && onAddMetadata && onUpdateMetadata && onDeleteMetadata);
@@ -610,7 +618,7 @@ export default function PageCore({
       
       <div
         ref={containerRef}
-        className={`relative flex min-h-full w-full flex-col isolate items-center ${
+        className={`relative flex min-h-full w-full flex-col isolate ${containerAlignClass} ${
           pageId ? "px-4 md:px-6 pt-24 md:pt-40" : 'p-3'
         } ${settings.lemma_info ? `${syncPlaybackActive ? 'gap-y-28':'gap-y-5'}` : `${syncPlaybackActive ? 'gap-y-5':''}`}`}
         style={{
@@ -622,7 +630,7 @@ export default function PageCore({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
-        <div className={`flex w-full flex-col items-center ${pageId ? "pb-[5rem]" : ""}`}>
+        <div className={`flex w-full flex-col ${containerAlignClass} ${pageId ? "pb-[5rem]" : ""}`}>
         {pageId ? (
           <div
             data-page-header="true"

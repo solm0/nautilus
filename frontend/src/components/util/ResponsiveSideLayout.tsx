@@ -57,7 +57,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function isInteractiveDragTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
+  if (!(target instanceof Element)) return false;
 
   return Boolean(
     target.closest(

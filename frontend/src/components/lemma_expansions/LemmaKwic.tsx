@@ -186,7 +186,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
           <div className="flex h-10">{left.map((t, j) => renderToken(t, j))}</div>
         </div>
 
-        <div className="relative px-2 flex shrink-0 items-center h-10">
+        <div className="relative px-2 flex shrink-0 items-center h-10 cursor-default">
           <div className="absolute inset-0 opacity-50 pointer-events-none" />
           {highlightIntersect(target.surface, baseLemma)}
         </div>
@@ -350,7 +350,7 @@ export default function LemmaKwic({
       ref={containerRef}
       className="relative flex h-full min-h-0 w-full overflow-hidden"
     >
-      <div className="absolute top-2 right-3 ml-auto">
+      <div className="absolute top-2 right-3 z-30 ml-auto bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
         <IconButton
           icon={<AlignCenterVertical size={16} />}
           onClick={() => rowRefs.current.forEach((r) => r?.setCenter())}

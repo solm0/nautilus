@@ -65,7 +65,7 @@ export function Side() {
   const settingsButtons = isMobile ? (
     <IconButton
       icon={<Settings2 size={20} />}
-      title={t("settings")}
+      title={t("Settings")}
       onClick={() => navigate("/setting")}
       active={location.pathname === "/setting" || openSettings === true}
     />
@@ -76,7 +76,7 @@ export function Side() {
     >
       <IconButton
         icon={<Settings2 size={16} />}
-        title={t("settings")}
+        title={t("Settings")}
         active={
           location.pathname === "/setting" || openSettings
         }

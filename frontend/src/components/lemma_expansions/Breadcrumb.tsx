@@ -532,10 +532,12 @@ const Breadcrumb = forwardRef<
   return (
     <div
       ref={containerRef}
+      data-no-drag="true"
       className={`shrink-0 relative w-full h-26 border-b border-neutral-200 cursor-grab overflow-hidden group`}
     >
       <svg
         ref={svgRef}
+        data-no-drag="true"
         style={{ display: "block", width: "100%", height: "100%" }}
       />
 
