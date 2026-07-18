@@ -4,6 +4,7 @@ import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
 import { useI18n } from "../../i18n"
 import { resolveAuthMessage } from "./errorMessages"
+import { isNetworkError } from "../../network"
 
 export default function Signup(){
   const [name, setName] = useState("")
@@ -14,11 +15,19 @@ export default function Signup(){
 
   async function submit(){
     if (name.trim() && email.trim() && password.trim()) {
-      const res=await signup(email,password,name);
+      try {
+        const res=await signup(email,password,name);
 
-      if (res.detail) {
-        setMsg(t(resolveAuthMessage(res.detail)))
-      } else setMsg("email sent.")
+        if (res.detail) {
+          setMsg(t(resolveAuthMessage(res.detail)))
+        } else setMsg("email sent.")
+      } catch (error) {
+        setMsg(
+          isNetworkError(error)
+            ? t("You're offline. Check your connection and try again.")
+            : t("error"),
+        )
+      }
     } else {
       setMsg("enter your name, email, and password.")
     }

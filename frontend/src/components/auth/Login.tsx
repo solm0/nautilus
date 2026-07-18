@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { login } from "../../api"
+import { login, verifyToken } from "../../api"
 import { useNavigate } from "react-router-dom"
 import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
 import { useI18n } from "../../i18n"
 import { resolveAuthMessage } from "./errorMessages"
+import { storeAccessToken } from "../../authSession"
+import { isNetworkError } from "../../network"
 
 export default function Login(){
   const [email,setEmail]=useState("")
@@ -17,13 +19,22 @@ export default function Login(){
   async function submit(){
 
     if (email.trim() && password.trim()) {
-      const res=await login(email,password)
-  
-      if (res.access_token) {
-        localStorage.setItem("token",res.access_token)
-        navigate('/')
-      } else {
-        setMsg(t(resolveAuthMessage(res.detail)))
+      try {
+        const res=await login(email,password)
+    
+        if (res.access_token) {
+          storeAccessToken(res.access_token)
+          await verifyToken().catch(() => null)
+          navigate('/')
+        } else {
+          setMsg(t(resolveAuthMessage(res.detail)))
+        }
+      } catch (error) {
+        setMsg(
+          isNetworkError(error)
+            ? t("You're offline. Check your connection and try again.")
+            : t("error"),
+        )
       }
     } else {
       setMsg("enter your email and password.")

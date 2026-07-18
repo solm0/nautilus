@@ -41,6 +41,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "copy text": "텍스트 복사",
     "Core": "코어",
     "Core installed": "코어 설치됨",
+    "Connect to the internet to see installable languages.": "설치 가능한 언어를 보려면 네트워크에 연결하세요.",
     "Create": "생성",
     "Create an account": "계정 만들기",
     "Create new link": "새 링크 만들기",
@@ -159,6 +160,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Request reset": "재설정 요청",
     "Requests": "요청",
     "Retry": "다시 시도",
+    "Try again": "다시 시도",
     "Revert changes": "변경 취소",
     "Relaunch": "재실행",
     "root": "루트",
@@ -213,6 +215,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.": "모든 데이터가 사라집니다. 페이지, 주석, 댓글, mutuals, 저장된 언어 데이터가 영구적으로 삭제됩니다.",
     "You're adding a comment": "댓글을 작성하는 중입니다",
     "You're editing a comment": "댓글을 수정하는 중입니다",
+    "You're offline. Check your connection and try again.": "오프라인 상태입니다. 네트워크를 확인한 뒤 다시 시도하세요.",
     "your password was reset.": "비밀번호가 재설정되었습니다.",
 
     "German": "독일어",

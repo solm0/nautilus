@@ -26,6 +26,7 @@ import {
   openAppNotificationSettings,
   type AppNotificationPermissionStatus,
 } from "../../notificationPreferences";
+import { clearStoredSession, updateStoredUser } from "../../authSession";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -33,7 +34,6 @@ function AppVersionSection() {
   const { t } = useI18n();
   const [latestVersionInfo, setLatestVersionInfo] =
     useState<LatestVersionInfo | null>(null);
-  const [latestVersionError, setLatestVersionError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -43,13 +43,10 @@ function AppVersionSection() {
         const next = await getLatestVersionInfo();
         if (!cancelled) {
           setLatestVersionInfo(next);
-          setLatestVersionError("");
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          setLatestVersionError(
-            error instanceof Error ? error.message : "Could not load latest version.",
-          );
+          setLatestVersionInfo(null);
         }
       }
     };
@@ -72,7 +69,7 @@ function AppVersionSection() {
 
   return (
     <section className="w-full flex flex-col gap-4 pt-8 md:pt-12 items-start">
-      <h2 className="font-semibold!">{t("App version")}</h2>
+      <h2 className="font-pretendard!">{t("App version")}</h2>
       <div className="flex items-center gap-2 text-sm">
         <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
@@ -100,12 +97,6 @@ function AppVersionSection() {
           </div>
           <Button text={t("Download now")} onClick={openDownloadPage} black />
         </div>
-      )}
-
-      {latestVersionError && (
-        <p className="text-xs text-neutral-500">
-          {latestVersionError}
-        </p>
       )}
     </section>
   );
@@ -168,6 +159,9 @@ export function UserProfile() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [offline, setOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -180,16 +174,35 @@ export function UserProfile() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const handleOnline = () => setOffline(false);
+    const handleOffline = () => setOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   async function handleSave() {
     await updateName(value);
-    setUser((prev) =>
-      prev ? { ...prev, name: value } : prev
-    );
+    setUser((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      const nextUser = { ...prev, name: value };
+      updateStoredUser(nextUser);
+      return nextUser;
+    });
     setEditing(false);
   }
 
   function logout() {
-    localStorage.removeItem("token")
+    clearStoredSession();
     navigate("/login");
   }
 
@@ -199,7 +212,7 @@ export function UserProfile() {
 
     try {
       await deleteAccount();
-      localStorage.removeItem("token");
+      clearStoredSession();
       navigate("/login");
     } catch (error) {
       setDeleteError(
@@ -230,17 +243,19 @@ export function UserProfile() {
             )}
 
             {/* button */}
-            {editing ? (
-              <IconButtonEvent
-                icon={<Check size={14} />}
-                onClick={handleSave}
-              />
-            ) : (
-              <IconButtonEvent
-                icon={<Pencil size={13} />}
-                onClick={()=>setEditing(true)}
-              />
-            )}
+            {!offline ? (
+              editing ? (
+                <IconButtonEvent
+                  icon={<Check size={14} />}
+                  onClick={handleSave}
+                />
+              ) : (
+                <IconButtonEvent
+                  icon={<Pencil size={13} />}
+                  onClick={()=>setEditing(true)}
+                />
+              )
+            ) : null}
           </div>
           <p className="text-sm pt-1 pb-2">{user?.email}</p>
         </div>
@@ -275,20 +290,28 @@ export function UserProfile() {
 
       <ResponsiveModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
         <div className="flex flex-col gap-7 md:pb-3">
-          <h2>{t("Delete account?")}</h2>
-          <p className="pr-8 text-sm text-neutral-500">
-            {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
-          </p>
-          {deleteError && (
-            <p className="text-sm text-red-600">{deleteError}</p>
+          {offline ? (
+            <p className="text-sm text-neutral-500">
+              {t("You're offline. Check your connection and try again.")}
+            </p>
+          ) : (
+            <>
+              <h2>{t("Delete account?")}</h2>
+              <p className="pr-8 text-sm text-neutral-500">
+                {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
+              </p>
+              {deleteError && (
+                <p className="text-sm text-red-600">{deleteError}</p>
+              )}
+              <Button
+                text={deleting ? t("Deleting...") : t("Delete")}
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                fit
+                red
+              />
+            </>
           )}
-          <Button
-            text={deleting ? t("Deleting...") : t("Delete")}
-            onClick={handleDeleteAccount}
-            disabled={deleting}
-            fit
-            red
-          />
         </div>
       </ResponsiveModal>
     </>
@@ -372,104 +395,104 @@ export default function Setting() {
     <>
       <div className="w-full h-full overflow-y-scroll overflow-x-hidden flex flex-col gap-7 pr-3 z-30 pl-3 md:pl-6 bg-neutral-50 pb-7">
         <AppVersionSection />
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Preferences")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Preferences")}</h2>
         <section className="w-full h-auto mb-14 flex flex-col gap-7">
-        <div className="flex flex-col gap-4">
-          <h3>{t("Page view")}</h3>
-          <div className="flex flex-col items-start text-sm gap-2">
-
-            <div className="flex items-center gap-2">
-              <span>{t("lemma info")}</span>
-              <SettingToggle
-                settingKey="lemma_info"
-                value={settings.lemma_info}
-                toggleSetting={toggleSetting}
-              />
-            </div>
-          </div>
-        </div>
-
-        {mobileApp && (
           <div className="flex flex-col gap-4">
-            <h3>{t("Notifications")}</h3>
+            <h3 className="font-pretendard!">{t("Page view")}</h3>
             <div className="flex flex-col items-start text-sm gap-2">
+
               <div className="flex items-center gap-2">
-                <span>{t("now playing alerts")}</span>
-                <button
-                  type="button"
-                  onClick={handleNowPlayingNotificationsToggle}
-                  aria-pressed={settings.now_playing_notifications}
-                  title={t("now playing alerts")}
-                  className={`
-                    relative inline-flex h-5 w-9 items-center rounded-full
-                    p-0.5 transition-colors
-                    ${
-                      settings.now_playing_notifications
-                        ? "bg-neutral-700"
-                        : "bg-neutral-300"
-                    }
-                  `}
-                >
-                  <div
-                    className={`
-                      h-4 w-4 rounded-full bg-white shadow-sm
-                      transition-transform duration-200
-                      ${
-                        settings.now_playing_notifications
-                          ? "translate-x-4"
-                          : "translate-x-0"
-                      }
-                    `}
-                  />
-                </button>
+                <span>{t("lemma info")}</span>
+                <SettingToggle
+                  settingKey="lemma_info"
+                  value={settings.lemma_info}
+                  toggleSetting={toggleSetting}
+                />
               </div>
-              {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
-                <button
-                  type="button"
-                  className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
-                  onClick={() => setOpenNotificationModal(true)}
-                >
-                  {t("Notifications are blocked on this device. Open settings.")}
-                </button>
-              )}
             </div>
           </div>
-        )}
 
-        <div className="flex items-center gap-4">
-          <h3>{t("Theme")}</h3>
-          <div>
-            <ThemeToggle />
+
+          <div className="flex items-center gap-4">
+            <h3 className="font-pretendard!">{t("Theme")}</h3>
+            <div>
+              <ThemeToggle />
+            </div>
           </div>
-        </div>
 
-        <div className="flex gap-2">
-          <div className="flex flex-wrap items-center gap-5">
-            <h3>{t("System language")}</h3>
-            <div className="flex gap-3 h-9">
-              <select
-                value={settings.system_language}
-                onChange={handleSystemLanguageChange}
-                className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
-              >
-                <option value="en">en</option>
-                <option value="ko">ko</option>
-              </select>
-              {pendingLanguageChange ? (
-                <Button
+          <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-5">
+              <h3 className="font-pretendard!">{t("System language")}</h3>
+              <div className="flex gap-3 h-9">
+                <select
+                  value={settings.system_language}
+                  onChange={handleSystemLanguageChange}
+                  className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
+                  >
+                  <option value="en">en</option>
+                  <option value="ko">ko</option>
+                </select>
+                {pendingLanguageChange ? (
+                  <Button
                   text={t("Relaunch")}
                   onClick={() => {
                     void relaunchApp();
                   }}
                   black
-                />
-              ) : null}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+          {mobileApp && (
+            <div className="flex flex-col gap-4">
+              <h3 className="font-pretendard!">{t("Notifications")}</h3>
+              <div className="flex flex-col items-start text-sm gap-2">
+                <div className="flex items-center gap-2">
+                  <span>{t("now playing alerts")}</span>
+                  <button
+                    type="button"
+                    onClick={handleNowPlayingNotificationsToggle}
+                    aria-pressed={settings.now_playing_notifications}
+                    title={t("now playing alerts")}
+                    className={`
+                      relative inline-flex h-5 w-9 items-center rounded-full
+                      p-0.5 transition-colors
+                      ${
+                        settings.now_playing_notifications
+                          ? "bg-neutral-700"
+                          : "bg-neutral-300"
+                      }
+                    `}
+                  >
+                    <div
+                      className={`
+                        h-4 w-4 rounded-full bg-white shadow-sm
+                        transition-transform duration-200
+                        ${
+                          settings.now_playing_notifications
+                            ? "translate-x-4"
+                            : "translate-x-0"
+                        }
+                      `}
+                    />
+                  </button>
+                </div>
+                {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
+                  <button
+                    type="button"
+                    className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
+                    onClick={() => setOpenNotificationModal(true)}
+                  >
+                    {t("Notifications are blocked on this device. Open settings.")}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Language packs")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Language packs")}</h2>
         <p className="text-sm">
           {mobileApp
             ? t("Activate only the languages you want to use on this device.")
@@ -479,10 +502,10 @@ export default function Setting() {
           <PackTable />
         </section>
         
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Mutuals")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Mutuals")}</h2>
         <Mutuals />
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-semibold!">{t("Profile")}</h2>
+        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Profile")}</h2>
         <UserProfile />
       </div>
 

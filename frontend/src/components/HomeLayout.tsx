@@ -3,6 +3,7 @@ import { verifyToken } from "../api";
 import { useState, useEffect } from "react";
 import { File, MessageSquareMore, Settings2, Star } from "lucide-react";
 import type { User } from "../types";
+import { clearStoredSession, getOfflineSessionUser } from "../authSession";
 import { IconButton } from "./util/Button";
 import { MiniPopup } from "./util/MiniPopup";
 import { SettingToggle } from "./util/ToggleButton";
@@ -118,7 +119,10 @@ export function Side() {
 }
 
 export default function HomeLayout() {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<User | null | undefined>(() => {
+    const offlineUser = getOfflineSessionUser();
+    return offlineUser ?? undefined;
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,17 +138,39 @@ export default function HomeLayout() {
   }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
-    verifyToken().then((u) => {
-      setUser(u);
-    });
+    let cancelled = false;
+
+    const loadUser = async () => {
+      const nextUser = await verifyToken();
+
+      if (cancelled) {
+        return;
+      }
+
+      setUser(nextUser);
+    };
+
+    void loadUser();
+
+    const handleOnline = () => {
+      void loadUser();
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", handleOnline);
+    };
   }, []);
 
   useEffect(() => {
     if (user === undefined) return; // 아직 로딩 중
     if (!user) {
+      clearStoredSession();
       navigate("/login");
     }
-  }, [user]);
+  }, [navigate, user]);
 
   return (
     <div className="h-screen w-screen overflow-hidden flex">

@@ -4,6 +4,7 @@ import SystemMessage from "./SystemMessage"
 import Button, { LinkButton } from "../../components/util/Button"
 import { useI18n } from "../../i18n"
 import { resolveAuthMessage } from "./errorMessages"
+import { isNetworkError } from "../../network"
 
 export default function ResetPassword(){
 
@@ -16,11 +17,19 @@ export default function ResetPassword(){
 
   async function submit(){
     if (pw.trim()) {
-      const res=await resetPassword(token,pw);
+      try {
+        const res=await resetPassword(token,pw);
 
-      if (res.detail) {
-        setMsg(t(resolveAuthMessage(res.detail)))
-      } else setMsg("your password was reset.")
+        if (res.detail) {
+          setMsg(t(resolveAuthMessage(res.detail)))
+        } else setMsg("your password was reset.")
+      } catch (error) {
+        setMsg(
+          isNetworkError(error)
+            ? t("You're offline. Check your connection and try again.")
+            : t("error"),
+        )
+      }
     } else {
       setMsg('enter your new password.')
     }

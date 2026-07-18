@@ -8,8 +8,10 @@ import PageCard from "./PageCard";
 import { Toolbar } from "./Toolbar";
 
 import Button from "../util/Button";
+import OfflineState from "../util/OfflineState";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useLayout } from "../RootLayout";
+import { isNetworkError } from "../../network";
 
 import {
   CENTRAL_API,
@@ -131,6 +133,7 @@ export default function PageLayout() {
   const [pages, setPages] = useState<Page[]>([]);
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
   const [expandedNotebookIds, setExpandedNotebookIds] = useState<Set<number>>(
     () => new Set()
   );
@@ -177,6 +180,7 @@ export default function PageLayout() {
     }
 
     try {
+      setOffline(false);
       const [pagesData, notebooksData] = await Promise.all([
         fetchPages(),
         fetchNotebooks(),
@@ -185,6 +189,8 @@ export default function PageLayout() {
       setPages(pagesData);
       setNotebooks(notebooksData);
       hasLoadedOnceRef.current = true;
+    } catch (error) {
+      setOffline(isNetworkError(error));
     } finally {
       setLoading(false);
     }
@@ -890,6 +896,8 @@ export default function PageLayout() {
       <SkeletonItem level={1} showActions={false} />
       <SkeletonItem />
     </div>
+  ) : offline && !hasLoadedOnceRef.current ? (
+    <OfflineState onRetry={() => void reload()} />
   ) : (
     <div className="flex flex-col px-2 pb-14 pt-0">
       {isSearching ? (

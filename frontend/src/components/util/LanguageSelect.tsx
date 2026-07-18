@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getInstalled, getPacks } from "../../api";
+import { isNetworkError } from "../../network";
+import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
 import { isCapacitorApp } from "../../platform";
 import { Link } from "react-router-dom";
 import {
@@ -105,6 +107,7 @@ export default function LanguageSelect({
   const [installedPacks, setInstalledPacks] = useState<InstalledPack[]>([]);
   const [availablePacks, setAvailablePacks] = useState<Pack[]>([]);
   const [installingPack, setInstallingPack] = useState<Pack | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -156,11 +159,17 @@ export default function LanguageSelect({
     getPacks()
       .then((packs: Pack[]) => {
         if (!active) return;
+        setOffline(false);
         setAvailablePacks(normalizePacksForTargetRelease(packs));
       })
-      .catch(() => {
+      .catch((error) => {
         if (!active) return;
-        setAvailablePacks([]);
+        setAvailablePacks(
+          normalizePacksForTargetRelease(
+            readPackCatalogSnapshot() as Pack[],
+          ),
+        );
+        setOffline(isNetworkError(error));
       });
 
     return () => {
@@ -238,10 +247,17 @@ export default function LanguageSelect({
           <button
             type="button"
             onClick={() => setInstallingPack(selectedPack)}
-            className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300"
+            disabled={offline}
+            className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-40"
           >
             {t("Install Writing Assistant")} {selectedPack.lang}
           </button>
+        ) : null}
+
+        {offline ? (
+          <p className="text-sm text-neutral-400">
+            {t("Connect to the internet to see installable languages.")}
+          </p>
         ) : null}
       </div>
 

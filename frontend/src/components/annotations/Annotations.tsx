@@ -7,6 +7,7 @@ import { AnnotationToolbar } from "./AnnotationToolbar";
 import { fetchAnnotationById } from "../../api";
 import type { TimelineItem } from "../setting/Mutuals";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
+import OfflineState from "../util/OfflineState";
 import { useI18n } from "../../i18n";
 
 export default function Annotations() {
@@ -17,34 +18,34 @@ export default function Annotations() {
   const my = useInfiniteAnnotations()
   const mutual = useInfiniteMutualTimeline()
   const active = tab === "my" ? my : mutual
-  const { items, load, hasMore, loading } = active
+  const { items, load, hasMore, loading, offline } = active
   const [pinned, setPinned] = useState<TimelineItem | null>(null);
 
   const annotationId = params.get("id");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    if (!sentinelRef.current || offline) return;
 
     const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
-        load();
+      if (entries[0].isIntersecting && hasMore && !loading && !offline) {
+        void load();
       }
     });
 
     observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [load]);
+  }, [hasMore, load, loading, offline]);
 
   useEffect(() => {
-    if (tab === "my" && my.items.length === 0) {
-      my.load();
+    if (tab === "my" && my.items.length === 0 && !my.offline) {
+      void my.load();
     }
-    if (tab === "mutuals" && mutual.items.length === 0) {
-      mutual.load();
+    if (tab === "mutuals" && mutual.items.length === 0 && !mutual.offline) {
+      void mutual.load();
     }
-  }, [tab]);
+  }, [my.items.length, my.load, my.offline, mutual.items.length, mutual.load, mutual.offline, tab]);
 
   // 알림에서 왔을 시 해당 annotation prepend
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function Annotations() {
 
     const id = Number(annotationId);
 
-    fetchAnnotationById(id).then(setPinned);
+    void fetchAnnotationById(id).then(setPinned).catch(() => null);
   }, [annotationId]);
 
   const handleUpdate = (updated: TimelineItem) => {
@@ -114,6 +115,10 @@ export default function Annotations() {
           Mutuals
         </span>
       </h2>
+
+      {offline && items.length === 0 ? (
+        <OfflineState onRetry={() => void load()} />
+      ) : null}
 
       <div className="flex flex-col gap-1 pt-7">
         {items.map(item => (

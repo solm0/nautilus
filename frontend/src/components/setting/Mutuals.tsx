@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
 import { fetchMutuals, fetchReceived, fetchSent, requestMutual, acceptMutual } from "../../api"
+import { isNetworkError } from "../../network";
 import { ResponsiveModal } from "../util/ResponsiveModal"
 import Button, { IconButton } from "../util/Button"
 import { Plus } from "lucide-react"
 import SystemMessage from "../auth/SystemMessage"
+import OfflineState from "../util/OfflineState";
 import type { User } from "../../types"
 import { UserIcon } from "./Setting"
 import { useI18n } from "../../i18n"
@@ -33,19 +35,25 @@ export default function Mutuals() {
   const [openSend, setOpenSend] = useState(false)
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [offline, setOffline] = useState(false)
 
   useEffect(() => {
-    load()
+    void load()
   }, [])
 
   async function load() {
-    const m = await fetchMutuals()
-    const r = await fetchReceived()
-    const s = await fetchSent()
+    try {
+      setOffline(false)
+      const m = await fetchMutuals()
+      const r = await fetchReceived()
+      const s = await fetchSent()
 
-    setMutuals(m.items)
-    setReceived(r)
-    setSent(s.items)
+      setMutuals(m.items)
+      setReceived(r)
+      setSent(s.items)
+    } catch (error) {
+      setOffline(isNetworkError(error))
+    }
   }
 
   async function handleRequest() {
@@ -69,11 +77,17 @@ export default function Mutuals() {
 
   return (
     <div className="flex flex-col gap-7">
+      {offline && mutuals.length === 0 && received.length === 0 && sent.length === 0 ? (
+        <OfflineState onRetry={() => void load()} />
+      ) : null}
+
       {/* 1. my mutuals */}
-      <div className="flex items-center gap-3">
-        <Button text={t("My mutuals")} onClick={() => setOpenList(true)} />
-        <IconButton icon={<Plus size={15} />} onClick={() => setOpenSend(true)} />
-      </div>
+      {!offline ? (
+        <div className="flex items-center gap-3">
+          <Button text={t("My mutuals")} onClick={() => setOpenList(true)} />
+          <IconButton icon={<Plus size={15} />} onClick={() => setOpenSend(true)} />
+        </div>
+      ) : null}
 
       {/* modal */}
       <ResponsiveModal open={openSend} onClose={() => setOpenSend(false)}>

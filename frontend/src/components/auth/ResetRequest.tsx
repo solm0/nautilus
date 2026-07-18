@@ -4,6 +4,7 @@ import Button, { LinkButton } from "../../components/util/Button"
 import SystemMessage from "./SystemMessage"
 import { useI18n } from "../../i18n"
 import { resolveAuthMessage } from "./errorMessages"
+import { isNetworkError } from "../../network"
 
 export default function ResetRequest(){
 
@@ -13,11 +14,19 @@ export default function ResetRequest(){
 
   async function submit(){
     if (email.trim()) {
-      const res=await requestReset(email);
+      try {
+        const res=await requestReset(email);
 
-      if (res.detail) {
-        setMsg(t(resolveAuthMessage(res.detail)))
-      } else setMsg("email sent.")
+        if (res.detail) {
+          setMsg(t(resolveAuthMessage(res.detail)))
+        } else setMsg("email sent.")
+      } catch (error) {
+        setMsg(
+          isNetworkError(error)
+            ? t("You're offline. Check your connection and try again.")
+            : t("error"),
+        )
+      }
     } else {
       setMsg("enter your email.")
     }

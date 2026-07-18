@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import PageContent from "./PageContent";
 import {
+  authHeaders,
   CENTRAL_API,
   addPageMetadata,
   deletePageMetadata,
@@ -24,7 +25,9 @@ import { useNowPlaying } from "../lyric/useNowPlaying";
 import { getActiveTimedBlockIndex } from "../lyric/spotifyLyrics";
 import { getLookupMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
+import { isNetworkError } from "../../network";
 import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
+import OfflineState from "../util/OfflineState";
 
 const lemmaInfoCache = new Map<string, Record<string, LemmaData>>();
 const lemmaAttemptedKeysCache = new Map<string, Set<string>>();
@@ -57,6 +60,8 @@ export default function PageView() {
 
   const [loadingPage, setLoadingPage] = useState(true);
   const [loadingLemma, setLoadingLemma] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [pageName, setPageName] = useState("");
   const [pageSource, setPageSource] = useState("user");
@@ -120,7 +125,7 @@ export default function PageView() {
     setLoadingLemma(false);
     inflightLemmaKeysRef.current.clear();
     fetchedRef.current = false;
-  }, [id]);
+  }, [id, reloadTick]);
 
   // FETCH PAGE DATA
   useEffect(() => {
@@ -130,13 +135,27 @@ export default function PageView() {
       if (fetchedRef.current) return;
       fetchedRef.current = true;
 
-      const token = localStorage.getItem("token");
+      const headers = authHeaders();
+
+      if (!headers) {
+        setLoadingPage(false);
+        return;
+      }
 
       setLoadingPage(true);
+      setOffline(false);
 
-      const res = await fetch(`${CENTRAL_API}/pages/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let res: Response;
+
+      try {
+        res = await fetch(`${CENTRAL_API}/pages/${id}`, {
+          headers,
+        });
+      } catch (error) {
+        setOffline(isNetworkError(error));
+        setLoadingPage(false);
+        return;
+      }
 
       if (!res.ok) {
         setLoadingPage(false);
@@ -159,9 +178,17 @@ export default function PageView() {
         setLemmaInfo(cachedLemmaInfo);
       }
 
-      const annRes = await fetch(`${CENTRAL_API}/pages/${id}/annotations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let annRes: Response;
+
+      try {
+        annRes = await fetch(`${CENTRAL_API}/pages/${id}/annotations`, {
+          headers,
+        });
+      } catch (error) {
+        setOffline(isNetworkError(error));
+        setLoadingPage(false);
+        return;
+      }
 
       if (annRes.ok) {
         const annData = await annRes.json();
@@ -328,6 +355,15 @@ export default function PageView() {
         message={loadingMessage ?? ""}
         usePortal={false}
       />
+
+      {offline && !result ? (
+        <OfflineState onRetry={() => {
+          fetchedRef.current = false;
+          setLoadingPage(true);
+          setOffline(false);
+          setReloadTick((prev) => prev + 1);
+        }} />
+      ) : null}
 
       <LanguagePackRequiredModal
         language={language ?? ""}

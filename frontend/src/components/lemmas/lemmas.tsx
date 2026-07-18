@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { getFavorites, lemmaLookupOne, setFavorite } from "../../api"
+import { isNetworkError } from "../../network";
 import { Star } from "lucide-react"
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk from "../lemma_expansions/Desk";
@@ -7,6 +8,7 @@ import type { LemmaData } from "../pageTypes";
 import { useLayout } from "../RootLayout";
 import { useI18n } from "../../i18n";
 import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
+import OfflineState from "../util/OfflineState";
 import { hasLemmaPackInstalled } from "../util/LanguageSelect";
 
 function groupLemmas(favorites: Set<string>) {
@@ -34,6 +36,7 @@ export default function Lemmas(){
   const [lemmaData, setLemmaData] = useState<LemmaData | null>(null);
   const [currentLang, setCurrentLang] = useState<string | null>(null);
   const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
   useRef<LemmaData | null>(null)
@@ -64,9 +67,14 @@ export default function Lemmas(){
 
   // favorite lemmas 가져오기
   useEffect(() => {
-    getFavorites().then(res => {
-      setFavorites(new Set(res))
-    })
+    getFavorites()
+      .then(res => {
+        setOffline(false);
+        setFavorites(new Set(res))
+      })
+      .catch((error) => {
+        setOffline(isNetworkError(error));
+      });
   }, [])
 
   const grouped = useMemo(() => groupLemmas(favorites), [favorites]);
@@ -113,6 +121,21 @@ export default function Lemmas(){
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
 
         <h2 className="top-0 pt-8 md:pt-12 z-30">{t("My Lemmas")}</h2>
+
+        {offline && grouped.length === 0 ? (
+          <OfflineState
+            onRetry={() => {
+              void getFavorites()
+                .then((res) => {
+                  setOffline(false);
+                  setFavorites(new Set(res));
+                })
+                .catch((error) => {
+                  setOffline(isNetworkError(error));
+                });
+            }}
+          />
+        ) : null}
         
         <div className="overflow-y-scroll flex flex-wrap content-start gap-x-1 gap-y-7 pb-18 pt-7">
           {grouped.map(([letter, items]) => (

@@ -1,9 +1,0 @@
-{
-  "id": "torch",
-  "consumers": [
-    "de",
-    "en",
-    "ja",
-    "mk"
-  ]
-}

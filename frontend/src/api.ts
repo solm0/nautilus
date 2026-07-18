@@ -1,6 +1,18 @@
 import type { TimelineItem } from "./components/setting/Mutuals";
 import type { PageSource, TextAnalysisResult, Token } from "./components/pageTypes"
 import type { User } from "./types";
+import {
+  clearStoredSession,
+  getOfflineSessionUser,
+  getStoredToken,
+  hasStoredSession,
+  isTokenExpired,
+  storeVerifiedSession,
+} from "./authSession";
+import {
+  readPackCatalogSnapshot,
+  writePackCatalogSnapshot,
+} from "./packCatalogSnapshot";
 import { getAppPlatform, isCapacitorApp } from "./platform";
 import {
   disableMobileLanguage,
@@ -182,7 +194,7 @@ export function parseApiErrorDetail(detail: ApiErrorDetail): {
 }
 
 export function authHeaders() {
-  const token = localStorage.getItem("token")
+  const token = getStoredToken();
   if (!token) return null
 
   return {
@@ -192,17 +204,43 @@ export function authHeaders() {
 }
 
 export async function verifyToken() {
-  const headers = authHeaders()
-  if (!headers) return false
+  const token = getStoredToken();
 
-  const res = await fetch(CENTRAL_API+"/me", {
-    headers
-  })
+  if (!token) {
+    return null;
+  }
 
-  if (!res.ok) return null
+  if (isTokenExpired(token)) {
+    clearStoredSession();
+    return null;
+  }
 
-  const data = await res.json()
-  return data   // { id, email }
+  const headers = authHeaders();
+
+  if (!headers) {
+    return null;
+  }
+
+  try {
+    const res = await fetch(CENTRAL_API + "/me", {
+      headers,
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        clearStoredSession();
+        return null;
+      }
+
+      return hasStoredSession() ? getOfflineSessionUser() : null;
+    }
+
+    const data = await res.json() as User;
+    storeVerifiedSession(token, data);
+    return data;
+  } catch {
+    return getOfflineSessionUser();
+  }
 }
 
 export async function updateName(name: string) {
@@ -882,16 +920,33 @@ export async function fetchMyComments(cursor?: any) {
 
 // packs 목록
 export async function getPacks() {
-  return fetch(`${CENTRAL_API}/lang/packs`).then(r => r.json());
+  const res = await fetch(`${CENTRAL_API}/lang/packs`);
+
+  if (!res.ok) {
+    throw new Error("pack fetch failed");
+  }
+
+  const data = await res.json();
+
+  if (Array.isArray(data)) {
+    writePackCatalogSnapshot(data);
+    return data;
+  }
+
+  return [];
 }
 
 // 설치 상태
 export async function getInstalled() {
   if (isCapacitorApp()) {
-    const [packs, enabledLangs] = await Promise.all([
-      getPacks(),
-      getEnabledMobileLanguages(),
-    ]);
+    const enabledLangs = await getEnabledMobileLanguages();
+    let packs = readPackCatalogSnapshot();
+
+    try {
+      packs = await getPacks();
+    } catch {
+      // Fallback to the last known pack catalog so mobile can keep showing enabled languages offline.
+    }
 
     const latestByLang = new Map<string, any>();
 

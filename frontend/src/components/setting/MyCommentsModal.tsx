@@ -9,7 +9,7 @@ import { useI18n } from "../../i18n";
 export default function MyCommentsModal() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const { items, load, hasMore, loading } = useMyComments();
+  const { items, load, hasMore, loading, offline } = useMyComments();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
@@ -29,14 +29,14 @@ export default function MyCommentsModal() {
     if (!sentinelRef.current) return;
 
     const obs = new IntersectionObserver(e => {
-      if (e[0].isIntersecting && hasMore && !loading) {
-        load();
+      if (e[0].isIntersecting && hasMore && !loading && !offline) {
+        void load();
       }
     });
 
     obs.observe(sentinelRef.current);
     return () => obs.disconnect();
-  }, [load, hasMore, loading]);
+  }, [hasMore, load, loading, offline]);
 
   return (
     <>
@@ -45,8 +45,15 @@ export default function MyCommentsModal() {
       <ResponsiveModal open={open} onClose={() => setOpen(false)} big>
         <div className="flex flex-col gap-7 overflow-hidden">
           <h2>{t("My Comments")}</h2>
+
+          {offline ? (
+            <p className="text-sm text-neutral-500">
+              {t("You're offline. Check your connection and try again.")}
+            </p>
+          ) : null}
           
-          <div className="flex flex-col overflow-y-auto">
+          {!offline ? (
+            <div className="flex flex-col overflow-y-auto">
             {dedupedItems.map(c => (
               <div
                 key={`${c.id}-${c.annotation_id}`}
@@ -65,11 +72,12 @@ export default function MyCommentsModal() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          ) : null}
 
-          <div ref={sentinelRef} className="h-10" />
+          {!offline ? <div ref={sentinelRef} className="h-10" /> : null}
 
-          {loading && <p className="opacity-50 w-full text-center text-sm">{t("Loading...")}</p>}
+          {!offline && loading ? <p className="opacity-50 w-full text-center text-sm">{t("Loading...")}</p> : null}
           {/* {!hasMore && <p className="opacity-50 w-full text-center text-sm">{t("End of the list")}</p>} */}
         </div>
       </ResponsiveModal>

@@ -4,7 +4,7 @@ import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useState } from "react";
-import { CENTRAL_API } from "../../api";
+import { authHeaders, CENTRAL_API } from "../../api";
 import { isCapacitorApp } from "../../platform";
 import { useI18n } from "../../i18n";
 
@@ -68,14 +68,15 @@ export function Toolbar({
   const createNotebook = async (name: string) => {
     if (!name.trim()) return;
 
-    const token = localStorage.getItem("token");
+    const headers = authHeaders();
+
+    if (!headers) {
+      return;
+    }
 
     await fetch(CENTRAL_API + "/notebooks", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify({ name })
     });
 

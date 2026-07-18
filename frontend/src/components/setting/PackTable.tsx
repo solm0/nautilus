@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon, Trash2 } from "lucide-react";
 import { getInstalled, getPacks, installPack, uninstallPack } from "../../api";
+import { isNetworkError } from "../../network";
+import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
 import PackModal from "./PackModal";
 import type { InstalledPack } from "../util/LanguageSelect";
 import Button from "../util/Button";
@@ -69,6 +71,8 @@ export default function PackTable() {
   const mobileApp = isCapacitorApp();
   const [packs, setPacks] = useState<Pack[]>([]);
   const [installed, setInstalled] = useState<InstalledPack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedInstall, setSelectedInstall] = useState<SelectedInstall | null>(null);
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
@@ -78,20 +82,64 @@ export default function PackTable() {
     shouldIgnoreClick: boolean;
   } | null>(null);
 
-  async function refreshInstalled() {
-    const data = await getInstalled();
-    invalidateInstalledLanguagesCache();
-    setInstalled(data);
+  function buildOfflinePacks(installedPacks: InstalledPack[]) {
+    const cached = readPackCatalogSnapshot() as Pack[];
+    const installedKeys = new Set(
+      installedPacks
+        .filter((pack) => pack.lemma_installed || pack.ngram_installed || pack.installed)
+        .map((pack) => `${pack.lang}:${pack.version}`),
+    );
+
+    const cachedInstalled = cached.filter((pack) =>
+      installedKeys.has(`${pack.lang}:${pack.version}`),
+    );
+
+    const missingInstalled = installedPacks
+      .filter((pack) => pack.lemma_installed || pack.ngram_installed || pack.installed)
+      .filter(
+        (pack) =>
+          !cachedInstalled.some(
+            (cachedPack) =>
+              cachedPack.lang === pack.lang && cachedPack.version === pack.version,
+          ),
+      )
+      .map((pack) => ({
+        lang: pack.lang,
+        version: pack.version,
+        lemma_filename: "",
+        ngram_filename: "",
+        lemma_download_url: "",
+        ngram_download_url: "",
+        tag: "",
+        corpus: [{}, {}],
+      }));
+
+    return normalizePacksForTargetRelease([...cachedInstalled, ...missingInstalled]);
   }
 
-  async function refreshPacks() {
-    const data = await getPacks();
-    setPacks(normalizePacksForTargetRelease(data));
+  async function reload() {
+    setLoading(true);
+
+    try {
+      const installedData = await getInstalled();
+      invalidateInstalledLanguagesCache();
+      setInstalled(installedData);
+
+      try {
+        const packsData = await getPacks();
+        setPacks(normalizePacksForTargetRelease(packsData));
+        setOffline(false);
+      } catch (error) {
+        setPacks(buildOfflinePacks(installedData));
+        setOffline(isNetworkError(error));
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    refreshPacks();
-    refreshInstalled();
+    void reload();
   }, []);
 
   function getInstallState(pack: Pack) {
@@ -171,7 +219,7 @@ export default function PackTable() {
         asset_kind: "lemma",
       });
 
-      await refreshInstalled();
+      await reload();
     } catch {
       setErrorMap((prev) => ({
         ...prev,
@@ -194,7 +242,7 @@ export default function PackTable() {
         version: pack.version,
       });
 
-      await refreshInstalled();
+      await reload();
     } catch {
       setErrorMap((prev) => ({
         ...prev,
@@ -293,7 +341,11 @@ export default function PackTable() {
   return (
     <>
       <div className="flex flex-col">
-        {groupsToRender.map(([lang, langPacks]) => {
+        {loading ? (
+          <div className="px-4 py-3 text-sm text-neutral-400">{t("Loading...")}</div>
+        ) : null}
+
+        {!loading && groupsToRender.map(([lang, langPacks]) => {
           const open = expanded[lang];
           const label = t(LANG_MAP[lang] || lang);
           const currentPack = langPacks[0];
@@ -369,7 +421,7 @@ export default function PackTable() {
                                   onClick={() => handleActivate(pack)}
                                   text={t("Activate")}
                                   fit
-                                  disabled={isHiddenVersion}
+                                  disabled={offline || isHiddenVersion}
                                 />
                               )
                             ) : (
@@ -381,11 +433,11 @@ export default function PackTable() {
                                   <button
                                     type="button"
                                     onClick={() => openInstall(pack, "lemma")}
-                                    disabled={isHiddenVersion || state.lemma_installed}
+                                    disabled={offline || isHiddenVersion || state.lemma_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.lemma_installed
                                         ? "bg-green-200 text-green-700/50"
-                                        : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
+                                      : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
                                     {state.lemma_installed ? t("Core installed") : t("Install Core")}
@@ -393,11 +445,11 @@ export default function PackTable() {
                                   <button
                                     type="button"
                                     onClick={() => openInstall(pack, "ngram")}
-                                    disabled={isHiddenVersion || !state.lemma_installed || state.ngram_installed}
+                                    disabled={offline || isHiddenVersion || !state.lemma_installed || state.ngram_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.ngram_installed
                                         ? "bg-neutral-200 text-neutral-700/50"
-                                        : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
+                                      : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
                                     {state.ngram_installed
@@ -433,6 +485,12 @@ export default function PackTable() {
             </div>
           );
         })}
+
+        {!loading && offline ? (
+          <div className="px-4 py-3 text-sm text-neutral-400">
+            {t("Connect to the internet to see installable languages.")}
+          </div>
+        ) : null}
       </div>
 
       {!mobileApp && selectedInstall ? (
@@ -444,8 +502,7 @@ export default function PackTable() {
           assetKind={selectedInstall.assetKind}
           onClose={() => setSelectedInstall(null)}
           onInstalled={async () => {
-            await refreshInstalled();
-            await refreshPacks();
+            await reload();
           }}
         />
       ) : null}
