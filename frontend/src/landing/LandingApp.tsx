@@ -44,6 +44,8 @@ type MutableDesktopVersion = {
 const HF_REPO_ID = "solm0/nautilus-releases";
 const HF_API_TREE_URL = `https://huggingface.co/api/datasets/${HF_REPO_ID}/tree/main/releases?recursive=1&expand=0`;
 const HF_RESOLVE_BASE = `https://huggingface.co/datasets/${HF_REPO_ID}/resolve/main`;
+const CHROME_EXTENSION_URL =
+  "https://chromewebstore.google.com/detail/nautilus/fedaaafnilhpkoknpbkkppicjkalgflk?hl=en-US&utm_source=ext_sidebar";
 
 type HfTreeEntry = {
   path?: string;
@@ -354,6 +356,20 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-neutral-600">Chrome Extension</p>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <a
+                      href={CHROME_EXTENSION_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-sm border border-transparent bg-neutral-900 px-6 py-1.5 text-sm font-medium text-neutral-200 transition-colors hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-900"
+                    >
+                      Chrome Web Store
+                    </a>
                   </div>
                 </div>
               </div>
