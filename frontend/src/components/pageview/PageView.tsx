@@ -131,6 +131,8 @@ export default function PageView() {
   // FETCH PAGE DATA
   useEffect(() => {
     if (!id) return;
+    let active = true;
+    const requestedPageId = Number(id);
 
     const run = async () => {
       if (fetchedRef.current) return;
@@ -141,7 +143,8 @@ export default function PageView() {
       let lang = "";
 
       try {
-        const detail = await fetchPageDetail(Number(id));
+        const detail = await fetchPageDetail(requestedPageId);
+        if (!active) return;
         const resultData: TextAnalysisResult = detail.result;
         lang = detail.language;
 
@@ -150,11 +153,19 @@ export default function PageView() {
         setPageSource(detail.source ?? "user");
         setPageMetadata(Array.isArray(detail.metadata) ? detail.metadata : []);
         setLanguage(lang);
-        setAnnotations(Array.isArray(detail.annotations) ? detail.annotations : []);
+        setAnnotations(
+          Array.isArray(detail.annotations)
+            ? detail.annotations.filter(
+                (annotation) => annotation.page_id === requestedPageId,
+              )
+            : [],
+        );
         setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
         const favorites = await getFavorites();
+        if (!active) return;
         setFavoriteKeys(new Set(favorites));
       } catch (error) {
+        if (!active) return;
         setOffline(isNetworkError(error));
         setLoadingPage(false);
         return;
@@ -169,6 +180,7 @@ export default function PageView() {
       setLoadingPage(false);
 
       const installed = await getInstalled();
+      if (!active) return;
       const pack = installed.find((l: Pack) => l.lang === lang);
 
       if (!pack?.lemma_installed) {
@@ -177,6 +189,10 @@ export default function PageView() {
     };
 
     void run();
+
+    return () => {
+      active = false;
+    };
   }, [id, reloadTick]);
 
   useEffect(() => {

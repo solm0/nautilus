@@ -10,6 +10,7 @@ import { useI18n } from "../../i18n";
 import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
 import OfflineState from "../util/OfflineState";
 import { hasLemmaPackInstalled } from "../util/LanguageSelect";
+import { isCapacitorApp } from "../../platform";
 
 function groupLemmas(favorites: Set<string>) {
   const groups: Record<string, string[]> = {}
@@ -37,6 +38,8 @@ export default function Lemmas(){
   const [currentLang, setCurrentLang] = useState<string | null>(null);
   const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const [panelOpenRequest, setPanelOpenRequest] = useState(0);
+  const mobileApp = isCapacitorApp();
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
   useRef<LemmaData | null>(null)
@@ -67,7 +70,7 @@ export default function Lemmas(){
 
   // favorite lemmas 가져오기
   useEffect(() => {
-    void getFavorites()
+    const loadFavorites = () => getFavorites()
       .then((res) => {
         setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
         setFavorites(new Set(res))
@@ -75,7 +78,20 @@ export default function Lemmas(){
       .catch((error) => {
         setOffline(isNetworkError(error));
       });
-  }, [])
+
+    void loadFavorites();
+
+    if (!mobileApp) return;
+
+    const handleOffline = () => setOffline(true);
+    const handleOnline = () => void loadFavorites();
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [mobileApp])
 
   const grouped = useMemo(() => groupLemmas(favorites), [favorites]);
   
@@ -108,6 +124,7 @@ export default function Lemmas(){
     }
 
     setLemmaData(data);
+    setPanelOpenRequest((prev) => prev + 1);
   }
 
   return (
@@ -124,7 +141,7 @@ export default function Lemmas(){
 
         {offline && grouped.length > 0 ? (
           <p className="text-xs text-neutral-400">
-            {t("You're offline.")}
+            {t("You're offline. Check your connection and try again.")}
           </p>
         ) : null}
 
@@ -187,7 +204,8 @@ export default function Lemmas(){
         <ResponsiveSideLayout
           open={!!lemmaData}
           onClose={()=>setLemmaData(null)}
-          restoreKey={lemmaData.key}
+          restoreKey={`${lemmaData.key}:${panelOpenRequest}`}
+          undockOnMount
         >
           <Desk
             key={lemmaData.key}

@@ -12,13 +12,17 @@ export default function Login(){
   const [email,setEmail]=useState("")
   const [password,setPassword]=useState("")
   const [msg,setMsg]=useState("")
+  const [submitting, setSubmitting] = useState(false)
   const { t } = useI18n();
 
   const navigate = useNavigate();
 
   async function submit(){
 
+    if (submitting) return
+
     if (email.trim() && password.trim()) {
+      setSubmitting(true)
       try {
         const res=await login(email,password)
     
@@ -35,6 +39,8 @@ export default function Login(){
             ? t("You're offline. Check your connection and try again.")
             : t("error"),
         )
+      } finally {
+        setSubmitting(false)
       }
     } else {
       setMsg("enter your email and password.")
@@ -51,6 +57,7 @@ export default function Login(){
           onChange={e=>setEmail(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
           autoFocus
+          autoCapitalize="none"
         />
         <input
           type="password"
@@ -58,11 +65,12 @@ export default function Login(){
           value={password}
           onChange={e=>setPassword(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
+          autoCapitalize="none"
         />
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text={t("Login")} onClick={submit} fit />
+          <Button text={submitting ? "..." : t("Login")} onClick={submit} disabled={submitting} fit />
         </div>
       </div>
 

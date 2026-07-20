@@ -85,6 +85,7 @@ export default function AnnotationNew({
             defaultOn={true}
             pageLanguage={pageLanguage}
             background
+            placeNgramInstallInEditor
           />
         ) : (
           <div className="flex flex-col gap-1">

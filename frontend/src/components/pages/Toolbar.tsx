@@ -49,8 +49,10 @@ function CreateNotebookContent({
 
 export function Toolbar({
   reload,
+  disabled = false,
 }: {
   reload: () => Promise<void>;
+  disabled?: boolean;
 }) {
   const mobileApp = isCapacitorApp();
   const { t } = useI18n();
@@ -96,11 +98,17 @@ export function Toolbar({
 
   return (
     <>
-      <div className={`flex ${mobileApp ? 'gap-2': 'gap-1'}`}>
+      <div
+        className={`flex ${mobileApp ? 'gap-2': 'gap-1'} ${
+          disabled ? "pointer-events-none opacity-50 [&_button]:opacity-100" : ""
+        }`}
+        aria-disabled={disabled}
+      >
         <IconButtonEvent
           icon={<FolderPlus size={mobileApp ? 16 : 14} />}
           onClick={() => setOpenFolderModal(true)}
           title={t("Create Notebook")}
+          disabled={disabled}
         />
 
         {/* Page */}
@@ -112,6 +120,7 @@ export function Toolbar({
               setOpenFilePopup((v) => !v);
             }}
             title={t("Create Page")}
+            disabled={disabled}
           />
           <MiniPopup
             open={openFilePopup}

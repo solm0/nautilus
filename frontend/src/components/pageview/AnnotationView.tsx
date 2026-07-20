@@ -163,6 +163,7 @@ export default function AnnotationView({
                 defaultOn={true}
                 pageLanguage={pageLanguage}
                 background
+                placeNgramInstallInEditor
               />
             ) : (
               <input

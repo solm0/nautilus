@@ -10,10 +10,14 @@ export default function ResetRequest(){
 
   const [email,setEmail]=useState("")
   const [msg,setMsg]=useState("")
+  const [submitting, setSubmitting] = useState(false)
   const { t } = useI18n();
 
   async function submit(){
+    if (submitting) return
+
     if (email.trim()) {
+      setSubmitting(true)
       try {
         const res=await requestReset(email);
 
@@ -26,6 +30,8 @@ export default function ResetRequest(){
             ? t("You're offline. Check your connection and try again.")
             : t("error"),
         )
+      } finally {
+        setSubmitting(false)
       }
     } else {
       setMsg("enter your email.")
@@ -42,11 +48,12 @@ export default function ResetRequest(){
           onChange={e=>setEmail(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
           autoFocus
+          autoCapitalize="none"
         />
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text={t("Request reset")} onClick={submit} fit />
+          <Button text={submitting ? "..." : t("Request reset")} onClick={submit} disabled={submitting} fit />
         </div>
       </div>
 
