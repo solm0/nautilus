@@ -188,7 +188,13 @@ async function loadReleaseCatalog() {
   return buildReleaseCatalogFromHfTree(tree);
 }
 
-function LandingApp({ privacyHref }: { privacyHref: string }) {
+function LandingApp({
+  chromePrivacyHref,
+  androidPrivacyHref,
+}: {
+  chromePrivacyHref: string;
+  androidPrivacyHref: string;
+}) {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<SidePanelState>(null);
@@ -282,18 +288,26 @@ function LandingApp({ privacyHref }: { privacyHref: string }) {
           <div className="w-46">
             <Logotype className="fill-nt-blue stroke-0"/>
           </div>
-          <Link
-            to={privacyHref}
-            className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
-          >
-            개인정보처리방침
-          </Link>
+          <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1">
+            <Link
+              to={androidPrivacyHref}
+              className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+            >
+              Android 개인정보처리방침
+            </Link>
+            <Link
+              to={chromePrivacyHref}
+              className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+            >
+              Chrome 개인정보처리방침
+            </Link>
+          </nav>
         </header>
 
         <div className="flex flex-col gap-21 h-auto overflow-y-scroll no-scrollbar pb-21">
 
           {/* 개요, 설치 */}
-          <section className="min-h-180 pt-21 flex flex-col gap-14">
+          <section className="min-h-180 shrink-0 pt-21 pb-21 flex flex-col gap-14">
             <h1 className="font-source max-w-[14em] text-[2.6rem] leading-[1.2] tracking-[-0.02em] text-neutral-900 md:text-5xl ">
               You don’t have to wait until everything is perfect.
               <br/>Just dive into text and enjoy it.

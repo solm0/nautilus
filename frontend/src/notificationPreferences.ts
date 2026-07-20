@@ -7,6 +7,7 @@ const PROMPT_SEEN_KEY = "nautilus_notification_prompt_seen";
 type AndroidNotificationPlugin = {
   getNotificationPermissionStatus(): Promise<NotificationPermissionStatus>;
   openNotificationSettings(): Promise<void>;
+  setNowPlayingNotificationsEnabled(options: { enabled: boolean }): Promise<void>;
 };
 
 const AndroidNowPlaying = registerPlugin<AndroidNotificationPlugin>("NowPlaying");
@@ -49,5 +50,15 @@ export async function openAppNotificationSettings() {
     await AndroidNowPlaying.openNotificationSettings();
   } catch (error) {
     console.error("[notifications][android] openNotificationSettings failed:", error);
+  }
+}
+
+export async function setNowPlayingNotificationsEnabled(enabled: boolean) {
+  if (!isCapacitorApp()) return;
+
+  try {
+    await AndroidNowPlaying.setNowPlayingNotificationsEnabled({ enabled });
+  } catch (error) {
+    console.error("[notifications][android] setNowPlayingNotificationsEnabled failed:", error);
   }
 }

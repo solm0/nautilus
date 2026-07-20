@@ -24,6 +24,8 @@ import java.util.Map;
 public class NowPlayingNotificationListener extends NotificationListenerService {
     private static final String CHANNEL_ID = "now_playing_detected";
     private static final int NOTIFICATION_ID = 42042;
+    private static final String PREFERENCES_NAME = "nautilus_now_playing";
+    private static final String NOTIFICATIONS_ENABLED_KEY = "notifications_enabled";
 
     private final Map<String, MediaController.Callback> callbacks = new HashMap<>();
     private MediaSessionManager mediaSessionManager;
@@ -165,6 +167,11 @@ public class NowPlayingNotificationListener extends NotificationListenerService 
 
     private void maybeNotifyForCurrentTrack() {
         if (MainActivity.isAppInForeground()) {
+            return;
+        }
+
+        if (!getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE)
+                .getBoolean(NOTIFICATIONS_ENABLED_KEY, true)) {
             return;
         }
 
