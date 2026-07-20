@@ -58,6 +58,23 @@ type ExtensionResponse = {
   text: string;
 };
 
+type ErrorPayload = {
+  code: string | null;
+  message: string | null;
+};
+
+export class ExtensionRequestError extends Error {
+  status: number;
+  code: string | null;
+
+  constructor(status: number, payload: ErrorPayload) {
+    super(payload.message || "request failed");
+    this.name = "ExtensionRequestError";
+    this.status = status;
+    this.code = payload.code;
+  }
+}
+
 export type InstalledPack = {
   lang: string;
   version: string;
@@ -93,9 +110,50 @@ async function probeSpecificLocalApi(localApi: string) {
   return result.ok;
 }
 
+function parseErrorPayload(text: string): ErrorPayload {
+  if (!text) return { code: null, message: null };
+
+  try {
+    const body = JSON.parse(text) as {
+      detail?:
+        | string
+        | { code?: string; message?: string }
+        | Array<{ msg?: string }>;
+      code?: string;
+      message?: string;
+    };
+    const detail = body.detail;
+
+    if (typeof detail === "string") {
+      return { code: body.code ?? null, message: detail };
+    }
+
+    if (Array.isArray(detail)) {
+      return {
+        code: body.code ?? null,
+        message: detail.find((item) => item.msg)?.msg ?? null,
+      };
+    }
+
+    if (detail && typeof detail === "object") {
+      return {
+        code: detail.code ?? body.code ?? null,
+        message: detail.message ?? body.message ?? null,
+      };
+    }
+
+    return {
+      code: body.code ?? null,
+      message: body.message ?? null,
+    };
+  } catch {
+    return { code: null, message: text };
+  }
+}
+
 async function parseResponse<T>(response: ExtensionResponse) {
   if (!response.ok) {
-    throw new Error(response.text || `request failed (${response.status})`);
+    throw new ExtensionRequestError(response.status, parseErrorPayload(response.text));
   }
 
   if (!response.text) {

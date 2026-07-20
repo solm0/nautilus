@@ -247,7 +247,11 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           onChange={(e) => onChange(e.target.value)}
           className="w-full h-full resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
           spellCheck={false}
-          placeholder={`${t("Add your thoughts...")}${language?.lang ? ` in ${LANG_MAP[language?.lang]}.` : ""}`}
+          placeholder={language?.lang
+            ? t("Add your thoughts in {language}...", {
+                language: t(LANG_MAP[language.lang] ?? language.lang),
+              })
+            : t("Add your thoughts...")}
         />
       ) : placeNgramInstallInEditor ? (
         <div

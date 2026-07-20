@@ -7,6 +7,7 @@ import type { TextAnalysisResult, TextBlock } from "../src/components/pageTypes"
 import {
   analyzeTextBlocks,
   EXTENSION_DEEPLINK_BASE,
+  ExtensionRequestError,
   enrichBlocksWithIpa,
   getInstalledLanguages,
   isAuthenticated,
@@ -60,6 +61,10 @@ type InstalledLanguageOption = {
 function isAuthTokenError(error: unknown) {
   if (!(error instanceof Error)) return false;
 
+  if (error instanceof ExtensionRequestError && error.status === 401) {
+    return true;
+  }
+
   const message = error.message.toLowerCase();
   return (
     message.includes("invalid token") ||
@@ -71,7 +76,106 @@ function isAuthTokenError(error: unknown) {
 
 function isMethodNotAllowedError(error: unknown) {
   if (!(error instanceof Error)) return false;
+  if (error instanceof ExtensionRequestError && error.status === 405) return true;
   return error.message.toLowerCase().includes("method not allowed");
+}
+
+function isConnectionError(error: unknown) {
+  if (error instanceof ExtensionRequestError && error.status === 0) return true;
+  if (!(error instanceof Error)) return false;
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    message.includes("request failed") ||
+    message.includes("local api unavailable")
+  );
+}
+
+function isExtensionReloadError(error: unknown) {
+  return error instanceof Error && error.message.includes("Extension context invalidated");
+}
+
+function loginErrorMessage(error: unknown) {
+  if (isExtensionReloadError(error)) {
+    return "The extension was updated. Refresh this page and try again.";
+  }
+  if (isConnectionError(error)) {
+    return "Couldn’t connect. Check your connection and try again.";
+  }
+  if (error instanceof ExtensionRequestError) {
+    if (error.code === "invalid_credentials") {
+      return "The email or password is incorrect.";
+    }
+    if (error.code === "email_not_verified") {
+      return "Verify your email before logging in.";
+    }
+    if (error.status === 422) {
+      return "Enter a valid email address.";
+    }
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  if (message.includes("invalid credentials")) {
+    return "The email or password is incorrect.";
+  }
+  if (message.includes("email not verified")) {
+    return "Verify your email before logging in.";
+  }
+  return "Couldn’t log in. Please try again.";
+}
+
+function signupErrorMessage(error: unknown) {
+  if (isExtensionReloadError(error)) {
+    return "The extension was updated. Refresh this page and try again.";
+  }
+  if (isConnectionError(error)) {
+    return "Couldn’t connect. Check your connection and try again.";
+  }
+  if (error instanceof ExtensionRequestError) {
+    if (error.code === "email_already_registered") {
+      return "An account with this email already exists.";
+    }
+    if (error.status === 422) {
+      return "Check your name, email, and password.";
+    }
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  if (message.includes("email already registered")) {
+    return "An account with this email already exists.";
+  }
+  return "Couldn’t create your account. Please try again.";
+}
+
+function saveErrorMessage(error: unknown) {
+  if (isExtensionReloadError(error)) {
+    return "The extension was updated. Refresh this page and try again.";
+  }
+  if (isConnectionError(error)) {
+    return "Couldn’t save. Check your connection and try again.";
+  }
+  if (error instanceof ExtensionRequestError) {
+    if (error.status === 413) {
+      return "There’s too much text to save at once. Select less text and try again.";
+    }
+    if (error.status === 400 || error.status === 422) {
+      return "Check the selected text and try again.";
+    }
+  }
+  return "Couldn’t save this page. Please try again.";
+}
+
+function logoutErrorMessage(error: unknown) {
+  if (isExtensionReloadError(error)) {
+    return "The extension was updated. Refresh this page and try again.";
+  }
+  return "Couldn’t log out. Please try again.";
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function normalizeTextPreservingBreaks(text: string) {
@@ -328,7 +432,18 @@ function AuthModal({
             </button>
           </div>
         ) : (
-          <>
+          <form
+            style={authFormStyle}
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (mode === "login") {
+                void onLogin(email, password);
+              } else {
+                void onSignup(name, email, password);
+              }
+            }}
+          >
             <div style={modalSectionStyle}>
               <p style={modalParagraphStyle}>
                 {mode === "login"
@@ -365,8 +480,7 @@ function AuthModal({
             <div style={buttonRowStyle}>
               {mode === "login" ? (
                 <button
-                  type="button"
-                  onClick={() => void onLogin(email, password)}
+                  type="submit"
                   style={primaryButtonStyle}
                   disabled={busy}
                 >
@@ -374,8 +488,7 @@ function AuthModal({
                 </button>
               ) : (
                 <button
-                  type="button"
-                  onClick={() => void onSignup(name, email, password)}
+                  type="submit"
                   style={primaryButtonStyle}
                   disabled={busy}
                 >
@@ -392,7 +505,7 @@ function AuthModal({
                 {mode === "login" ? "Create account" : "Back to login"}
               </button>
             </div>
-          </>
+          </form>
         )}
       </div>
     </div>
@@ -879,7 +992,7 @@ function OverlayApp() {
         return;
       }
 
-      setMessage(error instanceof Error ? error.message : "Save failed");
+      setMessage(saveErrorMessage(error));
     } finally {
       setSaveBusy(false);
     }
@@ -888,6 +1001,10 @@ function OverlayApp() {
   const handleLogin = async (email: string, password: string) => {
     if (!email.trim() || !password.trim()) {
       setAuthMessage("Enter your email and password.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setAuthMessage("Enter a valid email address.");
       return;
     }
 
@@ -903,7 +1020,7 @@ function OverlayApp() {
         await runSaveFlow(true);
       }
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Login failed");
+      setAuthMessage(loginErrorMessage(error));
     } finally {
       setAuthBusy(false);
     }
@@ -914,15 +1031,19 @@ function OverlayApp() {
       setAuthMessage("Enter your name, email, and password.");
       return;
     }
+    if (!isValidEmail(email)) {
+      setAuthMessage("Enter a valid email address.");
+      return;
+    }
 
     setAuthBusy(true);
     setAuthMessage(null);
     try {
       await signupWithPassword(name, email, password);
       setAuthMode("login");
-      setAuthMessage("Account created. Now log in.");
+      setAuthMessage("Account created. Verify your email, then log in.");
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Sign up failed");
+      setAuthMessage(signupErrorMessage(error));
     } finally {
       setAuthBusy(false);
     }
@@ -937,7 +1058,7 @@ function OverlayApp() {
       setAuthOpen(false);
       pendingAuthIntentRef.current = null;
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Logout failed");
+      setAuthMessage(logoutErrorMessage(error));
     } finally {
       setAuthBusy(false);
     }
@@ -1188,7 +1309,10 @@ function OverlayApp() {
             setAuthMessage(null);
             pendingAuthIntentRef.current = null;
           }}
-          onModeChange={setAuthMode}
+          onModeChange={(mode) => {
+            setAuthMode(mode);
+            setAuthMessage(null);
+          }}
           onLogin={handleLogin}
           onLogout={handleLogout}
           onSignup={handleSignup}
@@ -1520,6 +1644,12 @@ const modalSectionStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: "10px",
+};
+
+const authFormStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "14px",
 };
 
 const modalParagraphStyle: CSSProperties = {

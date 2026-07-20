@@ -93,7 +93,7 @@ export default function MoveModal({
           }
           className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
         >
-          <option value="">{t("root (folder option)")}</option>
+          <option value="">{t("root")}</option>
           {notebookOptions.map((notebook) => (
             <option key={notebook.id} value={notebook.id}>
               {notebook.name}

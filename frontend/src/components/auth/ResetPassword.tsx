@@ -46,7 +46,7 @@ export default function ResetPassword(){
       <div className="flex flex-col items-start gap-4 w-full text-lg">
         <input
           type="password"
-          placeholder="password"
+          placeholder={t("password")}
           value={pw}
           onChange={e=>setPw(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"

@@ -144,23 +144,23 @@ export default function PackModal({
             try {
               await onInstalled();
             } catch {
-              setError("Installed, but failed to refresh the language list.");
+              setError(t("Installed, but failed to refresh the language list."));
             }
           }
 
           if (nextStatus === "error") {
             stopPolling();
-            setError(p.error || "Installation failed.");
+            setError(t(p.error || "Installation failed."));
           }
         } catch {
           stopPolling();
           setStatus("error");
-          setError("Failed to fetch install progress.");
+          setError(t("Failed to fetch install progress."));
         }
       }, 500);
     } catch {
       setStatus("error");
-      setError("Failed to start installation.");
+      setError(t("Failed to start installation."));
     }
   }
 

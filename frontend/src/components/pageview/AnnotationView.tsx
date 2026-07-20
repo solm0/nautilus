@@ -72,7 +72,7 @@ export default function AnnotationView({
       setOpenModal(false);
       setPanel(null);
     } catch {
-      setMsg("Delete failed");
+      setMsg(t("Delete failed"));
     } finally {
       setLoading(null);
     }
@@ -113,10 +113,10 @@ export default function AnnotationView({
       );
 
       setEditing(false);
-      setMsg("Saved");
+      setMsg(t("Saved"));
       setTimeout(()=>setMsg(null),3000);
     } catch {
-      setMsg("Save failed");
+      setMsg(t("Save failed"));
     } finally {
       setLoading(null);
     }
@@ -176,7 +176,7 @@ export default function AnnotationView({
       }
 
       <div className="absolute bottom-2 left-0 px-2 w-full flex flex-col gap-2">
-        {msg && <p className={`text-sm ${msg === 'Invalid URL' && 'text-red-600'}`}>{msg}</p>}
+        {msg && <p className={`text-sm ${msg !== t("Saved") ? "text-red-600" : ""}`}>{msg}</p>}
         {editing &&
           <div className="self-end flex gap-2 w-full">
             <Button

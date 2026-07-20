@@ -5,6 +5,7 @@ import { IconButton } from "../util/Button";
 import { Focus } from "lucide-react";
 import PruneIcon from "../svgs/PruneIcon";
 import PurgeIcon from "../svgs/PurgeIcon";
+import { useI18n } from "../../i18n";
 
 function findInData(node: TreeNode, lemma: string): TreeNode | null {
   if (node.lemma === lemma) return node;
@@ -59,6 +60,7 @@ const Breadcrumb = forwardRef<
   { initialLemmaKey, activeNode, setActiveNode, nodeStatusByLemma = {} },
   ref
 ) {
+  const { t } = useI18n();
   const rootRef = useRef<D3Node | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -543,9 +545,9 @@ const Breadcrumb = forwardRef<
 
       {/* 컨트롤 */}
       <div className={`absolute right-1 bottom-1 h-auto w-auto flex gap-1 text-sm md:text-xs opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400`}>
-        <IconButton icon={<Focus size={16}/>} onClick={handleGotoBase} title="Go to base"/>
-        <IconButton icon={<PruneIcon className="w-3.5 h-3" />} onClick={handlePrune} title="Prune" />
-        <IconButton icon={<PurgeIcon className="w-3.5 h-3" />} onClick={handlePurge} title="Purge"/>
+        <IconButton icon={<Focus size={16}/>} onClick={handleGotoBase} title={t("Go to base")}/>
+        <IconButton icon={<PruneIcon className="w-3.5 h-3" />} onClick={handlePrune} title={t("Prune")} />
+        <IconButton icon={<PurgeIcon className="w-3.5 h-3" />} onClick={handlePurge} title={t("Purge")}/>
       </div>
     </div>
   );

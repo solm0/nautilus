@@ -88,10 +88,10 @@ export default function AnnotationCard({
         comment_count: item.comment_count,
       });
       setEditing(false);
-      setMsg("Saved");
+      setMsg(t("Saved"));
       setTimeout(()=>setMsg(null),3000);
     } catch {
-      setMsg("Save failed");
+      setMsg(t("Save failed"));
     }
   }
 

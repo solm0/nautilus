@@ -180,7 +180,7 @@ export default function CommentItem({
       <div className="pl-7 flex flex-col gap-3 pb-5">
         {!editing ? (
           <div className="pl-9 whitespace-pre-wrap text-sm">
-            {c.deleted ? "[deleted]" : content}
+            {c.deleted ? t("[deleted]") : content}
           </div>
         ) : (
           <div className="flex flex-col gap-1">

@@ -309,7 +309,7 @@ export default function PageCard({
 
       <ActionButton
         icon={<Pencil size={13} />}
-        label="Rename"
+        label={t("Rename")}
         disabled={disableServerActions}
         onClick={() => {
           setEditing(true);
@@ -332,7 +332,7 @@ export default function PageCard({
       {page && onTogglePinned ? (
         <ActionButton
           icon={<Pin size={13} fill={isPinned ? "currentColor" : "transparent"} />}
-          label={isPinned ? t("Unpin") : "Pin"}
+          label={isPinned ? t("Unpin") : t("Pin")}
           disabled={offline}
           onClick={() => {
             onTogglePinned();

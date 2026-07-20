@@ -1,6 +1,7 @@
 import { MoonStar, SunMedium } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { type AppSettings } from "../useSettings";
+import { useI18n } from "../../i18n";
 
 export default function ThemeToggle({
   compact = false,
@@ -8,6 +9,7 @@ export default function ThemeToggle({
   compact?: boolean;
 }) {
   const { theme, switchTheme } = useTheme();
+  const { t } = useI18n();
   const isDark = theme === "dark";
 
   return (
@@ -16,12 +18,12 @@ export default function ThemeToggle({
       onClick={switchTheme}
       aria-label={
         isDark
-          ? "Switch to light mode"
-          : "Switch to dark mode"
+          ? t("Switch to light mode")
+          : t("Switch to dark mode")
       }
       aria-pressed={isDark}
       title={
-        isDark ? "Light mode" : "Dark mode"
+        isDark ? t("Light mode") : t("Dark mode")
       }
       className={
         compact
@@ -67,7 +69,7 @@ export default function ThemeToggle({
         </>
       )}
       <span className="sr-only">
-        {isDark ? "Dark mode on" : "Light mode on"}
+        {isDark ? t("Dark mode on") : t("Light mode on")}
       </span>
     </button>
   );

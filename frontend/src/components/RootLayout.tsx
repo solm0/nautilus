@@ -26,6 +26,7 @@ import {
   markNotificationPromptSeen,
   openAppNotificationSettings,
 } from "../notificationPreferences";
+import { useI18n } from "../i18n";
 
 
 // ======================================
@@ -109,6 +110,7 @@ export function useLayout() {
 // ======================================
 
 export default function RootLayout() {
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const { settings } = useSettings();
@@ -302,8 +304,8 @@ export default function RootLayout() {
               }
               title={
                 pageSidebarOpen
-                  ? "Close sidebar"
-                  : "Open sidebar"
+                  ? t("Close sidebar")
+                  : t("Open sidebar")
               }
             />
           )}
