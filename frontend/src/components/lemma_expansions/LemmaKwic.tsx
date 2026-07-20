@@ -354,7 +354,7 @@ export default function LemmaKwic({
         <IconButton
           icon={<AlignCenterVertical size={16} />}
           onClick={() => rowRefs.current.forEach((r) => r?.setCenter())}
-          title="align center"
+          title={t("Align center")}
         />
       </div>
 

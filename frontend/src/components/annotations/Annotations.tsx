@@ -126,7 +126,7 @@ export default function Annotations() {
             setParams(next);
           }}
         >
-          Mutuals
+          {t("Mutuals")}
         </span>
       </h2>
 

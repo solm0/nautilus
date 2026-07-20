@@ -378,7 +378,7 @@ export default function LyricPage() {
               </p>
             </div>
             <div className="text-xs text-neutral-400">
-              platform: {permission.platform}
+              {t("Platform:")} {permission.platform}
             </div>
           </div>
         )}

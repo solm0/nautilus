@@ -463,7 +463,7 @@ export default function PackTable() {
                                   onClick={() => handleUninstall(pack)}
                                   disabled={shouldDisableRemove}
                                   className="rounded-sm p-2 text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-transparent disabled:hover:text-neutral-600"
-                                  title="Remove Core and Writing Assistant"
+                                  title={t("Remove Core and Writing Assistant")}
                                 >
                                   <Trash2 size={14} />
                                 </button>

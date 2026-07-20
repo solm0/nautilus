@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchArticulation, type ArticulationDetail } from "../../api";
 import type { Token } from "../pageTypes";
 import { AudioWaveform, Pause, Play } from "lucide-react";
+import { useI18n } from "../../i18n";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -1217,6 +1218,7 @@ function ArticulationDiagram({
   visual: typeof DEFAULT_VISUAL;
   animated: boolean;
 }) {
+  const { t } = useI18n();
   const oralAirPaths = [
     "M 262 422 C 258 390 250 352 240 314 C 232 274 198 238 126 244 C 88 248 58 258 32 268",
     "M 262 422 C 264 388 258 346 246 304 C 238 268 208 236 136 240 C 92 242 60 252 26 264",
@@ -1246,7 +1248,7 @@ function ArticulationDiagram({
       <svg
         viewBox={assets.base.viewBox}
         className="w-full h-full object-contain border border-neutral-300 rounded-sm"
-        aria-label={item?.ipa ?? "articulation"}
+        aria-label={item?.ipa ?? t("articulation")}
       >
         {renderAssetShapes(assets.base, "base")}
         {renderAnimatedAsset("jaw", assets.jaw[sourcePoses.jaw], assets.jaw[targetPoses.jaw], morphProgress)}
@@ -1290,13 +1292,17 @@ function ArticulationDiagram({
       </svg>
       {item && itemFeature && (
         <div className="absolute bottom-2 left-5 w-1/2 flex flex-col items-start text-sm">
-          <div className="flex-1 font-semibold">{itemFeature.place ?? itemFeature.backness ?? ""} {itemFeature.manner ?? itemFeature.height ?? ""}</div>
+          <div className="flex-1 font-semibold">
+            {t(itemFeature.place ?? itemFeature.backness ?? "")} {t(itemFeature.manner ?? itemFeature.height ?? "")}
+          </div>
           <div className="flex-1 flex gap-2">
             {itemFeature.kind === "vowel" || Boolean(itemFeature.voiced)
-              ? <div className="flex gap-1 items-center text-red-800">voiced<AudioWaveform size={14} /></div>
-              : <div className="flex gap-1 items-center">voiceless</div>
+              ? <div className="flex gap-1 items-center text-red-800">{t("voiced")}<AudioWaveform size={14} /></div>
+              : <div className="flex gap-1 items-center">{t("voiceless")}</div>
             }
-            <span className="text-blue-400">{itemFeature.secondary_articulations?.join(", ") || ""}</span>
+            <span className="text-blue-400">
+              {itemFeature.secondary_articulations?.map((label) => t(label)).join(", ") || ""}
+            </span>
           </div>
         </div>
       )}
@@ -1311,6 +1317,7 @@ export default function ArticulationPanel({
   language: string;
   tokens: Token[];
 }) {
+  const { t } = useI18n();
   const [items, setItems] = useState<ArticulationDetail[]>([]);
   const [assets, setAssets] = useState<ArticulationAssets | null>(null);
   const [assetsLoading, setAssetsLoading] = useState(true);
@@ -1463,11 +1470,11 @@ export default function ArticulationPanel({
   }, [items, language, tokens]);
 
   if (error || assetsError) {
-    return <div className="p-5 text-sm text-red-600">{error ?? assetsError}</div>;
+    return <div className="p-5 text-sm text-red-600">{t(error ?? assetsError ?? "")}</div>;
   }
 
   if (loading || assetsLoading || !assets) {
-    return <div className="p-5 text-sm text-neutral-500">Loading articulation...</div>;
+    return <div className="p-5 text-sm text-neutral-500">{t("Loading articulation...")}</div>;
   }
 
   return (
