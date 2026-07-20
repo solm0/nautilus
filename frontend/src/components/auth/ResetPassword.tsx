@@ -13,10 +13,14 @@ export default function ResetPassword(){
 
   const [pw,setPw]=useState("")
   const [msg,setMsg]=useState("")
+  const [submitting, setSubmitting] = useState(false)
   const { t } = useI18n();
 
   async function submit(){
+    if (submitting) return
+
     if (pw.trim()) {
+      setSubmitting(true)
       try {
         const res=await resetPassword(token,pw);
 
@@ -29,6 +33,8 @@ export default function ResetPassword(){
             ? t("You're offline. Check your connection and try again.")
             : t("error"),
         )
+      } finally {
+        setSubmitting(false)
       }
     } else {
       setMsg('enter your new password.')
@@ -44,11 +50,12 @@ export default function ResetPassword(){
           value={pw}
           onChange={e=>setPw(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
+          autoCapitalize="none"
         />
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text={t("Change password")} onClick={submit} fit />
+          <Button text={submitting ? "..." : t("Change password")} onClick={submit} disabled={submitting} fit />
         </div>
 
       </div>

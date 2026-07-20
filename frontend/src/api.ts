@@ -28,7 +28,7 @@ import {
   queueOfflineFavoriteToggle,
   queueOfflinePageCreate,
 } from "./offlineData";
-import { getAppPlatform, isCapacitorApp } from "./platform";
+import { getAppPlatform, isCapacitorApp, isElectronApp } from "./platform";
 import {
   disableMobileLanguage,
   enableMobileLanguage,
@@ -219,7 +219,11 @@ export function authHeaders() {
   }
 }
 
-export async function verifyToken() {
+export async function verifyToken({
+  throwOnNetworkError = false,
+}: {
+  throwOnNetworkError?: boolean;
+} = {}) {
   const token = getStoredToken();
 
   if (!token) {
@@ -254,7 +258,10 @@ export async function verifyToken() {
     const data = await res.json() as User;
     storeVerifiedSession(token, data);
     return data;
-  } catch {
+  } catch (error) {
+    if (throwOnNetworkError) {
+      throw error;
+    }
     return getOfflineSessionUser();
   }
 }
@@ -564,14 +571,20 @@ export async function fetchPages () {
     const data = await res.json();
 
     if (!Array.isArray(data)) {
-      return await getOfflinePages();
+      throw new Error("pages response was not an array");
     }
 
-    await cachePagesSnapshot(data);
-    const offlinePages = await getOfflinePages();
-    return offlinePages;
-  } catch {
-    return getOfflinePages();
+    if (isElectronApp()) {
+      await cachePagesSnapshot(data);
+      return getOfflinePages();
+    }
+
+    return data;
+  } catch (error) {
+    if (isElectronApp()) {
+      return getOfflinePages();
+    }
+    throw error;
   }
 };
 
@@ -586,13 +599,18 @@ export async function fetchNotebooks() {
     const data = await res.json();
 
     if (!Array.isArray(data)) {
-      return await getOfflineNotebooks();
+      throw new Error("notebooks response was not an array");
     }
 
-    await cacheNotebooksSnapshot(data);
+    if (isElectronApp()) {
+      await cacheNotebooksSnapshot(data);
+    }
     return data;
-  } catch {
-    return getOfflineNotebooks();
+  } catch (error) {
+    if (isElectronApp()) {
+      return getOfflineNotebooks();
+    }
+    throw error;
   }
 }
 
@@ -751,10 +769,16 @@ export async function getFavorites(): Promise<string[]> {
 
     const data = await res.json()
     const items = data.items as string[];
-    await cacheFavoriteLemmaKeys(items);
-    return getOfflineFavoriteKeys();
-  } catch {
-    return getOfflineFavoriteKeys();
+    if (isElectronApp()) {
+      await cacheFavoriteLemmaKeys(items);
+      return getOfflineFavoriteKeys();
+    }
+    return items;
+  } catch (error) {
+    if (isElectronApp()) {
+      return getOfflineFavoriteKeys();
+    }
+    throw error;
   }
 }
 

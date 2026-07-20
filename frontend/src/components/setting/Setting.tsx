@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   deleteAccount,
   getLatestVersionInfo,
@@ -27,6 +27,8 @@ import {
   type AppNotificationPermissionStatus,
 } from "../../notificationPreferences";
 import { clearStoredSession, updateStoredUser } from "../../authSession";
+import OfflineState from "../util/OfflineState";
+import { isNetworkError } from "../../network";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -152,6 +154,7 @@ export function UserIcon({user}: {user?: User | null}) {
 
 export function UserProfile() {
   const { t } = useI18n();
+  const mobileApp = isCapacitorApp();
   const [editing, setEditing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [value, setValue] = useState("");
@@ -160,32 +163,49 @@ export function UserProfile() {
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [offline, setOffline] = useState(
-    typeof navigator !== "undefined" ? !navigator.onLine : false,
+    mobileApp && typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    verifyToken().then(setUser);
-  }, []);
 
-  useEffect(() => {
-    if (user?.name) {
-      setValue(user.name);
+  const loadProfile = useCallback(async () => {
+    if (mobileApp && typeof navigator !== "undefined" && !navigator.onLine) {
+      setOffline(true);
+      return;
     }
-  }, [user]);
+
+    try {
+      const nextUser = await verifyToken({ throwOnNetworkError: mobileApp });
+      setUser(nextUser);
+      if (nextUser?.name) {
+        setValue(nextUser.name);
+      }
+      setOffline(false);
+    } catch (error) {
+      if (mobileApp && isNetworkError(error)) {
+        setOffline(true);
+      }
+    }
+  }, [mobileApp]);
 
   useEffect(() => {
-    const handleOnline = () => setOffline(false);
+    const initialLoadTimer = window.setTimeout(() => void loadProfile(), 0);
+
+    if (!mobileApp) {
+      return () => window.clearTimeout(initialLoadTimer);
+    }
+
+    const handleOnline = () => void loadProfile();
     const handleOffline = () => setOffline(true);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
     return () => {
+      window.clearTimeout(initialLoadTimer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [loadProfile, mobileApp]);
 
   async function handleSave() {
     await updateName(value);
@@ -224,6 +244,12 @@ export function UserProfile() {
 
   return (
     <>
+      {mobileApp && offline ? (
+        <OfflineState
+          onRetry={() => void loadProfile()}
+        />
+      ) : (
+      <>
       <div className="flex flex-col gap-7 mb-14 items-start">
         <div className="flex flex-col gap-2 items-start">
           <div className="w-full flex items-center gap-3">
@@ -316,6 +342,8 @@ export function UserProfile() {
           </>
         </div>
       </ResponsiveModal>
+      </>
+      )}
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { getInstalled, getPacks } from "../../api";
 import { isNetworkError } from "../../network";
 import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
@@ -89,6 +90,8 @@ export default function LanguageSelect({
   allowUnselected = false,
   requireNgram = false,
   onNgramInstalled,
+  onNgramAvailabilityChange,
+  ngramInstallPromptTarget,
 }: {
   language: string | null;
   setLanguage: (l: { lang: string } | null) => void;
@@ -99,6 +102,8 @@ export default function LanguageSelect({
   allowUnselected?: boolean;
   requireNgram?: boolean;
   onNgramInstalled?: (lang: string) => void;
+  onNgramAvailabilityChange?: (available: boolean) => void;
+  ngramInstallPromptTarget?: HTMLElement | null;
 }) {
   const mobileApp = isCapacitorApp();
   const { t } = useI18n();
@@ -190,6 +195,12 @@ export default function LanguageSelect({
   }, [allowUnselected, language, languages, setLanguage]);
 
   function handleLanguageChange(langObj: { lang: string }) {
+    onNgramAvailabilityChange?.(
+      Boolean(
+        installedPacks.find((pack) => pack.lang === langObj.lang)
+          ?.ngram_installed,
+      ),
+    );
     setLanguage(langObj);
     if (handleReset) handleReset();
   }
@@ -212,6 +223,24 @@ export default function LanguageSelect({
       !selectedState?.ngram_installed &&
       selectedPack,
   );
+
+  const ngramAvailable = Boolean(selectedState?.ngram_installed);
+
+  useEffect(() => {
+    if (!requireNgram) return;
+    onNgramAvailabilityChange?.(ngramAvailable);
+  }, [ngramAvailable, onNgramAvailabilityChange, requireNgram]);
+
+  const ngramInstallPrompt = shouldPromptNgramInstall && selectedPack ? (
+    <button
+      type="button"
+      onClick={() => setInstallingPack(selectedPack)}
+      disabled={offline}
+      className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-40"
+    >
+      {t("Install Writing Assistant")} {selectedPack.lang}
+    </button>
+  ) : null;
 
   return (
     <>
@@ -243,17 +272,12 @@ export default function LanguageSelect({
           ))}
         </div>
 
-        {shouldPromptNgramInstall && selectedPack ? (
-          <button
-            type="button"
-            onClick={() => setInstallingPack(selectedPack)}
-            disabled={offline}
-            className="rounded-sm border border-neutral-300 bg-neutral-100 px-3 py-2 text-left text-xs text-neutral-600 transition-colors hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-40"
-          >
-            {t("Install Writing Assistant")} {selectedPack.lang}
-          </button>
-        ) : null}
+        {ngramInstallPromptTarget === undefined ? ngramInstallPrompt : null}
       </div>
+
+      {ngramInstallPromptTarget && ngramInstallPrompt
+        ? createPortal(ngramInstallPrompt, ngramInstallPromptTarget)
+        : null}
 
       {installingPack ? (
         <PackModal
@@ -267,6 +291,7 @@ export default function LanguageSelect({
             invalidateInstalledLanguagesCache();
             const packs = await loadInstalledPacks();
             setInstalledPacks(packs);
+            onNgramAvailabilityChange?.(true);
             onNgramInstalled?.(installingPack.lang);
           }}
         />

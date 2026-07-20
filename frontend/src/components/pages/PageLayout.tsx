@@ -24,6 +24,7 @@ import {
   deletePendingPage,
   OFFLINE_SYNC_EVENT,
 } from "../../offlineData";
+import { isCapacitorApp } from "../../platform";
 
 const PINNED_STORAGE_KEY = "pages.sidebar.pinned";
 const LONG_PRESS_MS = 420;
@@ -134,6 +135,7 @@ export default function PageLayout() {
   const { id } = useParams();
   const location = useLocation();
   const currentPageId = id ? Number(id) : null;
+  const mobileApp = isCapacitorApp();
 
   const { pageSidebarOpen, setPageSidebarOpen } = useLayout();
 
@@ -207,6 +209,20 @@ export default function PageLayout() {
   useEffect(() => {
     reload();
   }, []);
+
+  useEffect(() => {
+    if (!mobileApp) return;
+
+    const handleOffline = () => setOffline(true);
+    const handleOnline = () => void reload();
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [mobileApp]);
 
   useEffect(() => {
     const handleOfflineSync = (event: Event) => {
@@ -1036,10 +1052,16 @@ export default function PageLayout() {
     <div className="flex h-full flex-col">
       <div className="w-full justify-between flex z-30 px-2 items-center h-8">
         <p className="text-xs opacity-60">{t("Pages")}</p>
-        <Toolbar reload={reload} />
+        <Toolbar reload={reload} disabled={mobileApp && offline} />
       </div>
 
       {searchBar}
+
+      {mobileApp && offline && hasLoadedOnceRef.current ? (
+        <p className="px-2 pb-2 text-xs text-neutral-400">
+          {t("You're offline. Check your connection and try again.")}
+        </p>
+      ) : null}
 
       {!isSearching && pinnedPages.length > 0 ? (
         <div className="pl-2 mr-2 py-2 mb-1 border-b border-neutral-400/50">

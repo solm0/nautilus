@@ -11,10 +11,14 @@ export default function Signup(){
   const [email,setEmail]=useState("")
   const [password,setPassword]=useState("")
   const [msg,setMsg]=useState("")
+  const [submitting, setSubmitting] = useState(false)
   const { t } = useI18n();
 
   async function submit(){
+    if (submitting) return
+
     if (name.trim() && email.trim() && password.trim()) {
+      setSubmitting(true)
       try {
         const res=await signup(email,password,name);
 
@@ -27,6 +31,8 @@ export default function Signup(){
             ? t("You're offline. Check your connection and try again.")
             : t("error"),
         )
+      } finally {
+        setSubmitting(false)
       }
     } else {
       setMsg("enter your name, email, and password.")
@@ -43,6 +49,7 @@ export default function Signup(){
           onChange={e => setName(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
           autoFocus
+          autoCapitalize="none"
         />
 
         <input
@@ -51,6 +58,7 @@ export default function Signup(){
           value={email}
           onChange={e=>setEmail(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-80 transition-opacity"
+          autoCapitalize="none"
         />
 
         <input
@@ -59,11 +67,12 @@ export default function Signup(){
           value={password}
           onChange={e=>setPassword(e.target.value)}
           className="w-full border-2 border-neutral-50 text-neutral-50 rounded-sm px-3 py-2 focus:outline-none opacity-30 focus:opacity-50 transition-opacity"
+          autoCapitalize="none"
         />
 
         <div className="flex flex-col gap-2 w-full">
           <SystemMessage msg={msg} />
-          <Button text={t("Sign up")} onClick={submit} fit />
+          <Button text={submitting ? "..." : t("Sign up")} onClick={submit} disabled={submitting} fit />
         </div>
       </div>
 

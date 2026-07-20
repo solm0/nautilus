@@ -718,7 +718,7 @@ export default function PageCore({
                       <div className={`flex flex-col ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
                         {item.startsWith('https://')
                           ? (
-                            <a href={item} className="underline underline-offset-3 hover:text-neutral-400 transition-colors max-w-105 truncate" target="_blank">{item}</a>
+                            <a href={item} className="underline underline-offset-3 hover:text-neutral-400 transition-colors max-w-78 truncate" target="_blank">{item}</a>
                           ) : (
                             <span className="select-text" style={{ userSelect: "text", WebkitUserSelect: "text" }}>
                               {item}

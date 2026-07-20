@@ -6,6 +6,7 @@ type Props = {
   onClose: () => void;
   children: React.ReactNode;
   restoreKey?: string | number | null;
+  undockOnMount?: boolean;
   onDesktopPlacementChange?: (
     placement: "left" | "right" | null
   ) => void;
@@ -223,6 +224,7 @@ export default function ResponsiveSideLayout({
   onClose,
   children,
   restoreKey = null,
+  undockOnMount = false,
   onDesktopPlacementChange,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -245,7 +247,9 @@ export default function ResponsiveSideLayout({
   const interactionRef = useRef<InteractionState>(null);
   const liveRectRef = useRef<WindowRect>(saved.rect);
   const dockZoneVisibleRef = useRef(false);
-  const prevRestoreKeyRef = useRef<string | number | null>(restoreKey);
+  const prevRestoreKeyRef = useRef<string | number | null>(
+    undockOnMount ? null : restoreKey,
+  );
 
   const desktopStyle = useMemo(
     () => ({

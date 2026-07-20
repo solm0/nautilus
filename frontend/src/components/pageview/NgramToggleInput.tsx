@@ -28,6 +28,7 @@ type NgramToggleInputProps = {
   }[];
   onHasTextChange?: (hasText: boolean) => void;
   autofocus?: boolean;
+  placeNgramInstallInEditor?: boolean;
 };
 
 function textToTokens(text: string) {
@@ -69,7 +70,8 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   background = false,
   languageOptions,
   onHasTextChange,
-  autofocus = true
+  autofocus = true,
+  placeNgramInstallInEditor = false,
 }, ref) => {
   const { t } = useI18n();
   const [useNgram, setUseNgram] = useState(defaultOn);
@@ -79,6 +81,9 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
   } | null>(pageLanguage ? {lang: pageLanguage} : null);
   const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties>({});
   const [writerRefreshKey, setWriterRefreshKey] = useState(0);
+  const [ngramAvailable, setNgramAvailable] = useState(false);
+  const [ngramInstallPromptTarget, setNgramInstallPromptTarget] =
+    useState<HTMLDivElement | null>(null);
 
   const initializedRef = useRef(false);
   const writerRef = useRef<NgramWriterHandle>(null);
@@ -214,10 +219,18 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           options={languageOptions}
           requireNgram
           onNgramInstalled={handleNgramInstalled}
+          onNgramAvailabilityChange={
+            placeNgramInstallInEditor ? setNgramAvailable : undefined
+          }
+          ngramInstallPromptTarget={
+            placeNgramInstallInEditor
+              ? ngramInstallPromptTarget
+              : undefined
+          }
         />
       </div>
 
-      {useNgram && language ? (
+      {useNgram && language && (!placeNgramInstallInEditor || ngramAvailable) ? (
         <NgramWriter
           ref={writerRef}
           key={`${language.lang}-${writerRefreshKey}`}
@@ -228,7 +241,7 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           onHasTextChange={onHasTextChange}
           autofocus={autofocus}
         />
-      ) : (
+      ) : !useNgram || !language ? (
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -236,7 +249,12 @@ const NgramToggleInput = forwardRef<NgramToggleInputHandle, NgramToggleInputProp
           spellCheck={false}
           placeholder={`${t("Add your thoughts...")}${language?.lang ? ` in ${LANG_MAP[language?.lang]}.` : ""}`}
         />
-      )}
+      ) : placeNgramInstallInEditor ? (
+        <div
+          ref={setNgramInstallPromptTarget}
+          className="flex h-full w-full items-center justify-center pb-8"
+        />
+      ) : null}
     </div>
   );
 });
