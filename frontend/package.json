@@ -9,7 +9,7 @@
     "dev:landing": "vite --config vite.landing.config.ts --open /landing/index.html",
     "build": "tsc -b && vite build",
     "build:extension": "tsc -p tsconfig.extension.json --noEmit && vite build -c vite.extension.config.ts",
-    "build:landing": "tsc -b && vite build -c vite.landing.config.ts && mv ../central/static/landing/landing/index.html ../central/static/landing/index.html && mkdir -p ../central/static/landing/chrome-extension-privacy && mv ../central/static/landing/landing/chrome-extension-privacy/index.html ../central/static/landing/chrome-extension-privacy/index.html",
+    "build:landing": "tsc -b && vite build -c vite.landing.config.ts && mv ../central/static/landing/landing/index.html ../central/static/landing/index.html && mkdir -p ../central/static/landing/chrome-extension-privacy ../central/static/landing/android-app-privacy && mv ../central/static/landing/landing/chrome-extension-privacy/index.html ../central/static/landing/chrome-extension-privacy/index.html && mv ../central/static/landing/landing/android-app-privacy/index.html ../central/static/landing/android-app-privacy/index.html",
     "lint": "eslint .",
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync",

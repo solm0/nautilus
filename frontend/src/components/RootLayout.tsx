@@ -25,6 +25,7 @@ import {
   hasSeenNotificationPrompt,
   markNotificationPromptSeen,
   openAppNotificationSettings,
+  setNowPlayingNotificationsEnabled,
 } from "../notificationPreferences";
 import { useI18n } from "../i18n";
 
@@ -135,6 +136,10 @@ export default function RootLayout() {
       JSON.stringify(pageSidebarOpen)
     );
   }, [pageSidebarOpen]);
+
+  useEffect(() => {
+    void setNowPlayingNotificationsEnabled(settings.now_playing_notifications);
+  }, [settings.now_playing_notifications]);
 
   useEffect(() => {
     if (!isCapacitorApp()) return;

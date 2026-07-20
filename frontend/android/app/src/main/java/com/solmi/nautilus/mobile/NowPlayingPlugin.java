@@ -28,6 +28,9 @@ import java.util.List;
 
 @CapacitorPlugin(name = "NowPlaying")
 public class NowPlayingPlugin extends Plugin {
+    private static final String PREFERENCES_NAME = "nautilus_now_playing";
+    private static final String NOTIFICATIONS_ENABLED_KEY = "notifications_enabled";
+
     @PluginMethod
     public void getPermissionStatus(PluginCall call) {
         JSObject result = new JSObject();
@@ -163,6 +166,22 @@ public class NowPlayingPlugin extends Plugin {
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(intent);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void setNowPlayingNotificationsEnabled(PluginCall call) {
+        Boolean enabled = call.getBoolean("enabled");
+        if (enabled == null) {
+            call.reject("enabled is required");
+            return;
+        }
+
+        getContext()
+            .getSharedPreferences(PREFERENCES_NAME, android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(NOTIFICATIONS_ENABLED_KEY, enabled)
+            .apply();
         call.resolve();
     }
 

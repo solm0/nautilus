@@ -12,24 +12,34 @@ import { I18nProvider, resolveInitialLocale } from "../i18n";
 applyTheme("light");
 const initialLocale = resolveInitialLocale();
 const DEV_LANDING_HOME_PATH = "/landing/index.html";
-const DEV_PRIVACY_PATH = "/landing/chrome-extension-privacy/index.html";
+const DEV_CHROME_PRIVACY_PATH = "/landing/chrome-extension-privacy/index.html";
+const DEV_ANDROID_PRIVACY_PATH = "/landing/android-app-privacy/index.html";
 const PROD_HOME_PATH = "/";
-const PROD_PRIVACY_PATH = "/chrome-extension-privacy";
+const PROD_CHROME_PRIVACY_PATH = "/chrome-extension-privacy";
+const PROD_ANDROID_PRIVACY_PATH = "/android-app-privacy";
 
 function isDevLandingPath(pathname: string) {
   return pathname.startsWith("/landing/");
 }
 
-function buildPrivacyHref(pathname: string) {
-  return isDevLandingPath(pathname) ? DEV_PRIVACY_PATH : PROD_PRIVACY_PATH;
+function buildPrivacyHref(pathname: string, devPath: string, prodPath: string) {
+  return isDevLandingPath(pathname) ? devPath : prodPath;
 }
 
 const currentPathname = window.location.pathname;
-const privacyHref = buildPrivacyHref(currentPathname);
+const chromePrivacyHref = buildPrivacyHref(
+  currentPathname,
+  DEV_CHROME_PRIVACY_PATH,
+  PROD_CHROME_PRIVACY_PATH,
+);
+const androidPrivacyHref = buildPrivacyHref(
+  currentPathname,
+  DEV_ANDROID_PRIVACY_PATH,
+  PROD_ANDROID_PRIVACY_PATH,
+);
 
 type PrivacyLocale = "en" | "ko";
-
-const privacyCopy: Record<
+type PrivacyCopy = Record<
   PrivacyLocale,
   {
     title: string;
@@ -37,7 +47,9 @@ const privacyCopy: Record<
     intro: string;
     sections: Array<{ heading: string; paragraphs: string[] }>;
   }
-> = {
+>;
+
+const chromePrivacyCopy: PrivacyCopy = {
   en: {
     title: "Nautilus Chrome Extension Privacy Policy",
     updatedAt: "Last updated: July 17, 2026",
@@ -172,9 +184,142 @@ const privacyCopy: Record<
   },
 };
 
-function ChromeExtensionPrivacyPage() {
+const androidPrivacyCopy: PrivacyCopy = {
+  en: {
+    title: "Nautilus Android App Privacy Policy",
+    updatedAt: "Last updated: July 20, 2026",
+    intro:
+      "The Nautilus Android app (the \"App\") helps users read and analyze foreign-language text and find lyrics for music playing on their device. This Privacy Policy explains what information the App processes, why it is used, and when it is shared.",
+    sections: [
+      {
+        heading: "1. Information We Process",
+        paragraphs: [
+          "When you create an account or sign in, the App processes information such as your name, email address, password, and authentication token.",
+          "The App processes text, pages, language selections, annotations, comments, and social connections that you choose to create or save.",
+          "If you enable Android notification access, the App uses active media-session information such as the song title, artist, album, playback state, and the name of the player app. Although Android grants broad notification access, Nautilus does not use message or conversation content for this feature.",
+          "The App stores preferences and downloaded language data on your device.",
+        ],
+      },
+      {
+        heading: "2. How Information Is Used",
+        paragraphs: [
+          "We use account information to sign you in and provide account features.",
+          "We use text and saved content to analyze language, save pages, and provide annotations and comments.",
+          "We use media-session information to identify the current song, find lyrics, and show optional now-playing alerts.",
+          "We may use technical information needed to keep the service secure, reliable, and operational.",
+        ],
+      },
+      {
+        heading: "3. Notification Access and Your Choice",
+        paragraphs: [
+          "Notification access is optional. The App asks for your consent before opening Android settings, and you can continue using other features without granting it.",
+          "You can revoke notification access at any time in Android settings. You can also turn off now-playing alerts in the App settings.",
+        ],
+      },
+      {
+        heading: "4. Sharing and Third-Party Services",
+        paragraphs: [
+          "To find lyrics, the App sends the current song title and artist name to the LRCLIB service at lrclib.net. It does not send your Nautilus account identifier with this request.",
+          "Information may be sent to Nautilus servers when needed for account, synchronization, language analysis, page, annotation, comment, and social features.",
+          "We do not sell personal information or use it for personalized or third-party advertising.",
+        ],
+      },
+      {
+        heading: "5. Storage and Retention",
+        paragraphs: [
+          "Device preferences, authentication information, cached lyrics, and downloaded language data may be stored locally on your device.",
+          "Account-related content stored on Nautilus servers is retained while needed to provide the service or until you delete it or delete your account, subject to legal and security requirements.",
+        ],
+      },
+      {
+        heading: "6. Deletion and Control",
+        paragraphs: [
+          "You can delete saved content in the App and delete your account from the profile section. You can remove local App data by clearing the App's storage or uninstalling it.",
+          "You can revoke Android permissions and special access from the device settings at any time.",
+        ],
+      },
+      {
+        heading: "7. Security",
+        paragraphs: [
+          "We use reasonable measures to protect information. No method of storage or transmission can guarantee complete security.",
+        ],
+      },
+      {
+        heading: "8. Contact",
+        paragraphs: ["solmii.jeong@gmail.com"],
+      },
+    ],
+  },
+  ko: {
+    title: "Nautilus Android 앱 개인정보처리방침",
+    updatedAt: "최종 업데이트: 2026년 7월 20일",
+    intro:
+      "Nautilus Android 앱(이하 \"앱\")은 외국어 텍스트를 읽고 분석하며, 기기에서 재생 중인 음악의 가사를 찾을 수 있도록 돕습니다. 본 개인정보처리방침은 앱이 어떤 정보를 처리하고, 왜 사용하며, 언제 공유하는지 설명합니다.",
+    sections: [
+      {
+        heading: "1. 처리하는 정보",
+        paragraphs: [
+          "회원가입하거나 로그인할 때 이름, 이메일 주소, 비밀번호, 인증 토큰 등의 정보를 처리합니다.",
+          "사용자가 만들거나 저장한 텍스트, 페이지, 언어 선택, 주석, 댓글 및 이웃 관계를 처리합니다.",
+          "Android 알림 접근을 허용하면 곡 제목, 아티스트, 앨범, 재생 상태 및 재생 앱 이름과 같은 활성 미디어 세션 정보를 사용합니다. Android는 넓은 알림 접근 권한을 부여하지만, Nautilus는 이 기능을 위해 메시지나 대화 내용을 사용하지 않습니다.",
+          "앱 설정과 다운로드한 언어 데이터를 기기에 저장합니다.",
+        ],
+      },
+      {
+        heading: "2. 정보 이용 목적",
+        paragraphs: [
+          "계정 정보는 로그인과 계정 기능 제공에 사용합니다.",
+          "텍스트와 저장 콘텐츠는 언어 분석, 페이지 저장, 주석 및 댓글 기능 제공에 사용합니다.",
+          "미디어 세션 정보는 현재 곡 확인, 가사 검색 및 선택적인 지금 재생 알림에 사용합니다.",
+          "서비스의 보안, 안정성 및 운영에 필요한 기술 정보를 사용할 수 있습니다.",
+        ],
+      },
+      {
+        heading: "3. 알림 접근과 사용자의 선택",
+        paragraphs: [
+          "알림 접근은 선택 사항입니다. 앱은 Android 설정을 열기 전에 동의를 요청하며, 허용하지 않아도 다른 기능을 계속 사용할 수 있습니다.",
+          "Android 설정에서 언제든지 알림 접근을 해제할 수 있으며, 앱 설정에서 지금 재생 알림도 끌 수 있습니다.",
+        ],
+      },
+      {
+        heading: "4. 정보 공유 및 외부 서비스",
+        paragraphs: [
+          "가사를 찾기 위해 현재 곡 제목과 아티스트 이름을 LRCLIB 서비스(lrclib.net)에 전송합니다. 이 요청에는 Nautilus 계정 식별자를 함께 보내지 않습니다.",
+          "계정, 동기화, 언어 분석, 페이지, 주석, 댓글 및 이웃 기능을 제공하는 데 필요한 정보는 Nautilus 서버로 전송될 수 있습니다.",
+          "개인정보를 판매하거나 개인 맞춤 광고 또는 제3자 광고에 사용하지 않습니다.",
+        ],
+      },
+      {
+        heading: "5. 저장 및 보관",
+        paragraphs: [
+          "앱 설정, 인증 정보, 캐시된 가사 및 다운로드한 언어 데이터는 사용자의 기기에 저장될 수 있습니다.",
+          "Nautilus 서버의 계정 관련 콘텐츠는 서비스 제공에 필요한 동안 또는 사용자가 해당 콘텐츠나 계정을 삭제할 때까지 보관될 수 있습니다. 법률 및 보안상 필요한 경우는 예외입니다.",
+        ],
+      },
+      {
+        heading: "6. 삭제 및 통제",
+        paragraphs: [
+          "앱에서 저장 콘텐츠를 삭제할 수 있으며 프로필에서 계정을 삭제할 수 있습니다. 앱 저장공간을 지우거나 앱을 제거하면 기기에 저장된 로컬 데이터를 삭제할 수 있습니다.",
+          "Android 기기 설정에서 언제든지 권한과 특별 접근을 해제할 수 있습니다.",
+        ],
+      },
+      {
+        heading: "7. 보안",
+        paragraphs: [
+          "정보를 보호하기 위해 합리적인 조치를 사용하지만, 어떤 저장 및 전송 방식도 완전한 보안을 보장할 수는 없습니다.",
+        ],
+      },
+      {
+        heading: "8. 문의처",
+        paragraphs: ["solmii.jeong@gmail.com"],
+      },
+    ],
+  },
+};
+
+function PrivacyPage({ copies }: { copies: PrivacyCopy }) {
   const [locale, setLocale] = useState<PrivacyLocale>("en");
-  const copy = privacyCopy[locale];
+  const copy = copies[locale];
 
   return (
     <main style={pageStyle}>
@@ -263,11 +408,13 @@ createRoot(document.getElementById("root")!).render(
     <I18nProvider locale={initialLocale}>
       <BrowserRouter>
         <Routes>
-          <Route path={PROD_HOME_PATH} element={<LandingApp privacyHref={privacyHref} />} />
-          <Route path={DEV_LANDING_HOME_PATH} element={<LandingApp privacyHref={privacyHref} />} />
-          <Route path={PROD_PRIVACY_PATH} element={<ChromeExtensionPrivacyPage />} />
-          <Route path={DEV_PRIVACY_PATH} element={<ChromeExtensionPrivacyPage />} />
-          <Route path="*" element={<LandingApp privacyHref={privacyHref} />} />
+          <Route path={PROD_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
+          <Route path={DEV_LANDING_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
+          <Route path={PROD_CHROME_PRIVACY_PATH} element={<PrivacyPage copies={chromePrivacyCopy} />} />
+          <Route path={DEV_CHROME_PRIVACY_PATH} element={<PrivacyPage copies={chromePrivacyCopy} />} />
+          <Route path={PROD_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} />} />
+          <Route path={DEV_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} />} />
+          <Route path="*" element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
         </Routes>
       </BrowserRouter>
     </I18nProvider>

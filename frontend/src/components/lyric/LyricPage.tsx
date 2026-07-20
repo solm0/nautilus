@@ -20,6 +20,7 @@ import { Speaker } from "lucide-react";
 import { isCapacitorApp } from "../../platform";
 import { getLookupMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
+import NowPlayingAccessConsentModal from "./NowPlayingAccessConsentModal";
 
 function median(values: number[]) {
   if (values.length === 0) return 0;
@@ -228,6 +229,7 @@ export default function LyricPage() {
   const [language, setLanguage] = useState<{
     lang: string;
   } | null>(null);
+  const [openAccessConsent, setOpenAccessConsent] = useState(false);
   const mobileApp = isCapacitorApp();
 
   const [anyLangInstalled, setAnyLangInstalled] = useState(false);
@@ -364,7 +366,7 @@ export default function LyricPage() {
               </p>
             </div>
             <div className="flex justify-start">
-              <Button text={t("Open permission settings")} onClick={openNowPlayingPermissionSettings} fit black />
+              <Button text={t("Review access")} onClick={() => setOpenAccessConsent(true)} fit black />
             </div>
           </div>
         )}
@@ -483,6 +485,14 @@ export default function LyricPage() {
           )}
         </div>
       </div>
+      <NowPlayingAccessConsentModal
+        open={openAccessConsent}
+        onClose={() => setOpenAccessConsent(false)}
+        onAccept={() => {
+          setOpenAccessConsent(false);
+          void openNowPlayingPermissionSettings();
+        }}
+      />
     </div>
   );
 }

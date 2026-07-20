@@ -29,6 +29,7 @@ import {
 import { clearStoredSession, updateStoredUser } from "../../authSession";
 import OfflineState from "../util/OfflineState";
 import { isNetworkError } from "../../network";
+import { ANDROID_PRIVACY_POLICY_URL } from "../../config";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -529,6 +530,14 @@ export default function Setting() {
                     {t("Notifications are blocked on this device. Open settings.")}
                   </button>
                 )}
+                <a
+                  href={ANDROID_PRIVACY_POLICY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-neutral-500 underline underline-offset-2"
+                >
+                  {t("Android app privacy policy")}
+                </a>
               </div>
             </div>
           )}
