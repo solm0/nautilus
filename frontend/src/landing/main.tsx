@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import type { CSSProperties } from "react";
 import "../index.css";
 import LandingApp from "./LandingApp";
+import AccountDeletionPage from "./AccountDeletionPage";
 import { applyTheme } from "../components/useTheme";
 import { I18nProvider, resolveInitialLocale } from "../i18n";
 
@@ -14,9 +15,11 @@ const initialLocale = resolveInitialLocale();
 const DEV_LANDING_HOME_PATH = "/landing/index.html";
 const DEV_CHROME_PRIVACY_PATH = "/landing/chrome-extension-privacy/index.html";
 const DEV_ANDROID_PRIVACY_PATH = "/landing/android-app-privacy/index.html";
+const DEV_ANDROID_ACCOUNT_DELETION_PATH = "/landing/android-app-account-deletion/index.html";
 const PROD_HOME_PATH = "/";
 const PROD_CHROME_PRIVACY_PATH = "/chrome-extension-privacy";
 const PROD_ANDROID_PRIVACY_PATH = "/android-app-privacy";
+const PROD_ANDROID_ACCOUNT_DELETION_PATH = "/android-app-account-deletion";
 
 function isDevLandingPath(pathname: string) {
   return pathname.startsWith("/landing/");
@@ -36,6 +39,11 @@ const androidPrivacyHref = buildPrivacyHref(
   currentPathname,
   DEV_ANDROID_PRIVACY_PATH,
   PROD_ANDROID_PRIVACY_PATH,
+);
+const androidAccountDeletionHref = buildPrivacyHref(
+  currentPathname,
+  DEV_ANDROID_ACCOUNT_DELETION_PATH,
+  PROD_ANDROID_ACCOUNT_DELETION_PATH,
 );
 
 type PrivacyLocale = "en" | "ko";
@@ -317,7 +325,13 @@ const androidPrivacyCopy: PrivacyCopy = {
   },
 };
 
-function PrivacyPage({ copies }: { copies: PrivacyCopy }) {
+function PrivacyPage({
+  copies,
+  accountDeletionHref,
+}: {
+  copies: PrivacyCopy;
+  accountDeletionHref?: string;
+}) {
   const [locale, setLocale] = useState<PrivacyLocale>("en");
   const copy = copies[locale];
 
@@ -354,6 +368,12 @@ function PrivacyPage({ copies }: { copies: PrivacyCopy }) {
             ))}
           </section>
         ))}
+
+        {accountDeletionHref ? (
+          <a href={accountDeletionHref} style={accountDeletionLinkStyle}>
+            Delete Nautilus account / Nautilus 계정 삭제
+          </a>
+        ) : null}
       </div>
     </main>
   );
@@ -403,18 +423,28 @@ const paragraphStyle: CSSProperties = {
   margin: "0 0 14px",
 };
 
+const accountDeletionLinkStyle: CSSProperties = {
+  display: "inline-block",
+  marginTop: "28px",
+  color: "#b91c1c",
+  fontSize: "1rem",
+  fontWeight: 700,
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <I18nProvider locale={initialLocale}>
       <BrowserRouter>
         <Routes>
-          <Route path={PROD_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
-          <Route path={DEV_LANDING_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
+          <Route path={PROD_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} androidAccountDeletionHref={androidAccountDeletionHref} />} />
+          <Route path={DEV_LANDING_HOME_PATH} element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} androidAccountDeletionHref={androidAccountDeletionHref} />} />
           <Route path={PROD_CHROME_PRIVACY_PATH} element={<PrivacyPage copies={chromePrivacyCopy} />} />
           <Route path={DEV_CHROME_PRIVACY_PATH} element={<PrivacyPage copies={chromePrivacyCopy} />} />
-          <Route path={PROD_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} />} />
-          <Route path={DEV_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} />} />
-          <Route path="*" element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} />} />
+          <Route path={PROD_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} accountDeletionHref={androidAccountDeletionHref} />} />
+          <Route path={DEV_ANDROID_PRIVACY_PATH} element={<PrivacyPage copies={androidPrivacyCopy} accountDeletionHref={androidAccountDeletionHref} />} />
+          <Route path={PROD_ANDROID_ACCOUNT_DELETION_PATH} element={<AccountDeletionPage />} />
+          <Route path={DEV_ANDROID_ACCOUNT_DELETION_PATH} element={<AccountDeletionPage />} />
+          <Route path="*" element={<LandingApp chromePrivacyHref={chromePrivacyHref} androidPrivacyHref={androidPrivacyHref} androidAccountDeletionHref={androidAccountDeletionHref} />} />
         </Routes>
       </BrowserRouter>
     </I18nProvider>

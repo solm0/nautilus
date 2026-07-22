@@ -191,9 +191,11 @@ async function loadReleaseCatalog() {
 function LandingApp({
   chromePrivacyHref,
   androidPrivacyHref,
+  androidAccountDeletionHref,
 }: {
   chromePrivacyHref: string;
   androidPrivacyHref: string;
+  androidAccountDeletionHref: string;
 }) {
   const [demo, setDemo] = useState<DemoPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -289,6 +291,12 @@ function LandingApp({
             <Logotype className="fill-nt-blue stroke-0"/>
           </div>
           <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1">
+            <Link
+              to={androidAccountDeletionHref}
+              className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+            >
+              계정 삭제
+            </Link>
             <Link
               to={androidPrivacyHref}
               className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
