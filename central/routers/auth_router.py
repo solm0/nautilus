@@ -70,6 +70,10 @@ class ResetPassword(BaseModel):
   token: str
   new_password: str
 
+class AccountDeletionRequest(BaseModel):
+  email: EmailStr
+  password: str
+
 # -----------------------------
 # helpers
 # -----------------------------
@@ -521,11 +525,7 @@ def update_name(
     return {"name": current_user.name}
 
 
-@router.delete("/me")
-def delete_account(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+def delete_user_account(current_user: User, db: Session):
     user_id = current_user.id
 
     owned_page_ids = [
@@ -583,3 +583,24 @@ def delete_account(
     db.commit()
 
     return {"ok": True}
+
+
+@router.delete("/me")
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return delete_user_account(current_user, db)
+
+
+@router.post("/account-deletion")
+def delete_account_with_credentials(
+    data: AccountDeletionRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user or not verify_password(data.password, user.password_hash):
+        raise api_error(400, "invalid_credentials", "invalid credentials")
+
+    return delete_user_account(user, db)

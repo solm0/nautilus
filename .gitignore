@@ -43,3 +43,4 @@ backend-dist
 dist-electron
 .build-check/
 .build-check-2/
+outputs

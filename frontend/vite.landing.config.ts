@@ -35,6 +35,7 @@ export default defineConfig({
         landing: resolve(__dirname, "landing/index.html"),
         chromeExtensionPrivacy: resolve(__dirname, "landing/chrome-extension-privacy/index.html"),
         androidAppPrivacy: resolve(__dirname, "landing/android-app-privacy/index.html"),
+        androidAppAccountDeletion: resolve(__dirname, "landing/android-app-account-deletion/index.html"),
       },
     },
   },
