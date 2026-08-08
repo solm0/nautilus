@@ -249,7 +249,11 @@ export default function LanguageSelect({
           {loading && <p className="px-2 text-sm text-neutral-400">{t("Loading...")}</p>}
 
           {!loading && languages.length === 0 && (
-            <Link to="/setting" className="px-2 text-sm text-neutral-500 border border-neutral-300 hover:bg-neutral-200 transition-colors">
+            <Link
+              to="/setting"
+              state={{ scrollTo: "language-packs" }}
+              className="px-2 text-sm text-neutral-500 border border-neutral-300 hover:bg-neutral-200 transition-colors"
+            >
               {mobileApp
                 ? t("Activate a language to continue.")
                 : t("Install languages to continue.")}

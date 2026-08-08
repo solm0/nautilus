@@ -37,6 +37,11 @@ export default function Lemmas(){
   const [lemmaData, setLemmaData] = useState<LemmaData | null>(null);
   const [currentLang, setCurrentLang] = useState<string | null>(null);
   const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
+  const [pendingLemma, setPendingLemma] = useState<{
+    lemma: string;
+    pos: string;
+    language: string;
+  } | null>(null);
   const [offline, setOffline] = useState(false);
   const [panelOpenRequest, setPanelOpenRequest] = useState(0);
   const mobileApp = isCapacitorApp();
@@ -105,6 +110,7 @@ export default function Lemmas(){
 
   const onLemmaClick = async (lemma:string, pos:string, language:string) => {
     setCurrentLang(language);
+    setPendingLemma({ lemma, pos, language });
     const hasPack = await hasLemmaPackInstalled(language);
 
     if (!hasPack) {
@@ -124,6 +130,7 @@ export default function Lemmas(){
     }
 
     setLemmaData(data);
+    setPendingLemma(null);
     setPanelOpenRequest((prev) => prev + 1);
   }
 
@@ -132,7 +139,19 @@ export default function Lemmas(){
       <LanguagePackRequiredModal
         language={missingPackLang ?? ""}
         open={missingPackLang !== null}
-        onClose={() => setMissingPackLang(null)}
+        onClose={() => {
+          setMissingPackLang(null);
+          setPendingLemma(null);
+        }}
+        onActivated={() => {
+          if (pendingLemma) {
+            void onLemmaClick(
+              pendingLemma.lemma,
+              pendingLemma.pos,
+              pendingLemma.language,
+            );
+          }
+        }}
       />
 
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
