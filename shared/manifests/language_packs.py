@@ -331,6 +331,14 @@ PACK_RELEASES = {
     "ja": [
         build_pack(
             "ja",
+            "1.1.1",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "jpn_wikipedia_2021_300K, jpn-jp_web_2020_1M"},
+            ],
+        ),
+        build_pack(
+            "ja",
             "1.1.0",
             [
                 {"Data source": "Leipzig Corpora Collection, University of Leipzig"},

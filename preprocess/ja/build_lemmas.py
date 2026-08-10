@@ -21,6 +21,7 @@ from sqlite_pack_writer import (
 )
 from build_config import get_release_dir, get_version
 from progress import ProgressLogger, log
+from furigana import contains_kanji, extract_lemma_readings
 
 
 LANG = "ja"
@@ -101,6 +102,19 @@ nlp = stanza.Pipeline(
     use_gpu=False,
     dir=str(MODEL_DIR),
     download_method=None,
+)
+
+try:
+    import fugashi
+    import unidic_lite
+except ModuleNotFoundError as exc:
+    raise RuntimeError(
+        "Japanese lemma builds require: "
+        "pip install -r preprocess/ja/requirements.txt"
+    ) from exc
+
+furigana_tagger = fugashi.Tagger(
+    f'-r "{unidic_lite.DICDIR}/mecabrc" -d "{unidic_lite.DICDIR}"'
 )
 
 
@@ -192,6 +206,7 @@ lines_out = []
 lemma_freq = Counter()
 lemma_lines = defaultdict(set)
 contexts = defaultdict(Counter)
+lemma_readings = defaultdict(Counter)
 line_id = 0
 
 batch_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="lines")
@@ -199,8 +214,9 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     batch = lines_raw[batch_start: batch_start + BATCH_SIZE]
     analyzed_batch = analyze_batch(batch)
 
-    for tokens in analyzed_batch:
+    for raw_line, tokens in zip(batch, analyzed_batch):
         valid_sequence = []
+        line_lemmas = set()
 
         for token in tokens:
             for morph in token.get("morphs") or []:
@@ -214,6 +230,11 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
                 lemma_freq[key] += 1
                 lemma_lines[key].add(line_id)
                 valid_sequence.append(key)
+                line_lemmas.add(lemma)
+
+        for lemma, reading in extract_lemma_readings(furigana_tagger, raw_line):
+            if lemma in line_lemmas:
+                lemma_readings[lemma][reading] += 1
 
         for i, a in enumerate(valid_sequence):
             start = max(0, i - WINDOW_SIZE)
@@ -274,10 +295,20 @@ for lemma in valid_lemmas:
 stats = {}
 
 for lemma in valid_lemmas:
-    stats[lemma] = {
+    lemma_text = lemma.rsplit("_", 1)[0]
+    payload = {
         "freq": lemma_freq[lemma],
         "lines": list(lemma_lines[lemma])[:MAX_LINE_IDS],
     }
+
+    if contains_kanji(lemma_text) and lemma_readings[lemma_text]:
+        reading_counts = lemma_readings[lemma_text]
+        payload["furigana"] = min(
+            reading_counts,
+            key=lambda reading: (-reading_counts[reading], reading),
+        )
+
+    stats[lemma] = payload
 
 lines_rows = [
     (line["line_id"], json.dumps(line, ensure_ascii=False))

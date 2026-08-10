@@ -2,6 +2,7 @@ __pycache__
 data
 releases
 preprocess/*/*.txt
+!preprocess/*/requirements.txt
 venv
 models
 classla_models

@@ -185,6 +185,7 @@ def lookup(
             "global_key": global_key,
             "related": [],
             "kwic": [],
+            "furigana": None,
             "is_favorite": is_favorite,
         }
 
@@ -204,6 +205,7 @@ def lookup(
         "global_key": global_key,
         "related": related,
         "kwic": kwic,
+        "furigana": lemma_service.get_furigana(local_key, req.language),
         "is_favorite": is_favorite,
     }
 
@@ -237,6 +239,7 @@ def lookup_batch(
             "key": local_key,
             "global_key": global_key,
             "related": lemma_service.get_related(local_key, lang),
+            "furigana": lemma_service.get_furigana(local_key, lang),
             "kwic": lemma_service.sample_kwic(
                 lemma_service.get_line_ids(local_key, lang),
                 lemma,
