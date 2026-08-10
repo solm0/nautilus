@@ -1,4 +1,4 @@
-import { FilePlusCorner, FolderPlus, Type } from "lucide-react";
+import { FilePlusCorner, FolderPlus, Globe2, Music4, Type } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
@@ -63,10 +63,30 @@ export function Toolbar({
     <>
       <Link
         to='/new'
+        onClick={() => setOpenFilePopup(false)}
         className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2">
         <Type size={16} />
         {t("Paste text")}
       </Link>
+      <Link
+        to='/lyric'
+        onClick={() => setOpenFilePopup(false)}
+        className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2">
+        <Music4 size={15} />
+        {t("Get lyrics")}
+      </Link>
+      {!mobileApp ? (
+        <a
+          href="https://chromewebstore.google.com/detail/nautilus/fedaaafnilhpkoknpbkkppicjkalgflk?hl=ko"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setOpenFilePopup(false)}
+          className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2"
+        >
+          <Globe2 size={15} />
+          {t("Chrome browser")}
+        </a>
+      ) : null}
     </>
   )
 
@@ -144,3 +164,4 @@ export function Toolbar({
     </>
   );
 }
+

@@ -6,6 +6,8 @@ import {
   FilePlus2,
   Folder,
   FolderOpen,
+  Globe2,
+  Music4,
   Pencil,
   Pin,
   Trash2,
@@ -20,6 +22,7 @@ import { useI18n } from "../../i18n";
 import { renamePendingNotebook, renamePendingPage } from "../../offlineData";
 import PendingSyncBadge from "../util/PendingSyncBadge";
 import { centralFetch } from "../../network";
+import { isCapacitorApp } from "../../platform";
 
 const LONG_PRESS_MS = 420;
 const MOVE_CANCEL_DISTANCE = 10;
@@ -114,6 +117,7 @@ export default function PageCard({
 }) {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const mobileApp = isCapacitorApp();
 
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -146,19 +150,44 @@ export default function PageCard({
     () => (
       <>
         {notebook ? (
-          <Link
-            to="/new"
-            state={{ notebookId: notebook.id }}
-            data-no-drag="true"
-            className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
-          >
-            <Type size={15} />
-            {t("Paste text")}
-          </Link>
+          <>
+            <Link
+              to="/new"
+              state={{ notebookId: notebook.id }}
+              data-no-drag="true"
+              onClick={() => setOpenPopupId(null)}
+              className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
+            >
+              <Type size={15} />
+              {t("Paste text")}
+            </Link>
+            <Link
+              to="/lyric"
+              data-no-drag="true"
+              onClick={() => setOpenPopupId(null)}
+              className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
+            >
+              <Music4 size={15} />
+              {t("Get lyrics")}
+            </Link>
+            {!mobileApp ? (
+              <a
+                href="https://chromewebstore.google.com/detail/nautilus/fedaaafnilhpkoknpbkkppicjkalgflk?hl=ko"
+                target="_blank"
+                rel="noreferrer"
+                data-no-drag="true"
+                onClick={() => setOpenPopupId(null)}
+                className="w-full px-3 py-2 hover:bg-neutral-100 text-left flex items-center gap-2 text-xs"
+              >
+                <Globe2 size={15} />
+                {t("Chrome browser")}
+              </a>
+            ) : null}
+          </>
         ) : null}
       </>
     ),
-    [notebook, t]
+    [mobileApp, notebook, setOpenPopupId, t]
   );
 
   const handleRename = async () => {
@@ -492,3 +521,4 @@ export default function PageCard({
     </div>
   );
 }
+

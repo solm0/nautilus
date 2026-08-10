@@ -48,6 +48,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Change password": "비밀번호 변경",
     "Checking current playback...": "현재 재생 상태를 확인하는 중...",
     "Clear search": "검색 지우기",
+    "Chrome browser": "Chrome 브라우저",
     "Close": "닫기",
     "Close sidebar": "사이드바 닫기",
     "Close pages sidebar": "페이지 사이드바 닫기",
