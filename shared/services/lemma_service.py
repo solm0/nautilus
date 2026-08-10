@@ -99,6 +99,12 @@ def get_line_ids(key: str, lang: str):
     return pack_db.get_line_ids(key) if pack_db else []
 
 
+def get_furigana(key: str, lang: str):
+    data = _load_language(lang)
+    pack_db = data["pack_db"]
+    return pack_db.get_furigana(key) if pack_db else None
+
+
 def find_match_indices(tokens, lemma, pos):
     indices = []
     for i, t in enumerate(tokens):

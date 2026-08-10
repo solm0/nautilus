@@ -27,6 +27,7 @@ export default function LemmaExpansion({
   const [idx, setIdx] = useState(0);
   const globalKey = data.global_key ?? `${data.key.split("_").slice(0, -1).join("_")}/${data.key.split("_").slice(-1)[0]}/${language}`;
   const isFavorite = favoriteKeys?.has(globalKey) ?? data.is_favorite;
+  const lemma = data.key.split("_").slice(0, -1).join("_");
 
   const onFavoriteClick = async () => {
     await onToggleFavorite(globalKey, !isFavorite);
@@ -81,17 +82,24 @@ export default function LemmaExpansion({
         </div>
       </div>
 
-      <div className="absolute top-1 left-1 flex gap-1.5 items-center z-80 px-2 py-0.5 bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
-        {data.key.split('_')[0]}
-        <Star
-          key={data.key}
-          size={14}
-          className="cursor-pointer text-neutral-400 hover:text-neutral-500"
-          fill={isFavorite ? "currentColor" : "transparent"}
-          onClick={() => {
-            void onFavoriteClick();
-          }}
-        />
+      <div className="absolute top-1 left-1 z-80 px-2 py-0.5 bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
+        {language === "ja" && data.furigana && (
+          <div className="text-[10px] leading-tight text-neutral-500">
+            {data.furigana}
+          </div>
+        )}
+        <div className="flex gap-1.5 items-center">
+          {lemma}
+          <Star
+            key={data.key}
+            size={14}
+            className="cursor-pointer text-neutral-400 hover:text-neutral-500"
+            fill={isFavorite ? "currentColor" : "transparent"}
+            onClick={() => {
+              void onFavoriteClick();
+            }}
+          />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
