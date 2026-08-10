@@ -99,11 +99,9 @@ export default function New() {
   const statusText = analyzing
     ? t("Analyzing selected text...")
     : null;
-  const saveButtonText = saveProgress === "attaching-ipa"
-    ? t("Attaching IPA...")
-    : saveProgress === "saving"
-      ? t("Saving...")
-      : t("Save");
+  const saveButtonText = saveProgress === "saving"
+    ? t("Saving...")
+    : t("Save");
 
   const handleReset = () => {
     setResult(null);

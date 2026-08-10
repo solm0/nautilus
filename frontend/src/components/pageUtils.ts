@@ -169,26 +169,6 @@ export function getSentenceSelectionForRange(
   };
 }
 
-export function getTokensForRange(blocks: TextBlock[], range: SelectionRange): Token[] {
-  const normalizedRange = normalizeRange(range);
-  const tokens: Token[] = [];
-  let globalIndex = 0;
-
-  for (const block of blocks) {
-    if (!block.tokens) continue;
-
-    for (const token of block.tokens) {
-      if (globalIndex >= normalizedRange.start && globalIndex <= normalizedRange.end) {
-        tokens.push(token);
-      }
-
-      globalIndex += 1;
-    }
-  }
-
-  return tokens;
-}
-
 export function getNearestTokenIndex(x: number, y: number): number | null {
   const element = document.elementFromPoint(x, y);
   const tokenElement = element?.closest("[data-idx]") as HTMLElement | null;

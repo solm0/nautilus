@@ -17,7 +17,7 @@
 
 ## Start here
 
-- `services/`: lemma, IPA, NLP, prediction, and pattern services
+- `services/`: lemma, NLP, prediction, and pattern services
 - `manifests/`: shared language-pack metadata, runtime dependency manifests, state/refcount helpers
 
 ## Notes

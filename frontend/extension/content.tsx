@@ -8,7 +8,6 @@ import {
   analyzeTextBlocks,
   EXTENSION_DEEPLINK_BASE,
   ExtensionRequestError,
-  enrichBlocksWithIpa,
   getInstalledLanguages,
   isAuthenticated,
   type InstalledPack,
@@ -72,12 +71,6 @@ function isAuthTokenError(error: unknown) {
     message.includes("401") ||
     message === "unauthorized"
   );
-}
-
-function isMethodNotAllowedError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  if (error instanceof ExtensionRequestError && error.status === 405) return true;
-  return error.message.toLowerCase().includes("method not allowed");
 }
 
 function isConnectionError(error: unknown) {
@@ -956,21 +949,9 @@ function OverlayApp() {
         language,
       );
 
-      setMessage("Attaching IPA...");
-      let blocksForSave = analyzed.blocks;
-
-      try {
-        const ipaData = await enrichBlocksWithIpa(analyzed.blocks, language);
-        blocksForSave = ipaData.blocks;
-      } catch (error) {
-        if (!isMethodNotAllowedError(error)) {
-          throw error;
-        }
-      }
-
       setMessage("Saving page...");
       const page = await saveAnalyzedPage(
-        makeResult(combinedText, blocksForSave),
+        makeResult(combinedText, analyzed.blocks),
         title.trim() || selectedBlocks[0]?.preview || "Web Clip",
         language,
         window.location.href,

@@ -328,22 +328,6 @@ export async function analyzeTextBlocks(blocks: string[], language: string) {
   }));
 }
 
-export async function enrichBlocksWithIpa(
-  blocks: TextAnalysisResult["blocks"],
-  language: string,
-) {
-  return extensionFetchWithLocalFallback<{ blocks: TextAnalysisResult["blocks"] }>("/ipa", () => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      blocks,
-      language,
-    }),
-  }));
-}
-
 export async function getInstalledLanguages() {
   return extensionFetchWithLocalFallback<InstalledPack[]>("/lang/installed", () => ({
     method: "GET",

@@ -1,12 +1,10 @@
 import json
 
 from fastapi import APIRouter
-from pydantic import ConfigDict
 from pydantic import BaseModel
 from typing import List
 
 from services.nlp_service import analyze_text
-from services.ipa_service import attach_token_ipa, describe_token_articulation
 from services.prediction_service import predict_next, search_prefix, tokenize
 from language_config.sr import cyr_to_lat
 import unicodedata
@@ -17,36 +15,11 @@ router = APIRouter(prefix="/api")
 class Block(BaseModel):
     text: str
 
+
 class AnalyzeRequest(BaseModel):
     blocks: List[Block]
     language: str
 
-
-class TokenInput(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    surface: str
-    lemma: str | None = None
-    pos: str | None = None
-    ipa: str | None = None
-
-
-class IpaEnrichBlock(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    text: str
-    timestamp_ms: int | None = None
-    tokens: List[TokenInput] = []
-
-
-class IpaEnrichRequest(BaseModel):
-    blocks: List[IpaEnrichBlock]
-    language: str
-
-
-class ArticulationRequest(BaseModel):
-    tokens: List[TokenInput]
-    language: str
 
 def normalize_sr(text: str) -> str:
     text = unicodedata.normalize("NFC", text)
@@ -130,33 +103,3 @@ def analyze(req: AnalyzeRequest):
         })
 
     return {"blocks": out_blocks}
-
-
-@router.post("/ipa")
-def enrich_ipa(req: IpaEnrichRequest):
-    blocks = [block.model_dump() for block in req.blocks]
-    return {
-        "blocks": attach_token_ipa(blocks, req.language)
-    }
-
-
-@router.post("/articulation")
-def articulation(req: ArticulationRequest):
-    items = []
-
-    for token_index, token in enumerate(req.tokens):
-        segments = describe_token_articulation(
-            surface=token.surface,
-            ipa=token.ipa,
-        )
-
-        for segment_index, segment in enumerate(segments):
-            items.append({
-                **segment,
-                "token_index": token_index,
-                "segment_index": segment_index,
-            })
-
-    return {
-        "items": items
-    }

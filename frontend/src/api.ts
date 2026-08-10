@@ -1,5 +1,5 @@
 import type { TimelineItem } from "./components/setting/Mutuals";
-import type { Annotation, PageSource, TextAnalysisResult, Token } from "./components/pageTypes"
+import type { Annotation, PageSource, TextAnalysisResult } from "./components/pageTypes"
 import type { User } from "./types";
 import {
   clearStoredSession,
@@ -355,34 +355,9 @@ export async function analyzeBlocks(
   };
 }
 
-async function enrichBlocksWithIpa(
-  blocks: TextAnalysisResult["blocks"],
-  language: string,
-) {
-  const res = await fetch(`${LOCAL_API}/ipa`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      blocks,
-      language,
-    }),
-  });
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(detail || `ipa enrich failed (${res.status})`);
-  }
-
-  return res.json() as Promise<{
-    blocks: TextAnalysisResult["blocks"];
-  }>;
-}
-
 // ----------- pages_router -------------
 
-export type SavePageProgress = "attaching-ipa" | "saving";
+export type SavePageProgress = "saving";
 
 export async function savePage(
   result: TextAnalysisResult,
@@ -400,15 +375,8 @@ export async function savePage(
     throw new Error("unauthorized");
   }
 
-  options?.onProgress?.("attaching-ipa");
-  const ipaData = await enrichBlocksWithIpa(result.blocks, language);
-  const resultWithIpa: TextAnalysisResult = {
-    ...result,
-    blocks: ipaData.blocks,
-  };
-
   const payload = {
-    result: resultWithIpa,
+    result,
     name,
     notebook_id: notebookId,
     language,
@@ -427,7 +395,7 @@ export async function savePage(
     });
   } catch {
     return queueOfflinePageCreate({
-      result: resultWithIpa,
+      result,
       name,
       notebookId,
       language,
@@ -444,60 +412,6 @@ export async function savePage(
 
   const data = await res.json();
   return data.id;
-}
-
-export type ArticulationFeature = {
-  kind: string;
-  symbol: string;
-  base_symbol: string;
-  place?: string;
-  manner?: string;
-  voiced?: boolean;
-  height?: string;
-  backness?: string;
-  rounded?: boolean;
-  length: string;
-  secondary_articulations: string[];
-  visual: {
-    tongue_height: number;
-    tongue_frontness: number;
-    lip_closure: number;
-    lip_rounding: number;
-    velum: string;
-    glottis: string;
-    constriction: string;
-    airflow: string;
-  };
-};
-
-export type ArticulationDetail = {
-  surface: string;
-  token_surface: string;
-  ipa: string;
-  feature: ArticulationFeature;
-  token_index: number;
-  segment_index: number;
-};
-
-export async function fetchArticulation(tokens: Token[], language: string) {
-  const res = await fetch(`${LOCAL_API}/articulation`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      tokens,
-      language,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error("articulation failed");
-  }
-
-  return res.json() as Promise<{
-    items: ArticulationDetail[];
-  }>;
 }
 
 export async function addPageMetadata(pageId: number, value: string) {
