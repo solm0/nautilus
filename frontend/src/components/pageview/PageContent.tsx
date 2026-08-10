@@ -551,7 +551,7 @@ export default function PageContent({
                 : "font-[280]"
             }
             ${info && 'hover:font-[500]'}
-            ${isInHover || isInPanel || isInPanelLemma && 'font-[500] rounded-sm'}
+            ${isInHover || isInPanel || isInPanelLemma && 'font-bold'}
             ${hasGapFillHighlight && 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]'}
             ${isSelected && !isStart && !isEnd && 'bg-neutral-200! after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
             ${isStart && 'bg-linear-to-r from-neutral-300 to-neutral-200 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
