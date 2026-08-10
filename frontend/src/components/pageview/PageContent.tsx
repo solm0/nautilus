@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import PageCore from "../PageCore";
-import { getNearestTokenIndex, getTextForRange, getTokenRect, getTokensForRange } from "../pageUtils";
+import { getNearestTokenIndex, getTextForRange, getTokenRect } from "../pageUtils";
 import { IconButton } from "../util/Button";
-import { Check, Copy, Link, MessageSquareMore, Smile, Speech } from "lucide-react";
+import { Check, Copy, Link, MessageSquareMore, Smile } from "lucide-react";
 import type { Annotation, EmojiAnnotation, LemmaData, TextBlock } from "../pageTypes";
 import { Gutter } from "./Gutter";
 import type { SidePanelState } from "./PageView";
@@ -517,8 +517,7 @@ export default function PageContent({
         const isInPanel = 
           (
             panelData?.type === 'annotation:view' ||
-            panelData?.type === 'annotation:new' ||
-            panelData?.type === 'articulation'
+            panelData?.type === 'annotation:new'
           ) &&
           index >= panelData?.data.start_index &&
           index <= panelData?.data.end_index;
@@ -583,26 +582,6 @@ export default function PageContent({
             >
               <div className="w-7 h-7 bg-neutral-800 text-neutral-100 rounded-full flex items-center justify-center  drop-shadow-lg">
                 <IconButton icon={hasCopied ? <Check size={15} /> : <Copy size={15} />} onClick={copySelection} title={t("copy text")} />
-              </div>
-
-              <div className="w-auto h-7.5 p-1 bg-neutral-800 text-neutral-100 rounded-full flex items-center gap-1 drop-shadow-lg">
-                <IconButton
-                  icon={<Speech size={15} />}
-                  onClick={() => {
-                    if (!setPanelData || !finalSelection) return;
-
-                    setPanelData({
-                      type: "articulation",
-                      data: {
-                        start_index: finalSelection.start,
-                        end_index: finalSelection.end,
-                        tokens: getTokensForRange(blocks, finalSelection),
-                      },
-                    });
-                    setMenu(null);
-                  }}
-                  title={t("articulation")}
-                />
               </div>
 
               <div className="flex gap-1 items-center bg-neutral-50 w-auto h-8 p-1 border border-neutral-200 rounded-sm drop-shadow-lg">

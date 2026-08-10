@@ -8,7 +8,6 @@ export type Token = {
   surface: string;
   lemma: string | null;
   pos: string | null;
-  ipa?: string | null;
   morphs?: MorphToken[];
 };
 

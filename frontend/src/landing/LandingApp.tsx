@@ -322,7 +322,7 @@ function LandingApp({
             </h1>
             <div className="max-w-3xl text-base md:text-lg leading-7 text-neutral-600 flex flex-col gap-[1em]">
               <p>
-                Nautilus<span className="text-sm font-medium">[노틸러스]</span>는 외국어의 문자 체계, 발음, 생성 규칙에 흥미를 느끼는 사용자를 위한 읽기 도구입니다.
+                Nautilus<span className="text-sm font-medium">[노틸러스]</span>는 외국어의 문자 체계와 생성 규칙에 흥미를 느끼는 사용자를 위한 읽기 도구입니다.
                 복잡한 사전 지식이 없어도 텍스트를 직접 탐색하고, 번역기에 덜 의존한 채 목표 언어를 읽고 써 볼 수 있도록 돕습니다.
               </p>
               <p>
@@ -575,7 +575,7 @@ function LandingApp({
           {/* use */}
           <section id="use" className="flex flex-col gap-7">
             <h2 className="font-source text-4xl! pt-8">3. How to use</h2>
-            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 조음 시각화, 패턴 기반 검색 같은 도구를 사용할 수 있습니다.</p>
+            <p className="max-w-[40em]">읽고 싶은 텍스트를 입력하면 Nautilus가 라벨링된 하나의 페이지로 저장합니다. 이후 페이지 안에서 문장 구조 시각화, 단어 맥락 검색, 주석 작성, 패턴 기반 검색 같은 도구를 사용할 수 있습니다.</p>
 
             <h3>가능한 입력 경로</h3>
             <div className="flex gap-4 flex-col md:flex-row">
@@ -601,11 +601,6 @@ function LandingApp({
             <h3 className="mt-7">또 다른 분석 도구와 기능들</h3>
             <div className="flex gap-4 flex-col md:flex-row">
               <div className="flex gap-4 flex-col md:flex-row">
-                <div className="flex-1 flex flex-col gap-4">
-                  <img src="/landing/landing_7.png" />
-                  <p className="font-semibold">Articulation - 조음 시각화</p>
-                  <p>선택한 구간의 IPA<span className="text-xs">(발음 기호)</span>와 조음 기관의 상태를 애니메이션으로 보여줍니다.</p>
-                </div>
                 <div className="flex-1 relative flex flex-col gap-4">
                   <img src="/landing/landing_9.png" />
                   <p className="font-semibold">Mutual</p>

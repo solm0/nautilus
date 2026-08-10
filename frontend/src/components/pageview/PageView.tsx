@@ -16,7 +16,6 @@ import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk from "../lemma_expansions/Desk";
 import AnnotationView from "./AnnotationView";
 import AnnotationNew from "./AnnotationNew";
-import ArticulationPanel from "./ArticulationPanel";
 import { useLayout } from "../RootLayout";
 import { type Pack } from "../setting/PackTable";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
@@ -37,14 +36,6 @@ export type SidePanelState =
   | { type: "lemma"; data: LemmaData; language?: string }
   | { type: "annotation:new"; data: Annotation }
   | { type: "annotation:view"; data: Annotation }
-  | {
-      type: "articulation";
-      data: {
-        start_index: number;
-        end_index: number;
-        tokens: TextAnalysisResult["blocks"][number]["tokens"];
-      };
-    }
   | null;
 
 export default function PageView() {
@@ -332,9 +323,7 @@ export default function PageView() {
         ? `annotation:view:${panel.data.id ?? "unknown"}`
       : panel?.type === "annotation:new"
         ? `annotation:new:${panel.data.type}:${panel.data.start_index}:${panel.data.end_index}`
-        : panel?.type === "articulation"
-          ? `articulation:${panel.data.start_index}:${panel.data.end_index}`
-          : null;
+        : null;
 
   return (
     <div className="relative w-full h-full flex justify-center bg-neutral-50">
@@ -451,13 +440,6 @@ export default function PageView() {
                 setAnnotations={setAnnotations}
                 setPanelData={setPanel}
                 pageLanguage={language}
-              />
-            )}
-
-            {language && panel?.type === "articulation" && (
-              <ArticulationPanel
-                language={language}
-                tokens={panel.data.tokens ?? []}
               />
             )}
           </ResponsiveSideLayout>

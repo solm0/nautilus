@@ -327,13 +327,11 @@ export default function LyricPage() {
 
   const saveButtonText = saveProgress === "analyzing"
     ? t("Analyzing selected text...")
-    : saveProgress === "attaching-ipa"
-      ? t("Attaching IPA...")
-      : saveProgress === "fetching-lemmas"
-        ? t("Fetching lemmas...")
-        : saveProgress === "saving"
-          ? t("Saving...")
-          : t("Save");
+    : saveProgress === "fetching-lemmas"
+      ? t("Fetching lemmas...")
+      : saveProgress === "saving"
+        ? t("Saving...")
+        : t("Save");
 
   const isSaveDisabled =
     saving ||
