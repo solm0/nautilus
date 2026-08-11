@@ -359,6 +359,19 @@ class LanguagePackDB:
         line_ids = stats.get("lines", [])
         return line_ids if isinstance(line_ids, list) else []
 
+    def get_furigana(self, key: str) -> str | None:
+        stats = self._fetch_json_payload("lemma_stats", "lemma_key", key)
+
+        if not isinstance(stats, dict):
+            return None
+
+        furigana = stats.get("furigana")
+        if not isinstance(furigana, str):
+            return None
+
+        furigana = furigana.strip()
+        return furigana or None
+
     def get_lines(self, line_ids: list[str]):
         rows = self._fetch_json_payloads("lines", "line_id", line_ids)
         return [rows[line_id] for line_id in line_ids if line_id in rows]
