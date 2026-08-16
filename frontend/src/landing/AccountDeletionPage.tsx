@@ -220,7 +220,6 @@ export default function AccountDeletionPage() {
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
   padding: "56px 20px 80px",
-  background: "#f7f7f5",
   color: "#171717",
 };
 
