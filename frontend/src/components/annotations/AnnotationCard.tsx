@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createComment, deleteAnnotation, getComments, updateAnnotation, verifyToken } from "../../api";
 import { formatRelative } from "../util/time";
 import { ResponsiveModal } from "../util/ResponsiveModal";
@@ -9,7 +9,6 @@ import type { TimelineItem } from "../setting/Mutuals";
 import type { Comment, User } from "../../types";
 import CommentItem, { CommentInput } from "./CommentItem";
 import { isValidUrl } from "../pageview/AnnotationNew";
-import NgramToggleInput, { type NgramToggleInputHandle } from "../pageview/NgramToggleInput";
 import { UserIcon } from "../setting/Setting";
 import { useI18n } from "../../i18n";
 import PendingSyncBadge from "../util/PendingSyncBadge";
@@ -39,7 +38,6 @@ export default function AnnotationCard({
   const [msg, setMsg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [canSave, setCanSave] = useState(item.content.trim().length > 0);
-  const inputRef = useRef<NgramToggleInputHandle>(null);
   const isPendingAnnotation = item.pending_sync || item.id < 0;
   const effectiveUser = item.user ?? (isPendingAnnotation ? user : null);
   const disableSnapshotActions = readonlySnapshotActions && !isPendingAnnotation;
@@ -50,10 +48,8 @@ export default function AnnotationCard({
   }, []);
 
   useEffect(() => {
-    if (item.type !== "memo") {
-      setCanSave(value.trim().length > 0);
-    }
-  }, [item.type, value]);
+    setCanSave(value.trim().length > 0);
+  }, [value]);
 
   const id = item.id;
 
@@ -67,9 +63,7 @@ export default function AnnotationCard({
   };
 
   const handleSave = async () => {
-    const nextValue = item.type === "memo"
-      ? inputRef.current?.flushPendingInput() ?? value
-      : value;
+    const nextValue = value;
 
     // link validation
     if (item.type === "link") {
@@ -268,14 +262,14 @@ export default function AnnotationCard({
                     onChange={(e) => setValue(e.target.value)}
                     className="border-2 border-neutral-300 rounded px-2 py-1 focus:outline-none"
                   />
-                : <NgramToggleInput
-                    ref={inputRef}
+                : <textarea
                     key={item.id}
                     value={value}
-                    onChange={setValue}
-                    onHasTextChange={setCanSave}
-                    defaultOn={true}
-                    cut background
+                    onChange={(event) => setValue(event.target.value)}
+                    className="w-full min-h-80 max-h-96 resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
+                    spellCheck={false}
+                    placeholder={t("Add your thoughts...")}
+                    autoFocus
                   />
             }
 

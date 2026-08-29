@@ -1,4 +1,3 @@
-import re
 import unicodedata
 from pathlib import Path
 
@@ -19,11 +18,6 @@ def normalize(text: str) -> str:
 # =====================
 # TOKENIZE
 # =====================
-
-TOKEN_RE = re.compile(r"[а-шѓќжчџшљњјѕ0-9-]+", re.IGNORECASE)
-
-def tokenize(text: str):
-    return TOKEN_RE.findall(normalize(text))
 
 # =====================
 # NLP (LAZY)
@@ -62,7 +56,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
 
         "pack_db": LanguagePackDB(db_path) if db_path else None,

@@ -429,7 +429,6 @@ export default function PageView() {
                 panel={panel}
                 setPanel={setPanel}
                 setAnnotations={setAnnotations}
-                pageLanguage={language}
                 offline={offline}
               />
             )}
@@ -439,7 +438,6 @@ export default function PageView() {
                 panel={panel}
                 setAnnotations={setAnnotations}
                 setPanelData={setPanel}
-                pageLanguage={language}
               />
             )}
           </ResponsiveSideLayout>

@@ -4,7 +4,6 @@ import type { SidePanelState } from "../components/pageview/PageView";
 import { CENTRAL_API } from "../api";
 import Desk from "../components/lemma_expansions/Desk";
 import PageContent from "../components/pageview/PageContent";
-import NgramToggleInput from "../components/pageview/NgramToggleInput";
 import { Link } from "react-router-dom";
 import { Download } from "lucide-react";
 
@@ -12,12 +11,9 @@ type DemoPayload = {
   language: string;
   title: string;
   description: string;
-  sample_input: string;
   result: TextAnalysisResult;
   lemma_info: Record<string, LemmaData>;
 };
-
-const fixedLanguageOptions = [{ lang: "en" }];
 
 type DesktopPlatform = "macOS" | "Linux" | "Windows";
 type DesktopVersion = {
@@ -192,7 +188,6 @@ function LandingApp() {
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<SidePanelState>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [composerValue, setComposerValue] = useState("language opens a sentence");
   const [selectedLemma, setSelectedLemma] = useState<LemmaData | null>(null);
   const [releaseCatalog, setReleaseCatalog] = useState<ReleaseCatalog>({
     desktop: [],
@@ -217,7 +212,6 @@ function LandingApp() {
         const firstLemma = Object.values(payload.lemma_info)[0] ?? null;
 
         setDemo(payload);
-        setComposerValue(payload.sample_input);
         setSelectedLemma(firstLemma);
       } catch (fetchError) {
         if (cancelled) {
@@ -416,25 +410,6 @@ function LandingApp() {
                 </div>
               </div>
               
-              <p>직접 타이핑하거나 추천 단어를 눌러 문장을 이어 보세요.</p>
-              <div className="border border-neutral-300 bg-neutral-50">
-                <div className="mt-5 h-[360px] p-4">
-                  {demo ? (
-                    <NgramToggleInput
-                      value={composerValue}
-                      onChange={setComposerValue}
-                      defaultOn={true}
-                      pageLanguage="en"
-                      background={true}
-                      languageOptions={fixedLanguageOptions}
-                      autofocus={false}
-                    />
-                  ) : (
-                    <DemoPlaceholder message={error ?? "Loading Writing Assistant demo..."} />
-                  )}
-                </div>
-              </div>
-
             </div>
 
           </section>

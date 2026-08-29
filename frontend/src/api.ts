@@ -1055,7 +1055,6 @@ export async function getInstalled() {
       version: pack.version,
       installed: enabledLangs.includes(pack.lang),
       lemma_installed: enabledLangs.includes(pack.lang),
-      ngram_installed: enabledLangs.includes(pack.lang),
     }));
   }
 
@@ -1068,7 +1067,6 @@ export async function installPack(pack: {
   version: string;
   filename: string;
   download_url?: string;
-  asset_kind?: "lemma" | "ngram";
 }) {
   if (isCapacitorApp()) {
     await enableMobileLanguage(pack.lang);

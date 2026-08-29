@@ -6,7 +6,6 @@ from pathlib import Path
 
 DB_FILENAME = "language_pack.db"
 LEMMA_DB_FILENAME = "lemma_pack.db"
-NGRAM_DB_FILENAME = "ngram_pack.db"
 
 
 def connect_db(db_path: Path) -> sqlite3.Connection:
@@ -74,79 +73,6 @@ def package_release_artifact(
             zip_ref.write(manifest_path, arcname=manifest_name)
 
     return archive_path
-
-
-def replace_ngram_tables(
-    conn: sqlite3.Connection,
-    trigram_rows: list[tuple[str, str, str, float]],
-    bigram_rows: list[tuple[str, str, float]],
-    unigram_rows: list[tuple[str, float]],
-):
-    with conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS ngram_uni (
-                token TEXT PRIMARY KEY,
-                score REAL NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS ngram_bi (
-                w1 TEXT NOT NULL,
-                next_token TEXT NOT NULL,
-                score REAL NOT NULL,
-                PRIMARY KEY (w1, next_token)
-            );
-
-            CREATE TABLE IF NOT EXISTS ngram_tri (
-                w1 TEXT NOT NULL,
-                w2 TEXT NOT NULL,
-                next_token TEXT NOT NULL,
-                score REAL NOT NULL,
-                PRIMARY KEY (w1, w2, next_token)
-            );
-
-            DELETE FROM ngram_uni;
-            DELETE FROM ngram_bi;
-            DELETE FROM ngram_tri;
-            """
-        )
-
-        conn.executemany(
-            "INSERT INTO ngram_uni(token, score) VALUES (?, ?)",
-            unigram_rows,
-        )
-        conn.executemany(
-            "INSERT INTO ngram_bi(w1, next_token, score) VALUES (?, ?, ?)",
-            bigram_rows,
-        )
-        conn.executemany(
-            "INSERT INTO ngram_tri(w1, w2, next_token, score) VALUES (?, ?, ?, ?)",
-            trigram_rows,
-        )
-
-
-def replace_prefix_index(
-    conn: sqlite3.Connection,
-    prefix_rows: list[tuple[str, str, int]],
-):
-    with conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS prefix_index (
-                prefix TEXT NOT NULL,
-                token TEXT NOT NULL,
-                freq INTEGER NOT NULL,
-                PRIMARY KEY (prefix, token)
-            );
-
-            DELETE FROM prefix_index;
-            """
-        )
-
-        conn.executemany(
-            "INSERT INTO prefix_index(prefix, token, freq) VALUES (?, ?, ?)",
-            prefix_rows,
-        )
 
 
 def replace_lemma_tables(

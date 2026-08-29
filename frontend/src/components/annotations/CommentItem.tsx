@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Comment } from "../../types";
 import { createComment, deleteComment, getComments, updateComment } from "../../api";
-import NgramToggleInput, { type NgramToggleInputHandle } from "../pageview/NgramToggleInput";
 import Button, { IconButton } from "../util/Button";
 import { Pencil, Trash2 } from "lucide-react";
 import { ResponsiveModal } from "../util/ResponsiveModal";
@@ -18,9 +17,7 @@ export function CommentInput({
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
-  const [resetKey, setResetKey] = useState(0);
   const [canSubmit, setCanSubmit] = useState(false);
-  const inputRef = useRef<NgramToggleInputHandle>(null);
 
   useEffect(() => {
     setValue("");
@@ -47,13 +44,13 @@ export function CommentInput({
         <div className="relative flex flex-col gap-7 items-end bg-neutral-50 border-y border-neutral-300 p-2">
         
           <div className="min-h-80 h-auto w-full">
-            <NgramToggleInput
-              ref={inputRef}
-              key={resetKey}
+            <textarea
               value={value}
-              onChange={setValue}
-              onHasTextChange={setCanSubmit}
-              background cut
+              onChange={(event) => setValue(event.target.value)}
+              className="w-full min-h-80 max-h-96 resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
+              spellCheck={false}
+              placeholder={t("Add your thoughts...")}
+              autoFocus
             />
           </div>
 
@@ -66,11 +63,10 @@ export function CommentInput({
             <Button
               text={t("Post")}
               onClick={async () => {
-                const nextValue = inputRef.current?.flushPendingInput() ?? value;
+                const nextValue = value;
                 if (!nextValue.trim()) return;
 
                 await onSubmit(nextValue);
-                setResetKey(k => k + 1);
                 setValue("");
                 setOpen(false)
               }}
@@ -103,7 +99,6 @@ export default function CommentItem({
   const [openModal, setOpenModal] = useState(false);
   const [replyReset, setReplyReset] = useState(0);
   const [canSave, setCanSave] = useState(content.trim().length > 0);
-  const inputRef = useRef<NgramToggleInputHandle>(null);
 
   useEffect(() => {
     setCanSave((value ?? "").trim().length > 0);
@@ -111,7 +106,7 @@ export default function CommentItem({
 
 
   const handleSave = async () => {
-    const nextValue = inputRef.current?.flushPendingInput() ?? value ?? "";
+    const nextValue = value ?? "";
     if (!nextValue.trim()) return;
     await updateComment(c.id, nextValue);
     setComments(prev =>
@@ -187,12 +182,13 @@ export default function CommentItem({
             <p className="text-xs pl-9 text-neutral-400">{t("You're editing a comment")}</p>
             <div className="relative flex flex-col gap-7 items-end bg-neutral-50 border-y border-neutral-300 p-2">
               <div className="min-h-80 h-auto w-full">
-                <NgramToggleInput
-                  ref={inputRef}
+                <textarea
                   value={value}
-                  onChange={setValue}
-                  onHasTextChange={setCanSave}
-                  cut background
+                  onChange={(event) => setValue(event.target.value)}
+                  className="w-full min-h-80 max-h-96 resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
+                  spellCheck={false}
+                  placeholder={t("Add your thoughts...")}
+                  autoFocus
                 />
               </div>
 

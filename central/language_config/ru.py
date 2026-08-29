@@ -1,4 +1,3 @@
-import re
 
 from pathlib import Path
 from .model_store import get_model_dir
@@ -25,14 +24,6 @@ LATIN_TO_CYR = str.maketrans({
 
 def normalize(text: str):
     return text.translate(LATIN_TO_CYR)
-
-
-def tokenize(text: str):
-    text = text.lower()
-    text = text.replace("ё", "е")
-    text = re.sub(r"[^а-яё0-9\- ]+", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text.split()
 
 
 _nlp = None
@@ -66,7 +57,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
         "pack_db": pack_db,
         "db_path": db_path,

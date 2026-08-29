@@ -97,21 +97,15 @@ def get_pack_map():
     return {pack["lang"]: pack for pack in PACKS}
 
 
-def resolve_release_artifacts(lang: str, version: str):
+def resolve_release_artifact(lang: str, version: str):
     release_dir = RELEASES_DIR / lang / f"{lang}-v{version}"
     lemma_zip = release_dir / f"{lang}-v{version}-lemma.zip"
-    ngram_zip = release_dir / f"{lang}-v{version}-ngram.zip"
-
-    missing = [path.name for path in (lemma_zip, ngram_zip) if not path.exists()]
-    if missing:
+    if not lemma_zip.exists():
         raise FileNotFoundError(
-            f"Missing release artifacts for {lang} v{version}: {', '.join(missing)}"
+            f"Missing release artifact for {lang} v{version}: {lemma_zip.name}"
         )
 
-    return {
-        "lemma": lemma_zip,
-        "ngram": ngram_zip,
-    }
+    return lemma_zip
 
 
 def upload_asset(api: HfApi, repo_id: str, repo_type: str, lang: str, version: str, asset_path: Path):
@@ -134,21 +128,17 @@ def upload_asset(api: HfApi, repo_id: str, repo_type: str, lang: str, version: s
 
 
 def publish_language(api: HfApi, repo_id: str, repo_type: str, lang: str, version: str):
-    assets = resolve_release_artifacts(lang, version)
-    urls = {}
-
-    for asset_kind, asset_path in assets.items():
-        print(f"Uploading {asset_path.name} -> language-packs/{lang}/{version}/")
-        urls[asset_kind] = upload_asset(api, repo_id, repo_type, lang, version, asset_path)
+    asset_path = resolve_release_artifact(lang, version)
+    print(f"Uploading {asset_path.name} -> language-packs/{lang}/{version}/")
+    url = upload_asset(api, repo_id, repo_type, lang, version, asset_path)
 
     print(f"Published {lang} v{version}")
-    for asset_kind, url in urls.items():
-        print(f"  {asset_kind}: {url}")
+    print(f"  lemma: {url}")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Upload split lemma/ngram zip assets to Hugging Face.",
+        description="Upload lemma zip assets to Hugging Face.",
     )
     parser.add_argument(
         "--lang",

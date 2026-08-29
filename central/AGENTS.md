@@ -8,7 +8,7 @@
 
 - `main.py`: app boot, model download, schema setup, router registration, landing mount
 - `routers/auth_router.py`: authentication flows
-- `routers/mobile_router.py`: mobile analyze, lookup, predict, search APIs
+- `routers/mobile_router.py`: mobile analyze and lookup APIs
 - `routers/pages_router.py`, `comment_router.py`, `mutual_router.py`: shared content features
 - `db.py`, `models.py`: persistence layer
 

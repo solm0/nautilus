@@ -2,9 +2,7 @@ export type PackCatalogEntry = {
   lang: string;
   version: string;
   lemma_filename: string;
-  ngram_filename: string;
   lemma_download_url: string;
-  ngram_download_url: string;
   tag: string;
   corpus: {
     "Data source"?: string;

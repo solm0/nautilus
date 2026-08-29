@@ -1,4 +1,3 @@
-import re
 import unicodedata
 
 from pathlib import Path
@@ -9,13 +8,6 @@ from .sqlite_pack import LanguagePackDB, find_pack_db
 def normalize(text: str):
     text = unicodedata.normalize("NFC", text)
     return text.lower()
-
-
-TOKEN_RE = re.compile(r"[a-zçë0-9-]+", re.IGNORECASE)
-
-
-def tokenize(text: str):
-    return TOKEN_RE.findall(normalize(text))
 
 
 _nlp = None
@@ -49,7 +41,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
         "pack_db": LanguagePackDB(db_path) if db_path else None,
         "db_path": db_path,

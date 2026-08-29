@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SidePanelState } from "./PageView"
 import type { Annotation } from "../pageTypes";
 import { createAnnotation as createAnnotationRequest } from "../../api";
 import Button from "../util/Button";
-import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInput";
 import { useI18n } from "../../i18n";
 
 export function isValidUrl(str: string) {
@@ -16,18 +15,16 @@ export function isValidUrl(str: string) {
 }
 
 export default function AnnotationNew({
-  panel, setAnnotations, setPanelData, pageLanguage
+  panel, setAnnotations, setPanelData
 }:{
   panel: SidePanelState;
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
   setPanelData: (p: SidePanelState | null) => void;
-  pageLanguage: string;
 }) {
   const { t } = useI18n();
   const [inputValue, setInputValue] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [canSave, setCanSave] = useState(false);
-  const inputRef = useRef<NgramToggleInputHandle>(null);
   const annotationPanel =
     panel?.type === "annotation:new" ? panel : null;
 
@@ -38,19 +35,15 @@ export default function AnnotationNew({
   }, [annotationPanel]);
 
   useEffect(() => {
-    if (annotationPanel?.data.type !== "memo") {
-      setCanSave(inputValue.trim().length > 0);
-    }
-  }, [annotationPanel?.data.type, inputValue]);
+    setCanSave(inputValue.trim().length > 0);
+  }, [inputValue]);
 
   if (!annotationPanel) return null;
 
   const annotationData = annotationPanel.data;
 
   async function handleCreateAnnotation() {
-    const nextValue = annotationData.type === "memo"
-      ? inputRef.current?.flushPendingInput() ?? inputValue
-      : inputValue;
+    const nextValue = inputValue;
 
     // link validation
     if (annotationData.type === "link") {
@@ -77,15 +70,13 @@ export default function AnnotationNew({
     <div className="w-full h-full pt-2 px-3 pb-16">
       {annotationData.type === "memo"
         ? (
-          <NgramToggleInput
-            ref={inputRef}
+          <textarea
             value={inputValue}
-            onChange={setInputValue}
-            onHasTextChange={setCanSave}
-            defaultOn={true}
-            pageLanguage={pageLanguage}
-            background
-            placeNgramInstallInEditor
+            onChange={(event) => setInputValue(event.target.value)}
+            className="w-full h-full resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
+            spellCheck={false}
+            placeholder={t("Add your thoughts...")}
+            autoFocus
           />
         ) : (
           <div className="flex flex-col gap-1">

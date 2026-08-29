@@ -13,10 +13,7 @@ from language_config.model_store import ensure_model_installed, model_installed,
 from language_config.registry import invalidate_language as invalidate_nlp_language
 from language_config.sqlite_pack import (
     LEMMA_TABLES,
-    NGRAM_TABLES,
-    NGRAM_DB_NAMES,
     find_lemma_db,
-    find_ngram_db,
     has_required_tables,
 )
 from runtime_paths import get_runtime_state_root, get_static_data_root
@@ -44,7 +41,6 @@ DOWNLOAD_URL_RE = re.compile(r"Downloading\s+(?P<url>https?://\S+?)(?::\s|$)")
 def get_install_state(lang: str, version: str):
     path = DATA_DIR / lang / version
     lemma_db_path = find_lemma_db(path)
-    ngram_db_path = find_ngram_db(path)
     model_ready = model_installed(lang)
 
     lemma_data_ready = (
@@ -52,14 +48,8 @@ def get_install_state(lang: str, version: str):
         and has_required_tables(lemma_db_path, LEMMA_TABLES)
     )
     lemma_installed = lemma_data_ready and model_ready
-    ngram_installed = (
-        ngram_db_path is not None
-        and has_required_tables(ngram_db_path, NGRAM_TABLES)
-    )
-
     return {
         "lemma_installed": lemma_installed,
-        "ngram_installed": ngram_installed,
         "model_installed": model_ready,
         "installed": lemma_installed and model_ready,
         "runtime_state": get_runtime_state_snapshot(STATE_ROOT, lang),
@@ -71,21 +61,11 @@ def invalidate_runtime(lang: str):
     invalidate_lemma_language(lang)
 
 
-def clear_existing_install_target(lang: str, version: str, asset_kind: str):
+def clear_existing_install_target(lang: str, version: str):
     path = DATA_DIR / lang / version
 
-    if asset_kind == "lemma":
-        if path.exists():
-            shutil.rmtree(path, ignore_errors=True)
-        return
-
-    if not path.exists():
-        return
-
-    for db_name in NGRAM_DB_NAMES:
-        candidate = path / db_name
-        if candidate.exists():
-            candidate.unlink()
+    if path.exists():
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def set_progress(task_id: str, progress: float, status: str, **extra):
@@ -240,7 +220,6 @@ def install_pack(
     lang: str,
     version: str,
     filename: str | None,
-    asset_kind: str,
     task_id: str,
     download_url: str | None = None,
 ):
@@ -250,16 +229,10 @@ def install_pack(
         os.makedirs(DATA_DIR, exist_ok=True)
         invalidate_runtime(lang)
 
-        if asset_kind not in {"lemma", "ngram"}:
-            raise Exception(f"invalid asset_kind: {asset_kind}")
-
         if not filename:
-            raise Exception("filename is required for split pack install")
+            raise Exception("filename is required for pack install")
 
-        if asset_kind == "ngram" and not get_install_state(lang, version)["lemma_installed"]:
-            raise Exception("lemma pack must be installed first")
-
-        clear_existing_install_target(lang, version, asset_kind)
+        clear_existing_install_target(lang, version)
 
         if not download_url:
             raise Exception("download_url is required")
@@ -339,13 +312,12 @@ def install_pack(
         # tmp 파일 삭제
         os.remove(tmp_zip.name)
 
-        if not verify_install(lang, version, asset_kind):
+        if not verify_install(lang, version):
             raise Exception("install corrupted")
 
-        if asset_kind == "lemma":
-            set_progress(task_id, 0.94, "installing_model", phase="model")
-            install_model_with_progress(lang, task_id)
-            set_progress(task_id, 0.99, "verifying_install", phase="finalizing")
+        set_progress(task_id, 0.94, "installing_model", phase="model")
+        install_model_with_progress(lang, task_id)
+        set_progress(task_id, 0.99, "verifying_install", phase="finalizing")
 
         set_progress(task_id, 1.0, "done", phase="done")
 
@@ -393,18 +365,8 @@ def is_installed(lang: str, version: str):
     return get_install_state(lang, version)["installed"]
 
 
-def verify_install(lang: str, version: str, asset_kind: str = "lemma"):
+def verify_install(lang: str, version: str):
     path = DATA_DIR / lang / version
-
-    if asset_kind == "ngram":
-        lemma_db_path = find_lemma_db(path)
-        ngram_db_path = find_ngram_db(path)
-        if lemma_db_path is None or ngram_db_path is None:
-            return False
-        return (
-            has_required_tables(lemma_db_path, LEMMA_TABLES)
-            and has_required_tables(ngram_db_path, NGRAM_TABLES)
-        )
 
     lemma_db_path = find_lemma_db(path)
     if lemma_db_path is None:

@@ -7,11 +7,9 @@
 ## Start here
 
 - `{lang}/build_lemmas.py`: builds `lines`, `lemma_stats`, and `lemma_graph`
-- `{lang}/build_ngram.py`: builds `ngram_uni`, `ngram_bi`, and `ngram_tri`
-- `{lang}/build_prefix_index.py`: builds `prefix_index`
 - `sqlite_pack_writer.py`: shared SQLite write helpers and manifest generation
 - `run_all_builds.py`: runs all language builders for a target version with progress logs
-- `publish_releases.py`: uploads generated lemma/ngram zip assets to GitHub Releases
+- `publish_releases.py`: uploads generated lemma zip assets to Hugging Face
 
 ## When to use this folder
 
@@ -28,7 +26,6 @@
 
 ## Notes
 
-- Each language directory usually has three separate builders, with lemma output going to `lemma_pack.db` and ngram/prefix output going to `ngram_pack.db`
-- Output responsibility is split by table group: lemma tables, ngram tables, and prefix index
+- Each language directory builds lemma output into `lemma_pack.db`
 - Use `python3 preprocess/run_all_builds.py --version 1.1.0 --jobs 2 --caffeinate` for a short one-command full rebuild with parallelism and sleep prevention
 - If you change table names or required outputs here, also verify `backend/language_config/sqlite_pack.py` and install validation logic

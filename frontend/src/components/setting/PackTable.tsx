@@ -16,9 +16,7 @@ export type Pack = {
   lang: string;
   version: string;
   lemma_filename: string;
-  ngram_filename: string;
   lemma_download_url: string;
-  ngram_download_url: string;
   tag: string;
   corpus: {
     "Data source"?: string;
@@ -31,7 +29,6 @@ type SelectedInstall = {
   version: string;
   filename: string;
   downloadUrl: string;
-  assetKind: "lemma" | "ngram";
 };
 
 export const LANG_MAP: Record<string, string> = {
@@ -86,7 +83,7 @@ export default function PackTable() {
     const cached = readPackCatalogSnapshot() as Pack[];
     const installedKeys = new Set(
       installedPacks
-        .filter((pack) => pack.lemma_installed || pack.ngram_installed || pack.installed)
+        .filter((pack) => pack.lemma_installed || pack.installed)
         .map((pack) => `${pack.lang}:${pack.version}`),
     );
 
@@ -95,7 +92,7 @@ export default function PackTable() {
     );
 
     const missingInstalled = installedPacks
-      .filter((pack) => pack.lemma_installed || pack.ngram_installed || pack.installed)
+      .filter((pack) => pack.lemma_installed || pack.installed)
       .filter(
         (pack) =>
           !cachedInstalled.some(
@@ -107,9 +104,7 @@ export default function PackTable() {
         lang: pack.lang,
         version: pack.version,
         lemma_filename: "",
-        ngram_filename: "",
         lemma_download_url: "",
-        ngram_download_url: "",
         tag: "",
         corpus: [{}, {}],
       }));
@@ -151,39 +146,15 @@ export default function PackTable() {
         version: pack.version,
         installed: false,
         lemma_installed: false,
-        ngram_installed: false,
         model_installed: false,
       }
     );
   }
 
   function renderDesktopStatus(state: InstalledPack) {
-    const chips: string[] = [];
-
-    if (state.lemma_installed) {
-      chips.push("C");
-    }
-
-    if (state.ngram_installed) {
-      chips.push("W");
-    }
-
-    if (chips.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="flex flex-wrap gap-1">
-        {chips.map((chip) => (
-          <div
-            key={chip}
-            className={`text-xs px-1.5 rounded-full ${chip === 'C' ? 'bg-green-200 text-green-700/60' : 'bg-neutral-200 text-neutral-700/60'}`}
-          >
-            {chip}
-          </div>
-        ))}
-      </div>
-    );
+    return state.lemma_installed ? (
+      <div className="text-xs px-1.5 rounded-full bg-green-200 text-green-700/60">C</div>
+    ) : null;
   }
 
   function renderHeaderStatus(state: InstalledPack) {
@@ -216,7 +187,6 @@ export default function PackTable() {
         version: pack.version,
         filename: pack.lemma_filename,
         download_url: pack.lemma_download_url,
-        asset_kind: "lemma",
       });
 
       await reload();
@@ -285,14 +255,12 @@ export default function PackTable() {
     ] as const);
   }, [grouped, mobileApp]);
 
-  function openInstall(pack: Pack, assetKind: "lemma" | "ngram") {
+  function openInstall(pack: Pack) {
     setSelectedInstall({
       lang: pack.lang,
       version: pack.version,
-      filename: assetKind === "lemma" ? pack.lemma_filename : pack.ngram_filename,
-      downloadUrl:
-        assetKind === "lemma" ? pack.lemma_download_url : pack.ngram_download_url,
-      assetKind,
+      filename: pack.lemma_filename,
+      downloadUrl: pack.lemma_download_url,
     });
   }
 
@@ -387,7 +355,7 @@ export default function PackTable() {
                     const key = `${pack.lang}-${pack.version}`;
                     const isHiddenVersion = HIDDEN_PACK_VERSIONS.has(pack.version);
                     const shouldDisableRemove =
-                      isHiddenVersion || (!state.lemma_installed && !state.ngram_installed);
+                      isHiddenVersion || !state.lemma_installed;
 
                     return (
                       <div
@@ -432,7 +400,7 @@ export default function PackTable() {
                                 <div className="flex flex-col gap-2">
                                   <button
                                     type="button"
-                                    onClick={() => openInstall(pack, "lemma")}
+                                    onClick={() => openInstall(pack)}
                                     disabled={offline || isHiddenVersion || state.lemma_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.lemma_installed
@@ -442,20 +410,6 @@ export default function PackTable() {
                                   >
                                     {state.lemma_installed ? t("Core installed") : t("Install Core")}
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openInstall(pack, "ngram")}
-                                    disabled={offline || isHiddenVersion || !state.lemma_installed || state.ngram_installed}
-                                    className={`rounded-sm px-3 py-2 text-xs transition-colors ${
-                                      state.ngram_installed
-                                        ? "bg-neutral-200 text-neutral-700/50"
-                                      : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
-                                    }`}
-                                  >
-                                    {state.ngram_installed
-                                      ? t("Writing Assistant installed")
-                                      : t("Install Writing Assistant")}
-                                  </button>
                                 </div>
 
                                 <button
@@ -463,7 +417,7 @@ export default function PackTable() {
                                   onClick={() => handleUninstall(pack)}
                                   disabled={shouldDisableRemove}
                                   className="rounded-sm p-2 text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-transparent disabled:hover:text-neutral-600"
-                                  title={t("Remove Core and Writing Assistant")}
+                                  title={t("Remove Core")}
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -499,7 +453,6 @@ export default function PackTable() {
           version={selectedInstall.version}
           filename={selectedInstall.filename}
           downloadUrl={selectedInstall.downloadUrl}
-          assetKind={selectedInstall.assetKind}
           onClose={() => setSelectedInstall(null)}
           onInstalled={async () => {
             await reload();

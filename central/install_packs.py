@@ -9,9 +9,7 @@ from packaging.version import Version
 
 from language_config.sqlite_pack import (
     LEMMA_TABLES,
-    NGRAM_TABLES,
     find_lemma_db,
-    find_ngram_db,
     has_required_tables,
 )
 from packs import PACKS
@@ -54,31 +52,19 @@ def get_latest_release_asset(lang: str):
 
     return {
         "version": str(latest_version),
-        "assets": {
-            "lemma": {
-                "download_url": latest_pack["lemma_download_url"],
-                "filename": latest_pack["lemma_filename"],
-            },
-            "ngram": {
-                "download_url": latest_pack["ngram_download_url"],
-                "filename": latest_pack["ngram_filename"],
-            },
+        "asset": {
+            "download_url": latest_pack["lemma_download_url"],
+            "filename": latest_pack["lemma_filename"],
         },
     }
 
 
-def is_version_fully_installed(lang: str, version: str) -> bool:
+def is_version_installed(lang: str, version: str) -> bool:
     version_dir = BASE_DIR / lang / version
     lemma_db_path = find_lemma_db(version_dir)
-    ngram_db_path = find_ngram_db(version_dir)
-
-    if lemma_db_path is None or ngram_db_path is None:
+    if lemma_db_path is None:
         return False
-
-    return (
-        has_required_tables(lemma_db_path, LEMMA_TABLES)
-        and has_required_tables(ngram_db_path, NGRAM_TABLES)
-    )
+    return has_required_tables(lemma_db_path, LEMMA_TABLES)
 
 
 def get_installed_versions(lang: str):
@@ -167,7 +153,7 @@ def process_language(lang: str):
 
         if (
             installed_latest == latest_version
-            and is_version_fully_installed(lang, str(latest_version))
+            and is_version_installed(lang, str(latest_version))
         ):
             print(f"{lang} already up to date ({installed_latest})")
             mark_runtime_consumers(STATE_ROOT, lang)
@@ -183,17 +169,17 @@ def process_language(lang: str):
 
     TMP_DIR.mkdir(parents=True, exist_ok=True)
 
-    for asset_kind, asset in latest["assets"].items():
-        zip_path = TMP_DIR / asset["filename"]
+    asset = latest["asset"]
+    zip_path = TMP_DIR / asset["filename"]
 
-        print(f"Downloading {asset_kind}: {asset['download_url']}")
-        download_file(asset["download_url"], zip_path)
-        install_pack(lang, str(latest_version), zip_path)
-        zip_path.unlink(missing_ok=True)
+    print(f"Downloading lemma pack: {asset['download_url']}")
+    download_file(asset["download_url"], zip_path)
+    install_pack(lang, str(latest_version), zip_path)
+    zip_path.unlink(missing_ok=True)
 
-    if not is_version_fully_installed(lang, str(latest_version)):
+    if not is_version_installed(lang, str(latest_version)):
         raise RuntimeError(
-            f"{lang} {latest_version} install is incomplete after downloading split assets"
+            f"{lang} {latest_version} install is incomplete after downloading the lemma asset"
         )
 
     mark_runtime_consumers(STATE_ROOT, lang)

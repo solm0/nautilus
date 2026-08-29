@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SidePanelState } from "./PageView";
 import type { Annotation } from "../pageTypes";
 import { deleteAnnotation, updateAnnotation } from "../../api";
 import { deletePendingAnnotation, updatePendingAnnotation } from "../../offlineData";
 import { isValidUrl } from "./AnnotationNew";
-import NgramToggleInput, { type NgramToggleInputHandle } from "./NgramToggleInput";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { Pencil, Trash2 } from "lucide-react";
 import Button, { IconButton } from "../util/Button";
@@ -14,13 +13,11 @@ export default function AnnotationView({
   panel,
   setPanel,
   setAnnotations,
-  pageLanguage,
   offline,
 }: {
   panel: SidePanelState;
   setPanel: React.Dispatch<React.SetStateAction<SidePanelState | null>>
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  pageLanguage: string;
   offline: boolean;
 }) {
   const { t } = useI18n();
@@ -38,7 +35,6 @@ export default function AnnotationView({
   const [msg, setMsg] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [canSave, setCanSave] = useState(annotationPanel.data.content.trim().length > 0);
-  const inputRef = useRef<NgramToggleInputHandle>(null);
 
 
   // panel 바뀌면 상태 리셋
@@ -51,10 +47,8 @@ export default function AnnotationView({
   }, [annotationPanel]);
 
   useEffect(() => {
-    if (annotationPanel.data.type !== "memo") {
-      setCanSave(value.trim().length > 0);
-    }
-  }, [annotationPanel.data.type, value]);
+    setCanSave(value.trim().length > 0);
+  }, [value]);
 
   const id = annotationPanel.data.id;
 
@@ -81,9 +75,7 @@ export default function AnnotationView({
   const handleSave = async () => {
     setLoading("edit");
     setMsg(null);
-    const nextValue = annotationPanel.data.type === "memo"
-      ? inputRef.current?.flushPendingInput() ?? value
-      : value;
+    const nextValue = value;
 
     // link validation
     if (annotationPanel.data.type === "link") {
@@ -154,16 +146,14 @@ export default function AnnotationView({
             </div>
         : (
             annotationPanel.data.type === "memo" ? (
-              <NgramToggleInput
-                ref={inputRef}
+              <textarea
                 key={annotationPanel.data.id}
                 value={value}
-                onChange={setValue}
-                onHasTextChange={setCanSave}
-                defaultOn={true}
-                pageLanguage={pageLanguage}
-                background
-                placeNgramInstallInEditor
+                onChange={(event) => setValue(event.target.value)}
+                className="w-full h-full resize-none bg-transparent leading-7 pb-8 text-base text-inherit caret-black focus:outline-none placeholder-neutral-400 overflow-y-auto"
+                spellCheck={false}
+                placeholder={t("Add your thoughts...")}
+                autoFocus
               />
             ) : (
               <input

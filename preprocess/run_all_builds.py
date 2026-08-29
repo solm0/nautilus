@@ -19,8 +19,6 @@ from shared.manifests import PACKS
 PREPROCESS_DIR = ROOT_DIR / "preprocess"
 STEP_SCRIPTS = (
     ("lemmas", "build_lemmas.py"),
-    ("ngram", "build_ngram.py"),
-    ("prefix", "build_prefix_index.py"),
 )
 CAFFEINATE_ENV_VAR = "NAUTILUS_BUILD_CAFFEINATED"
 
@@ -164,11 +162,8 @@ def verify_artifacts(lang: str, version: str):
     release_dir = ROOT_DIR / "releases" / lang / f"{lang}-v{version}"
     required_files = [
         release_dir / "lemma_pack.db",
-        release_dir / "ngram_pack.db",
         release_dir / "lemma_manifest.json",
-        release_dir / "ngram_manifest.json",
         release_dir / f"{lang}-v{version}-lemma.zip",
-        release_dir / f"{lang}-v{version}-ngram.zip",
     ]
 
     missing = [path.name for path in required_files if not path.exists()]

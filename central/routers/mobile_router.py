@@ -1,9 +1,8 @@
-import json
 import logging
 import time
 import unicodedata
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -13,7 +12,6 @@ from models import User, UserLemma
 from routers.auth_router import get_current_user_optional
 from services import lemma_service
 from services.nlp_service import analyze_text
-from services.prediction_service import predict_next, search_prefix, tokenize
 
 router = APIRouter(prefix="/api/mobile", tags=["mobile"])
 logger = logging.getLogger(__name__)
@@ -66,45 +64,6 @@ def fetch_favorites(
     ).all()
 
     return {row[0] for row in rows}
-
-
-@router.get("/predict")
-def predict(
-    language: str,
-    text: str | None = None,
-    context: str | None = Query(default=None),
-):
-    tokens = None
-
-    if context is not None:
-        try:
-            parsed = json.loads(context)
-        except json.JSONDecodeError as exc:
-            raise HTTPException(status_code=400, detail="invalid context") from exc
-
-        if not isinstance(parsed, list) or not all(isinstance(token, str) for token in parsed):
-            raise HTTPException(status_code=400, detail="invalid context")
-
-        tokens = parsed
-    elif text is not None:
-        tokens = tokenize(text, language)
-    else:
-        raise HTTPException(status_code=422, detail="text or context is required")
-
-    return {
-        "input": text,
-        "context": tokens,
-        "tokens": tokens,
-        "predictions": predict_next(tokens, language),
-    }
-
-
-@router.get("/search")
-def search(q: str, language: str):
-    return {
-        "query": q,
-        "predictions": search_prefix(q, language),
-    }
 
 
 @router.post("/analyze")

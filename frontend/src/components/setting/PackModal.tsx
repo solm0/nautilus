@@ -23,7 +23,6 @@ type Props = {
   version: string;
   filename: string;
   downloadUrl: string;
-  assetKind: "lemma" | "ngram";
   onClose: () => void;
   onInstalled: () => Promise<void> | void;
 };
@@ -52,7 +51,6 @@ export default function PackModal({
   version,
   filename,
   downloadUrl,
-  assetKind,
   onClose,
   onInstalled,
 }: Props) {
@@ -69,7 +67,7 @@ export default function PackModal({
   const installedRef = useRef(false);
 
   const langName = t(LANG_MAP[lang] || lang);
-  const assetLabel = assetKind === "lemma" ? t("Core") : t("Writing Assistant");
+  const assetLabel = t("Core");
 
   const stopPolling = () => {
     if (intervalRef.current !== null) {
@@ -95,7 +93,6 @@ export default function PackModal({
         version,
         filename,
         download_url: downloadUrl,
-        asset_kind: assetKind,
       });
 
       stopPolling();

@@ -1,4 +1,3 @@
-import re
 import unicodedata
 
 from pathlib import Path
@@ -11,29 +10,6 @@ from .sqlite_pack import LanguagePackDB, find_pack_db
 # =====================
 def normalize(text: str):
     return unicodedata.normalize("NFC", text)
-
-
-# =====================
-# TOKENIZE
-# =====================
-def tokenize(text: str):
-
-    text = normalize(text)
-
-    # 독일어 문자 + 하이픈만 유지
-    text = re.sub(r"[^A-Za-zÄÖÜäöüß\- ]+", " ", text)
-
-    text = re.sub(r"\s+", " ", text).strip()
-
-    tokens = text.split()
-
-    # 한 글자 제거
-    tokens = [
-        t for t in tokens
-        if len(t) >= 2
-    ]
-
-    return tokens
 
 
 # =====================
@@ -76,7 +52,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
 
         "pack_db": pack_db,

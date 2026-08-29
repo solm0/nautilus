@@ -1,12 +1,9 @@
-import re
 import unicodedata
 from pathlib import Path
 
 from .model_store import get_model_dir
 from .sqlite_pack import LanguagePackDB, find_pack_db
 
-
-TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+(?:[-'][0-9A-Za-z가-힣]+)*", re.UNICODE)
 
 KIWI_TAG_TO_UPOS = {
     "NNG": "NOUN",
@@ -75,10 +72,6 @@ def normalize_lemma(lemma: str | None):
         return None
 
     return normalize(lemma).lower().strip() or None
-
-
-def tokenize(text: str):
-    return TOKEN_RE.findall(normalize(text).lower())
 
 
 def map_kiwi_tag(tag: str, lemma: str | None = None, surface: str | None = None):
@@ -291,7 +284,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
         "analyze_text": analyze_text,
         "pack_db": LanguagePackDB(db_path) if db_path else None,

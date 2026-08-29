@@ -60,16 +60,13 @@ def build_pack(
     corpus: list[dict[str, str]],
 ):
     lemma_filename = f"{lang}-v{version}-lemma.zip"
-    ngram_filename = f"{lang}-v{version}-ngram.zip"
 
     return {
         "lang": lang,
         "version": version,
         "tag": f"v{version}",
         "lemma_filename": lemma_filename,
-        "ngram_filename": ngram_filename,
         "lemma_download_url": build_pack_download_url(lang, version, lemma_filename),
-        "ngram_download_url": build_pack_download_url(lang, version, ngram_filename),
         "corpus": corpus,
     }
 

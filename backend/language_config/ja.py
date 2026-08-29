@@ -43,7 +43,6 @@ def _representative_morph(morphs: list[dict]):
 
 
 _nlp = None
-_tokenizer = None
 
 
 def ensure_model():
@@ -66,38 +65,6 @@ def get_nlp():
         )
 
     return _nlp
-
-
-def get_tokenizer():
-    global _tokenizer
-
-    if _tokenizer is None:
-        import stanza
-        model_dir = ensure_model()
-
-        _tokenizer = stanza.Pipeline(
-            lang="ja",
-            processors="tokenize",
-            use_gpu=False,
-            dir=str(model_dir),
-            download_method=None,
-        )
-
-    return _tokenizer
-
-
-def tokenize(text: str):
-    doc = get_tokenizer()(text)
-    tokens = []
-
-    for sent in doc.sentences:
-        for word in sent.words:
-            normalized = normalize_lemma(word.text)
-
-            if normalized:
-                tokens.append(normalized)
-
-    return tokens
 
 
 def analyze_text(text: str):
@@ -140,7 +107,6 @@ def get_config(base_dir: Path):
 
     return {
         "normalize": normalize,
-        "tokenize": tokenize,
         "get_nlp": get_nlp,
         "analyze_text": analyze_text,
         "pack_db": pack_db,
@@ -149,7 +115,6 @@ def get_config(base_dir: Path):
 
 
 def unload():
-    global _nlp, _tokenizer
+    global _nlp
 
     _nlp = None
-    _tokenizer = None
