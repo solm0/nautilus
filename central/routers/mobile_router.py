@@ -142,13 +142,12 @@ def lookup(
         return {
             "key": local_key,
             "global_key": global_key,
-            "related": [],
+            "found": False,
             "kwic": [],
             "furigana": None,
             "is_favorite": is_favorite,
         }
 
-    related = lemma_service.get_related(local_key, req.language)
     line_ids = lemma_service.get_line_ids(local_key, req.language)
 
     kwic = lemma_service.sample_kwic(
@@ -162,7 +161,7 @@ def lookup(
     return {
         "key": local_key,
         "global_key": global_key,
-        "related": related,
+        "found": True,
         "kwic": kwic,
         "furigana": lemma_service.get_furigana(local_key, req.language),
         "is_favorite": is_favorite,
@@ -197,7 +196,7 @@ def lookup_batch(
         result[local_key] = {
             "key": local_key,
             "global_key": global_key,
-            "related": lemma_service.get_related(local_key, lang),
+            "found": True,
             "furigana": lemma_service.get_furigana(local_key, lang),
             "kwic": lemma_service.sample_kwic(
                 lemma_service.get_line_ids(local_key, lang),

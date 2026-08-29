@@ -120,7 +120,7 @@ export default function Lemmas(){
 
     const data = await lemmaLookupOne({ lemma, pos }, language);
 
-    if (data.related.length === 0) {
+    if (data.found === false) {
       const hasPackAfterLookup = await hasLemmaPackInstalled(language);
 
       if (!hasPackAfterLookup) {

@@ -7,7 +7,6 @@ from typing import Iterable
 
 LEMMA_TABLES = {
     "lines",
-    "lemma_graph",
     "lemma_stats",
 }
 
@@ -170,14 +169,6 @@ class LanguagePackDB:
             return False
 
         return row is not None
-
-    def get_related(self, key: str, limit: int = 5):
-        related = self._fetch_json_payload("lemma_graph", "lemma_key", key)
-
-        if not isinstance(related, list):
-            return []
-
-        return related[:limit]
 
     def get_line_ids(self, key: str):
         stats = self._fetch_json_payload("lemma_stats", "lemma_key", key)

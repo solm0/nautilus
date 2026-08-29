@@ -1,5 +1,4 @@
 import json
-import math
 import re
 import sys
 import unicodedata
@@ -47,11 +46,9 @@ MAX_LINES = None
 GENERAL_MIN_FREQ = 3
 PROPN_MIN_FREQ = 20
 
-TOP_K = 5
 MAX_LINE_IDS = 200
 
 BATCH_SIZE = 64
-WINDOW_SIZE = 2
 
 # =====================
 # FILTERS
@@ -156,8 +153,6 @@ lemma_freq = Counter()
 
 lemma_lines = defaultdict(set)
 
-contexts = defaultdict(Counter)
-
 line_id = 0
 
 # =====================
@@ -183,8 +178,6 @@ for batch_start in range(
     for sent in doc.sentences:
 
         tokens = []
-
-        valid_sequence = []
 
         for word in sent.words:
 
@@ -216,10 +209,6 @@ for batch_start in range(
                     line_id
                 )
 
-                valid_sequence.append(
-                    key
-                )
-
             tokens.append({
                 "surface": surface,
                 "lemma": (
@@ -229,36 +218,6 @@ for batch_start in range(
                 ),
                 "pos": pos,
             })
-
-        # =====================
-        # WINDOW GRAPH
-        # =====================
-
-        for i, a in enumerate(
-            valid_sequence
-        ):
-
-            start = max(
-                0,
-                i - WINDOW_SIZE,
-            )
-
-            end = min(
-                len(valid_sequence),
-                i + WINDOW_SIZE + 1,
-            )
-
-            for j in range(start, end):
-
-                if i == j:
-                    continue
-
-                b = valid_sequence[j]
-
-                if a == b:
-                    continue
-
-                contexts[a][b] += 1
 
         lines_out.append({
             "line_id": line_id,
@@ -294,51 +253,6 @@ for lemma, freq in lemma_freq.items():
         valid_lemmas.add(lemma)
 
 log(f"valid lemmas: {len(valid_lemmas):,}")
-
-# =====================
-# BUILD GRAPH
-# =====================
-
-graph = {}
-
-for lemma in valid_lemmas:
-
-    freq_a = lemma_freq[lemma]
-
-    candidates = []
-
-    for other, cofreq in (
-        contexts[lemma].items()
-    ):
-
-        if other not in valid_lemmas:
-            continue
-
-        freq_b = lemma_freq[other]
-
-        score = (
-            cofreq
-            / math.sqrt(freq_a * freq_b)
-        )
-
-        score *= (
-            1 / math.log1p(freq_b)
-        )
-
-        candidates.append(
-            (other, score)
-        )
-
-    candidates.sort(
-        key=lambda x: x[1],
-        reverse=True,
-    )
-
-    graph[lemma] = [
-        word
-        for word, _
-        in candidates[:TOP_K]
-    ]
 
 # =====================
 # STATS
@@ -382,18 +296,6 @@ stats_rows = [
     in stats.items()
 ]
 
-graph_rows = [
-    (
-        lemma,
-        json.dumps(
-            payload,
-            ensure_ascii=False,
-        ),
-    )
-    for lemma, payload
-    in graph.items()
-]
-
 conn = connect_db(OUTPUT_DB)
 
 try:
@@ -402,7 +304,6 @@ try:
         conn,
         lines_rows,
         stats_rows,
-        graph_rows,
     )
 
 finally:

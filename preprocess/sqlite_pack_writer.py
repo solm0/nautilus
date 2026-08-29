@@ -79,7 +79,6 @@ def replace_lemma_tables(
     conn: sqlite3.Connection,
     lines_rows: list[tuple[int, str]],
     stats_rows: list[tuple[str, str]],
-    graph_rows: list[tuple[str, str]],
 ):
     with conn:
         conn.executescript(
@@ -94,14 +93,8 @@ def replace_lemma_tables(
                 payload TEXT NOT NULL
             );
 
-            CREATE TABLE IF NOT EXISTS lemma_graph (
-                lemma_key TEXT PRIMARY KEY,
-                payload TEXT NOT NULL
-            );
-
             DELETE FROM lines;
             DELETE FROM lemma_stats;
-            DELETE FROM lemma_graph;
             """
         )
 
@@ -112,8 +105,4 @@ def replace_lemma_tables(
         conn.executemany(
             "INSERT INTO lemma_stats(lemma_key, payload) VALUES (?, ?)",
             stats_rows,
-        )
-        conn.executemany(
-            "INSERT INTO lemma_graph(lemma_key, payload) VALUES (?, ?)",
-            graph_rows,
         )

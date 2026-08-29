@@ -1,5 +1,4 @@
 import json
-import math
 import re
 import sys
 import unicodedata
@@ -39,7 +38,6 @@ MAX_LINES = None
 GENERAL_MIN_FREQ = 3
 PROPN_MIN_FREQ = 20
 
-TOP_K = 5
 MAX_LINE_IDS = 200
 
 STOP_POS = {
@@ -119,14 +117,12 @@ log(f"loaded: {len(lines_raw):,} raw lines")
 lines_out = []
 lemma_freq = Counter()
 lemma_lines = defaultdict(set)
-contexts = defaultdict(Counter)
 line_id = 0
 
 doc_progress = ProgressLogger("lemma parse", every=1500, total=len(lines_raw), unit="docs")
 for doc_id, doc in enumerate(nlp.pipe(lines_raw, batch_size=64)):
     for sent in doc.sents:
         tokens = []
-        token_keys = {}
 
         for token in sent:
             lemma = normalize(token.lemma_)
@@ -146,29 +142,12 @@ for doc_id, doc in enumerate(nlp.pipe(lines_raw, batch_size=64)):
                 key = f"{lemma}_{pos}"
                 lemma_freq[key] += 1
                 lemma_lines[key].add(line_id)
-                token_keys[token.i] = key
 
             tokens.append({
                 "surface": token.text,
                 "lemma": lemma if valid else None,
                 "pos": pos,
             })
-
-        for token in sent:
-            if token.i not in token_keys:
-                continue
-
-            if token.head.i not in token_keys:
-                continue
-
-            a = token_keys[token.i]
-            b = token_keys[token.head.i]
-
-            if a == b:
-                continue
-
-            contexts[a][b] += 1
-            contexts[b][a] += 1
 
         lines_out.append({
             "line_id": line_id,
@@ -193,24 +172,6 @@ for lemma, freq in lemma_freq.items():
 
 log(f"valid lemmas: {len(valid_lemmas):,}")
 
-graph = {}
-
-for lemma in valid_lemmas:
-    candidates = []
-    freq_a = lemma_freq[lemma]
-
-    for other, cofreq in contexts[lemma].items():
-        if other not in valid_lemmas:
-            continue
-
-        freq_b = lemma_freq[other]
-        score = cofreq / math.sqrt(freq_a * freq_b)
-        score *= 1 / math.log1p(freq_b)
-        candidates.append((other, score))
-
-    candidates.sort(key=lambda x: x[1], reverse=True)
-    graph[lemma] = [word for word, _ in candidates[:TOP_K]]
-
 stats = {}
 
 for lemma in valid_lemmas:
@@ -227,14 +188,10 @@ stats_rows = [
     (lemma, json.dumps(payload, ensure_ascii=False))
     for lemma, payload in stats.items()
 ]
-graph_rows = [
-    (lemma, json.dumps(payload, ensure_ascii=False))
-    for lemma, payload in graph.items()
-]
 
 conn = connect_db(OUTPUT_DB)
 try:
-    replace_lemma_tables(conn, lines_rows, stats_rows, graph_rows)
+    replace_lemma_tables(conn, lines_rows, stats_rows)
 finally:
     conn.close()
 

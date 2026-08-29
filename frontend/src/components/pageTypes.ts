@@ -45,7 +45,7 @@ export type LemmaData = {
   key: string;
   furigana?: string | null;
   kwic: KwicData[];
-  related: string[];
+  found?: boolean;
   is_favorite: boolean;
   global_key: string;
 };

@@ -6,7 +6,7 @@
 
 ## Start here
 
-- `{lang}/build_lemmas.py`: builds `lines`, `lemma_stats`, and `lemma_graph`
+- `{lang}/build_lemmas.py`: builds `lines` and `lemma_stats`
 - `sqlite_pack_writer.py`: shared SQLite write helpers and manifest generation
 - `run_all_builds.py`: runs all language builders for a target version with progress logs
 - `publish_releases.py`: uploads generated lemma zip assets to Hugging Face

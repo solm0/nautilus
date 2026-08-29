@@ -87,12 +87,6 @@ def has_key(key: str, lang: str):
     return pack_db.has_lemma_key(key) if pack_db else False
 
 
-def get_related(key: str, lang: str, k=5):
-    data = _load_language(lang)
-    pack_db = data["pack_db"]
-    return pack_db.get_related(key, k) if pack_db else []
-
-
 def get_line_ids(key: str, lang: str):
     data = _load_language(lang)
     pack_db = data["pack_db"]

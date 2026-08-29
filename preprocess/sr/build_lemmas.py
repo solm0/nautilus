@@ -1,5 +1,4 @@
 import json
-import math
 import re
 import sys
 import unicodedata
@@ -41,7 +40,6 @@ MAX_LINES = None
 GENERAL_MIN_FREQ = 3
 PROPN_MIN_FREQ = 20
 
-TOP_K = 5
 MAX_LINE_IDS = 200
 BATCH_SIZE = 64
 
@@ -153,7 +151,7 @@ def valid_lemma(lemma: str) -> bool:
     return bool(VALID_RE.fullmatch(lemma))
 
 # Keep preprocess using the repo-local model cache rather than home-dir resources.
-classla.download("sr", dir=str(MODEL_DIR), processors="tokenize,pos,lemma,depparse")
+classla.download("sr", dir=str(MODEL_DIR), processors="tokenize,pos,lemma")
 
 # =====================
 # NLP
@@ -161,7 +159,7 @@ classla.download("sr", dir=str(MODEL_DIR), processors="tokenize,pos,lemma,deppar
 
 nlp = classla.Pipeline(
     lang="sr",
-    processors="tokenize,pos,lemma,depparse",
+    processors="tokenize,pos,lemma",
     dir=str(MODEL_DIR),
     use_gpu=False,
 )
@@ -197,7 +195,6 @@ lines_out = []
 
 lemma_freq = Counter()
 lemma_lines = defaultdict(set)
-contexts = defaultdict(Counter)
 
 lemma_cache = {}
 
@@ -221,11 +218,8 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
     for sent in doc.sentences:
 
         tokens = []
-        token_keys = {}
 
         for word in sent.words:
-
-            idx = word.id
 
             surface = normalize(word.text)
 
@@ -250,37 +244,12 @@ for batch_start in range(0, len(lines_raw), BATCH_SIZE):
                 lemma_freq[key] += 1
 
                 lemma_lines[key].add(line_id)
-                token_keys[idx] = key
 
             tokens.append({
                 "surface": surface,
                 "lemma": lemma if valid else None,
                 "pos": pos,
             })
-
-        for word in sent.words:
-
-            idx = word.id
-
-            if idx not in token_keys:
-                continue
-
-            head_idx = word.head
-
-            if head_idx == 0:
-                continue
-
-            if head_idx not in token_keys:
-                continue
-
-            a = token_keys[idx]
-            b = token_keys[head_idx]
-
-            if a == b:
-                continue
-
-            contexts[a][b] += 1
-            contexts[b][a] += 1
 
         lines_out.append({
             "line_id": line_id,
@@ -316,37 +285,6 @@ for lemma, freq in lemma_freq.items():
 log(f"valid lemmas: {len(valid_lemmas):,}")
 
 # =====================
-# BUILD GRAPH
-# =====================
-
-graph = {}
-
-for lemma in valid_lemmas:
-
-    freq_a = lemma_freq[lemma]
-
-    candidates = []
-
-    for other, cofreq in contexts[lemma].items():
-
-        if other not in valid_lemmas:
-            continue
-
-        freq_b = lemma_freq[other]
-
-        score = cofreq / math.sqrt(freq_a * freq_b)
-        score *= 1 / math.log1p(freq_b)
-
-        candidates.append((other, score))
-
-    candidates.sort(key=lambda x: x[1], reverse=True)
-
-    graph[lemma] = [
-        word
-        for word, _ in candidates[:TOP_K]
-    ]
-
-# =====================
 # STATS
 # =====================
 
@@ -373,11 +311,6 @@ stats_rows = [
     for lemma, payload in stats.items()
 ]
 
-graph_rows = [
-    (lemma, json.dumps(payload, ensure_ascii=False))
-    for lemma, payload in graph.items()
-]
-
 conn = connect_db(OUTPUT_DB)
 
 try:
@@ -385,7 +318,6 @@ try:
         conn,
         lines_rows,
         stats_rows,
-        graph_rows,
     )
 finally:
     conn.close()

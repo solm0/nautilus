@@ -58,7 +58,7 @@ export default function LemmaExpansionWrapper({
       try {
         const data = await lemmaLookupOne({ lemma, pos }, language);
 
-        if (data.related.length === 0) {
+        if (data.found === false) {
           const hasPack = await hasLemmaPackInstalled(language);
 
           if (!hasPack) {
@@ -94,7 +94,7 @@ export default function LemmaExpansionWrapper({
   if (status === "loading" && !lemmaData) {
     return null;
   }
-  if (status === "error" || lemmaData && lemmaData.related.length == 0) {
+  if (status === "error" || lemmaData?.found === false) {
     return (
       <>
         <LanguagePackRequiredModal
@@ -110,7 +110,7 @@ export default function LemmaExpansionWrapper({
       </>
     );
   }
-  if (lemmaData && lemmaData.related.length > 0) {
+  if (lemmaData) {
     return (
       <LemmaExpansion
         data={lemmaData}

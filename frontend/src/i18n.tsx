@@ -174,7 +174,6 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Preparing installation...": "설치 준비 중...",
     "Preview will show here": "미리보기가 여기에 표시됩니다",
     "Profile": "프로필",
-    "related": "연관어",
     "replied to your comment": "님의 댓글에 답글을 남겼습니다",
     "Request": "요청",
     "Review access": "접근 권한 확인",
