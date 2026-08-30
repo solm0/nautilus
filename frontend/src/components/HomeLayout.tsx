@@ -39,7 +39,7 @@ export function Side() {
   }, []);
 
   const normalMenus = [
-    { label: <File size={isMobile ? 20 : 16} />, path: "/", title: t("pages") },
+    { label: <File size={isMobile ? 20 : 16} />, path: "/", title: t("Pages") },
     { label: <MessageSquareMore size={isMobile ? 20 : 16} />, path: "/annotations", title: t("Annotations") },
     { label: <Star size={isMobile ? 20 : 16} />, path: "/lemmas", title: t("My Lemmas") },
   ];

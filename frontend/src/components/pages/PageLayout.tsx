@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useParams } from "react-router-dom";
 import { Menu, Search, X } from "lucide-react";
+import { Preferences } from "@capacitor/preferences";
 
 import MoveModal from "./MoveModal";
 import { useI18n } from "../../i18n";
 import PageCard from "./PageCard";
+import { PageFilters, type PageInputSource } from "./PageFilters";
 import { Toolbar } from "./Toolbar";
 
 import Button from "../util/Button";
@@ -18,6 +20,7 @@ import {
   authHeaders,
   fetchNotebooks,
   fetchPages,
+  getPacks,
 } from "../../api";
 import {
   deletePendingNotebook,
@@ -25,6 +28,7 @@ import {
   OFFLINE_SYNC_EVENT,
 } from "../../offlineData";
 import { isCapacitorApp } from "../../platform";
+import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
 
 const PINNED_STORAGE_KEY = "pages.sidebar.pinned";
 const LONG_PRESS_MS = 420;
@@ -96,20 +100,46 @@ function sortByCreatedDesc<T extends { created_at: string }>(items: T[]) {
   );
 }
 
-function loadPinnedIds() {
-  if (typeof window === "undefined") return [];
-
+function parsePinnedIds(raw: string | null) {
   try {
-    const raw = localStorage.getItem(PINNED_STORAGE_KEY);
     if (!raw) return [];
 
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.filter((value): value is number => typeof value === "number");
+    return Array.from(
+      new Set(
+        parsed.filter(
+          (value): value is number =>
+            typeof value === "number" && Number.isFinite(value)
+        )
+      )
+    );
   } catch {
     return [];
   }
+}
+
+async function loadPinnedIds(mobileApp: boolean) {
+  if (typeof window === "undefined") return [];
+
+  if (mobileApp) {
+    const { value } = await Preferences.get({ key: PINNED_STORAGE_KEY });
+    if (value) return parsePinnedIds(value);
+  }
+
+  return parsePinnedIds(window.localStorage.getItem(PINNED_STORAGE_KEY));
+}
+
+async function savePinnedIds(pageIds: number[], mobileApp: boolean) {
+  const value = JSON.stringify(pageIds);
+
+  if (mobileApp) {
+    await Preferences.set({ key: PINNED_STORAGE_KEY, value });
+    return;
+  }
+
+  window.localStorage.setItem(PINNED_STORAGE_KEY, value);
 }
 
 function buildNotebookPath(
@@ -146,9 +176,8 @@ export default function PageLayout() {
   const [expandedNotebookIds, setExpandedNotebookIds] = useState<Set<number>>(
     () => new Set()
   );
-  const [pinnedPageIds, setPinnedPageIds] = useState<number[]>(() =>
-    loadPinnedIds()
-  );
+  const [pinnedPageIds, setPinnedPageIds] = useState<number[]>([]);
+  const [pinnedStorageReady, setPinnedStorageReady] = useState(false);
   const [movePageIds, setMovePageIds] = useState<number[]>([]);
   const [movePageLabel, setMovePageLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -162,7 +191,11 @@ export default function PageLayout() {
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [isMobileLike, setIsMobileLike] = useState(false);
   const [sidebarOffsetX, setSidebarOffsetX] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterLanguages, setFilterLanguages] = useState<string[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<PageInputSource | null>(null);
   const [mobileSidebarMounted, setMobileSidebarMounted] = useState(false);
   const [mobileSidebarEntered, setMobileSidebarEntered] = useState(false);
 
@@ -178,6 +211,7 @@ export default function PageLayout() {
   const flashTimeoutRef = useRef<number | null>(null);
   const mobileSidebarTimeoutRef = useRef<number | null>(null);
   const sidebarDragStartRef = useRef<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const sidebarDraggingRef = useRef(false);
   const hasLoadedOnceRef = useRef(false);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -208,6 +242,37 @@ export default function PageLayout() {
 
   useEffect(() => {
     reload();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFilterLanguages = async () => {
+      let packs: Array<{ lang?: string }>;
+
+      try {
+        packs = await getPacks();
+      } catch {
+        packs = readPackCatalogSnapshot() as Array<{ lang?: string }>;
+      }
+
+      if (cancelled) return;
+
+      setFilterLanguages(
+        Array.from(
+          new Set(
+            packs
+              .map((pack) => pack.lang?.trim().toLowerCase())
+              .filter((lang): lang is string => Boolean(lang))
+          )
+        ).sort((a, b) => a.localeCompare(b))
+      );
+    };
+
+    void loadFilterLanguages();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -257,8 +322,32 @@ export default function PageLayout() {
   }, [id, setPageSidebarOpen]);
 
   useEffect(() => {
-    localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(pinnedPageIds));
-  }, [pinnedPageIds]);
+    let cancelled = false;
+
+    const hydratePinnedPages = async () => {
+      try {
+        const storedPageIds = await loadPinnedIds(mobileApp);
+        if (!cancelled) setPinnedPageIds(storedPageIds);
+      } catch (error) {
+        console.warn("Could not load pinned pages from device storage.", error);
+      } finally {
+        if (!cancelled) setPinnedStorageReady(true);
+      }
+    };
+
+    void hydratePinnedPages();
+    return () => {
+      cancelled = true;
+    };
+  }, [mobileApp]);
+
+  useEffect(() => {
+    if (!pinnedStorageReady) return;
+
+    void savePinnedIds(pinnedPageIds, mobileApp).catch((error) => {
+      console.warn("Could not save pinned pages to device storage.", error);
+    });
+  }, [mobileApp, pinnedPageIds, pinnedStorageReady]);
 
   useEffect(() => {
     setOpenPopupId(null);
@@ -346,9 +435,11 @@ export default function PageLayout() {
   }, [currentPage, notebookById, notebooks]);
 
   useEffect(() => {
+    if (!hasLoadedOnceRef.current || !pinnedStorageReady) return;
+
     const validIds = new Set(pages.map((page) => page.id));
     setPinnedPageIds((prev) => prev.filter((pageId) => validIds.has(pageId)));
-  }, [pages]);
+  }, [pages, pinnedStorageReady]);
 
   useEffect(() => {
     return () => {
@@ -430,11 +521,15 @@ export default function PageLayout() {
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const isSearching = normalizedSearchQuery.length > 0;
+  const isFiltering = Boolean(selectedLanguage || selectedSource);
+  const showFilteredResults = isSearching || isFiltering;
 
   const filteredItems = useMemo(() => {
-    if (!isSearching) return [];
+    if (!showFilteredResults) return [];
 
-    const matchingNotebooks = notebooks
+    const matchingNotebooks = isFiltering
+      ? []
+      : notebooks
       .filter((notebook) =>
         notebook.name.toLowerCase().includes(normalizedSearchQuery)
       )
@@ -444,7 +539,15 @@ export default function PageLayout() {
       }));
 
     const matchingPages = pages
-      .filter((page) => page.name.toLowerCase().includes(normalizedSearchQuery))
+      .filter(
+        (page) =>
+          (!isSearching ||
+            page.name.toLowerCase().includes(normalizedSearchQuery)) &&
+          (!selectedLanguage ||
+            page.language.toLowerCase() === selectedLanguage) &&
+          (!selectedSource ||
+            (page.source ?? "user").toLowerCase() === selectedSource)
+      )
       .map((page) => ({
         key: `search-page-${page.id}`,
         item: { type: "page" as const, page },
@@ -462,7 +565,16 @@ export default function PageLayout() {
 
       return new Date(bDate).getTime() - new Date(aDate).getTime();
     });
-  }, [isSearching, normalizedSearchQuery, notebooks, pages]);
+  }, [
+    isFiltering,
+    isSearching,
+    normalizedSearchQuery,
+    notebooks,
+    pages,
+    selectedLanguage,
+    selectedSource,
+    showFilteredResults,
+  ]);
 
   const rootPages = useMemo(
     () =>
@@ -917,33 +1029,40 @@ export default function PageLayout() {
     }
   };
 
-  const clearSearch = () => {
+  const closeSearch = () => {
     setSearchQuery("");
+    setSearchOpen(false);
   };
 
-  const searchBar = (
-    <div className="px-2 pt-1 pb-2">
-      <div className="flex items-center gap-2 rounded-md border border-neutral-300 md:border-neutral-400 text-neutral-300 md:text-neutral-400 px-2 py-1">
-        <Search size={14} className="shrink-0" />
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [searchOpen]);
+
+  const searchControl = (
+    <div className="flex min-w-0 flex-1 items-center gap-1">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md bg-neutral-400/15 px-1.5 py-1.5 text-neutral-400">
+        <Search size={14} className="shrink-0" aria-hidden="true" />
         <input
+          ref={searchInputRef}
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={t("Search")}
+          placeholder={t("Find...")}
           className="min-w-0 flex-1 bg-transparent text-xs text-neutral-700 placeholder:text-neutral-400 focus:outline-none"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeSearch();
+          }}
         />
-        <button
-          type="button"
-          onClick={clearSearch}
-          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-neutral-400 transition-colors ${
-            searchQuery
-              ? "hover:bg-neutral-100 hover:text-neutral-700"
-              : "pointer-events-none opacity-30"
-          }`}
-          title={t("Clear search")}
-        >
-          <X size={14} />
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={closeSearch}
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-neutral-500 transition-colors hover:bg-neutral-400/20 hover:text-neutral-800"
+        title={t("Close")}
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 
@@ -960,7 +1079,7 @@ export default function PageLayout() {
     <OfflineState onRetry={() => void reload()} />
   ) : (
     <div className="flex flex-col px-2 pb-14 pt-0">
-      {isSearching ? (
+      {showFilteredResults ? (
         filteredItems.length > 0 ? (
           filteredItems.map(({ key, item }) => (
             <PageCard
@@ -1013,7 +1132,7 @@ export default function PageLayout() {
             />
           ))
         ) : (
-          <div className="px-2 py-3 text-sm text-neutral-400">
+          <div className="px-2 py-3 text-sm opacity-60">
             {t("No matches found.")}
           </div>
         )
@@ -1050,12 +1169,31 @@ export default function PageLayout() {
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="w-full justify-between flex z-30 px-2 items-center h-8">
-        <p className="text-xs opacity-60">{t("Pages")}</p>
-        <Toolbar reload={reload} disabled={mobileApp && offline} />
+      <div className="w-full justify-between flex z-30 py-1 items-center h-8 pr-2 pl-1 md:pl-0">
+        {searchOpen ? (
+          searchControl
+        ) : (
+          <>
+            <PageFilters
+              languages={filterLanguages}
+              selectedLanguage={selectedLanguage}
+              selectedSource={selectedSource}
+              mobileApp={mobileApp}
+              onLanguageChange={setSelectedLanguage}
+              onSourceChange={setSelectedSource}
+            />
+            <Toolbar
+              reload={reload}
+              onSearch={() => {
+                setSelectedLanguage(null);
+                setSelectedSource(null);
+                setSearchOpen(true);
+              }}
+              disabled={mobileApp && offline}
+            />
+          </>
+        )}
       </div>
-
-      {searchBar}
 
       {mobileApp && offline && hasLoadedOnceRef.current ? (
         <p className="px-2 pb-2 text-xs text-neutral-400">
@@ -1063,9 +1201,9 @@ export default function PageLayout() {
         </p>
       ) : null}
 
-      {!isSearching && pinnedPages.length > 0 ? (
-        <div className="pl-2 mr-2 py-2 mb-1 border-b border-neutral-400/50">
-          <div className="pb-1 pt-1 text-xs opacity-60">
+      {!showFilteredResults && pinnedPages.length > 0 ? (
+        <div className="pl-2 mr-2 mb-1 pb-1 border-b border-neutral-400/50">
+          <div className="py-1 h-8 text-xs opacity-60 flex items-center">
             {t("Pinned")}
           </div>
           <div className="flex flex-col">
@@ -1096,6 +1234,12 @@ export default function PageLayout() {
       ) : null}
 
       <div ref={sidebarScrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        {!showFilteredResults ?
+          <div className="pl-2 mr-2 py-1 text-xs opacity-60 h-8 flex items-center">
+            {t("Pages")}
+          </div>
+          : <div className="h-1"></div>
+        }
         {sidebarListContent}
       </div>
     </div>

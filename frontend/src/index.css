@@ -156,6 +156,7 @@ h3 {
 
 @theme inline {
   --font-source: "Source", "Source-kr", serif;
+  /* --font-source: "Pretendard", sans-serif; */
   --font-pretendard: "Pretendard", sans-serif;
   --color-neutral-transparent: var(--app-neutral-transparent);
   --color-neutral-50: var(--app-neutral-50);

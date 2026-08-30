@@ -14,9 +14,8 @@ import type {
 } from "react";
 import type { Token, TextBlock, LemmaData } from "./pageTypes";
 import { useSettings } from "./useSettings";
-import { Check, Ellipsis, Pencil, Plus, Star, Trash2, X } from "lucide-react";
+import { FileInput, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { MiniPopup } from "./util/MiniPopup";
-import { IconButton } from "./util/Button";
 import { useI18n } from "../i18n";
 
 /* =========================================================
@@ -549,7 +548,14 @@ export default function PageCore({
   const [editingMetadataIndex, setEditingMetadataIndex] = useState<number | null>(null);
   const [savingMetadata, setSavingMetadata] = useState(false);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
-  const longPressTimerRef = useRef<number | null>(null);
+  const [pressedMetadataIndex, setPressedMetadataIndex] = useState<number | null>(null);
+  const longPressGestureRef = useRef<{
+    index: number;
+    startX: number;
+    startY: number;
+    timerId: number;
+  } | null>(null);
+  const suppressMetadataClickRef = useRef<number | null>(null);
   const isLyricPage = pageSource === "lrclib";
   const containerAlignClass =
     horizontalAlign === "left"
@@ -580,17 +586,33 @@ export default function PageCore({
   }, []);
 
   function clearMetadataLongPress() {
-    if (longPressTimerRef.current != null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
+    if (longPressGestureRef.current) {
+      window.clearTimeout(longPressGestureRef.current.timerId);
+      longPressGestureRef.current = null;
     }
+
+    setPressedMetadataIndex(null);
+  }
+
+  function startEditingMetadata(index: number, value: string) {
+    clearMetadataLongPress();
+    setEditingMetadataIndex(index);
+    setDraftMetadata(value);
+    setOpenMetadataMenuId(null);
   }
 
   async function handleSaveMetadata() {
     if (!canManageMetadata || !pageId) return;
 
     const nextValue = draftMetadata.trim();
-    if (!nextValue) return;
+    if (!nextValue) {
+      if (editingMetadataIndex != null) {
+        setDraftMetadata("");
+        setEditingMetadataIndex(null);
+        setOpenMetadataMenuId(null);
+      }
+      return;
+    }
 
     setSavingMetadata(true);
 
@@ -619,7 +641,7 @@ export default function PageCore({
       <div
         ref={containerRef}
         className={`relative flex min-h-full w-full flex-col isolate ${containerAlignClass} ${
-          pageId ? "px-4 md:px-6 pt-24 md:pt-40" : 'p-3'
+          pageId ? "px-4 md:px-6 pt-24" : 'p-3'
         } ${settings.lemma_info ? `${syncPlaybackActive ? 'gap-y-28':'gap-y-5'}` : `${syncPlaybackActive ? 'gap-y-5':''}`}`}
         style={{
           userSelect: "none",
@@ -635,7 +657,7 @@ export default function PageCore({
           <div
             data-page-header="true"
             className={`
-              flex w-full max-w-[48em] flex-col gap-14 pb-14 select-text font-source
+              flex w-full max-w-[48em] flex-col gap-7 pb-14 select-text font-source
               ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}
             `}
             style={{ userSelect: "text", WebkitUserSelect: "text" }}
@@ -646,132 +668,161 @@ export default function PageCore({
             </h1>
 
             {/* metadata */}
-            <div className={`flex flex-col gap-2 text-sm ${pageSource === 'lrclib' ? 'items-start' : 'items-center'} `}>
+            <div className={`flex flex-col gap-4 text-sm ${pageSource === 'lrclib' ? 'items-start' : 'items-center'} `}>
               {pageSource && pageSource !== 'user' ? (
-                <div className="flex flex-col gap-1 pb-6">
-                  <span className="text-xs font-pretendard text-neutral-400">{t("Source")}</span>
-                  <span className="uppercase">{pageSource}</span>
+                <div className="flex gap-1.5 items-center font-pretendard text-neutral-400 text-xs">
+                  <FileInput size={13}/>
+                  <span>{pageSource}</span>
                 </div>
               ) : null}
 
               {safeMetadataItems.map((item, index) => {
                 const popupId = `metadata-${index}`;
                 const isEditing = editingMetadataIndex === index;
+                const menuOpen = openMetadataMenuId === popupId;
+                const interactionHighlighted =
+                  menuOpen || pressedMetadataIndex === index;
 
                 return (
                   <div
                     key={`${item}-${index}`}
                     className={`
-                      group relative flex flex-col gap-1 py-1 transition-all
-                      ${isEditing ? 'bg-neutral-200/50' : 'hover:bg-neutral-200/50'}
-                      ${pageSource === 'lrclib' ? 'px-0' : 'px-2'}
+                      group relative flex flex-col gap-1 rounded px-1 -translate-x-1 py-1 transition-colors
+                      ${!isEditing && !isCoarsePointer ? 'hover:bg-neutral-200/50' : ''}
+                      ${interactionHighlighted ? 'bg-neutral-200/50' : ''}
+                      ${menuOpen ? 'z-90' : 'z-0'}
                     `}
                     onPointerDown={(event) => {
                       event.stopPropagation();
                       if (!canManageMetadata || !isCoarsePointer || isEditing) return;
 
                       clearMetadataLongPress();
-                      longPressTimerRef.current = window.setTimeout(() => {
+                      suppressMetadataClickRef.current = null;
+                      setPressedMetadataIndex(index);
+                      const timerId = window.setTimeout(() => {
+                        suppressMetadataClickRef.current = index;
                         setOpenMetadataMenuId(popupId);
+                        longPressGestureRef.current = null;
                       }, 400);
+                      longPressGestureRef.current = {
+                        index,
+                        startX: event.clientX,
+                        startY: event.clientY,
+                        timerId,
+                      };
+                    }}
+                    onPointerMove={(event) => {
+                      const gesture = longPressGestureRef.current;
+                      if (!gesture || gesture.index !== index) return;
+
+                      if (
+                        Math.hypot(
+                          event.clientX - gesture.startX,
+                          event.clientY - gesture.startY
+                        ) > 8
+                      ) {
+                        clearMetadataLongPress();
+                      }
                     }}
                     onPointerUp={() => clearMetadataLongPress()}
                     onPointerLeave={() => clearMetadataLongPress()}
                     onPointerCancel={() => clearMetadataLongPress()}
+                    onDoubleClick={(event) => {
+                      if (!canManageMetadata || isCoarsePointer || isEditing) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      startEditingMetadata(index, item);
+                    }}
+                    onContextMenu={(event) => {
+                      if (!canManageMetadata || isCoarsePointer || isEditing) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setOpenMetadataMenuId(popupId);
+                    }}
+                    style={
+                      isCoarsePointer
+                        ? { userSelect: "none", WebkitUserSelect: "none" }
+                        : undefined
+                    }
                   >
                     {isEditing ? (
-                      <div className={`flex flex-col gap-2 px-3 py-2 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
-                        <textarea
-                          className={`bg-transparent focus:outline-none ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
-                          value={draftMetadata}
-                          onChange={(event) => setDraftMetadata(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              void handleSaveMetadata();
-                            }
-                            if (event.key === "Escape") {
-                              setEditingMetadataIndex(null);
-                              setDraftMetadata("");
-                              setOpenMetadataMenuId(null);
-                            }
-                          }}
-                          autoFocus
-                        />
-                        <div className="flex gap-1">
-                          <IconButton
-                            icon={<Check size={14} />}
-                            disabled={savingMetadata}
-                            onClick={() => void handleSaveMetadata()}
-                          />
-                          <IconButton
-                            icon={<X size={14} />}
-                            disabled={savingMetadata}
-                            onClick={() => {
-                            setEditingMetadataIndex(null);
-                            setDraftMetadata("");
-                            setOpenMetadataMenuId(null);
-                          }}
-                          />
-                        </div>
-                      </div>
+                      <input
+                        type="text"
+                        className={`field-sizing-content min-w-[2ch] max-w-[min(78vw,42rem)] border-0 bg-transparent p-0 outline-none ${
+                          pageSource === 'lrclib' ? 'text-left' : 'text-center'
+                        }`}
+                        value={draftMetadata}
+                        onChange={(event) => setDraftMetadata(event.target.value)}
+                        onBlur={() => void handleSaveMetadata()}
+                        onKeyDown={(event) => {
+                          if (event.nativeEvent.isComposing) return;
+                          if (event.key === "Enter" || event.key === "Escape") {
+                            event.preventDefault();
+                            event.currentTarget.blur();
+                          }
+                        }}
+                        disabled={savingMetadata}
+                        autoFocus
+                      />
                     ) : (
-                      <div className={`flex flex-col ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
+                      <div
+                        className={`flex flex-col ${
+                          pageSource === 'lrclib'
+                            ? 'items-start text-left'
+                            : 'items-center text-center'
+                        } ${isCoarsePointer ? 'select-none' : 'select-text'}`}
+                      >
                         {item.startsWith('https://')
                           ? (
-                            <a href={item} className="underline underline-offset-3 hover:text-neutral-400 transition-colors max-w-78 truncate" target="_blank">{item}</a>
+                            <a
+                              href={item}
+                              className="max-w-78 truncate underline underline-offset-3 transition-colors hover:text-neutral-400"
+                              target="_blank"
+                              onClick={(event) => {
+                                if (suppressMetadataClickRef.current === index) {
+                                  event.preventDefault();
+                                  suppressMetadataClickRef.current = null;
+                                }
+                              }}
+                            >
+                              {item}
+                            </a>
                           ) : (
-                            <span className="select-text" style={{ userSelect: "text", WebkitUserSelect: "text" }}>
+                            <span>
                               {item}
                             </span>
                           )
                         }
-                        
-                        {canManageMetadata ? (
-                          <div className="relative font-pretendard">
-                            <div className="group-hover:opacity-100 opacity-0">
-                              <IconButton
-                                icon={<Ellipsis size={13} />}
-                                onClick={() => {
-                                  setOpenMetadataMenuId((current) =>
-                                    current === popupId ? null : popupId
-                                  );
-                                }}
-                              />
-                            </div>
-                            
-                            <MiniPopup
-                              open={openMetadataMenuId === popupId}
-                              onClose={() => setOpenMetadataMenuId(null)}
-                              left
-                            >
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-700 transition-colors hover:bg-neutral-100"
-                                onClick={() => {
-                                  setEditingMetadataIndex(index);
-                                  setDraftMetadata(item);
-                                  setOpenMetadataMenuId(null);
-                                }}
-                              >
-                                <Pencil size={13} />
-                                <span>{t("Edit")}</span>
-                              </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50"
-                                onClick={() => {
-                                  setOpenMetadataMenuId(null);
-                                  void onDeleteMetadata?.(index);
-                                }}
-                              >
-                                <Trash2 size={13} />
-                                <span>{t("Delete")}</span>
-                              </button>
-                            </MiniPopup>
-                          </div>
-                        ) : null}
                       </div>
                     )}
+
+                    {canManageMetadata && !isEditing ? (
+                      <MiniPopup
+                        open={menuOpen}
+                        onClose={() => setOpenMetadataMenuId(null)}
+                        left
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-700 transition-colors hover:bg-neutral-100"
+                          onClick={() => startEditingMetadata(index, item)}
+                        >
+                          <Pencil size={13} />
+                          <span>{t("Edit")}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50"
+                          onClick={() => {
+                            setOpenMetadataMenuId(null);
+                            void onDeleteMetadata?.(index);
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          <span>{t("Delete")}</span>
+                        </button>
+                      </MiniPopup>
+                    ) : null}
                   </div>
                 );
               })}
@@ -785,7 +836,9 @@ export default function PageCore({
                     setDraftMetadata("");
                     setEditingMetadataIndex(-1);
                   }}
-                  className="flex items-center gap-2 border border-dashed border-neutral-300 px-3 py-2 text-neutral-400 transition-colors hover:border-neutral-400 hover:text-neutral-700"
+                  className={`-translate-x-1 flex items-center gap-2 rounded px-1 py-1 text-neutral-400 transition-colors ${
+                    !isCoarsePointer ? "hover:bg-neutral-200/50" : ""
+                  }`}
                 >
                   <Plus size={14} />
                   <span className="font-pretendard text-xs">{t("Add metadata")}</span>
@@ -793,39 +846,25 @@ export default function PageCore({
               ) : null}
 
               {canManageMetadata && editingMetadataIndex === -1 ? (
-                <div className={`flex flex-col gap-2 bg-neutral-200/50 px-3 py-2 w-105 ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}`}>
-                  <textarea
-                    className={`min-w-[12em] focus:outline-none w-full placeholder:font-pretendard placeholder:text-xs ${pageSource === 'lrclib' ? 'text-left' : 'text-center'} resize-none`}
-                    placeholder={t("Add metadata")}
-                    value={draftMetadata}
-                    onChange={(event) => setDraftMetadata(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        void handleSaveMetadata();
-                      }
-                      if (event.key === "Escape") {
-                        setEditingMetadataIndex(null);
-                        setDraftMetadata("");
-                      }
-                    }}
-                    autoFocus
-                  />
-                  <div className="flex gap-1">
-                    <IconButton
-                      icon={<Check size={14} />}
-                      disabled={savingMetadata}
-                      onClick={() => void handleSaveMetadata()}
-                    />
-                    <IconButton
-                      icon={<X size={14} />}
-                      disabled={savingMetadata}
-                      onClick={() => {
-                      setEditingMetadataIndex(null);
-                      setDraftMetadata("");
-                    }}
-                    />
-                  </div>
-                </div>
+                <input
+                  type="text"
+                  className={`field-sizing-content min-w-[2ch] max-w-[min(78vw,42rem)] border-0 bg-transparent p-0 outline-none placeholder:text-neutral-400 ${
+                    pageSource === 'lrclib' ? 'text-left' : 'text-center'
+                  }`}
+                  placeholder={t("Add metadata")}
+                  value={draftMetadata}
+                  onChange={(event) => setDraftMetadata(event.target.value)}
+                  onBlur={() => void handleSaveMetadata()}
+                  onKeyDown={(event) => {
+                    if (event.nativeEvent.isComposing) return;
+                    if (event.key === "Enter" || event.key === "Escape") {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  disabled={savingMetadata}
+                  autoFocus
+                />
               ) : null}
             </div>
             

@@ -32,7 +32,9 @@ export function MiniPopup({
         ${left ? `${row ? 'left-full top-0 ml-2' : 'left-0 top-full mt-1'}` : `${row ? 'right-full top-0 mr-2' : 'right-0 top-full mt-1'}`}
         rounded-md
         bg-neutral-50
+        border border-neutral-300/30
         shadow-lg
+        font-pretendard
         text-xs
         overflow-hidden
         z-80
