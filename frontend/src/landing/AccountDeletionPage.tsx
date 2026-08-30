@@ -29,7 +29,7 @@ const copy: Record<Locale, Copy> = {
     warningTitle: "This action is permanent",
     warningItems: [
       "Your account and profile will be deleted.",
-      "Saved pages, notebooks, annotations, comments, mutual connections, favorites, and notifications will be deleted.",
+      "Saved pages, notebooks, annotations, and favorites will be deleted.",
       "Deleted data cannot be restored.",
     ],
     email: "Email address",
@@ -50,7 +50,7 @@ const copy: Record<Locale, Copy> = {
     warningTitle: "삭제 후에는 되돌릴 수 없습니다",
     warningItems: [
       "계정과 프로필이 삭제됩니다.",
-      "저장한 페이지, 노트북, 주석, 댓글, 이웃 관계, 즐겨찾기 및 알림이 삭제됩니다.",
+      "저장한 페이지, 노트북, 주석 및 즐겨찾기가 삭제됩니다.",
       "삭제된 데이터는 복구할 수 없습니다.",
     ],
     email: "이메일 주소",

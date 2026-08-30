@@ -15,7 +15,7 @@
 작업 범위를 먼저 좁히는 것이 중요합니다.
 
 - 로컬 분석, lemma lookup, 로컬 API 이슈: `backend`
-- 로그인, 댓글, 공유 페이지, 모바일 클라우드 API: `central`
+- 로그인, 공유 페이지, 모바일 클라우드 API: `central`
 - 웹 UI, 모바일 UI, extension UI: `frontend`
 - 데스크톱 앱 부팅, 패키징, 딥링크, 플레이어 연동: `electron`
 - 양쪽 서버에서 공통으로 보이는 언어 처리 이슈: `shared`

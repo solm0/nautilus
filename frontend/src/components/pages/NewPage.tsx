@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowUp, Music4 } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNowPlaying } from "../lyric/useNowPlaying";
 import { useI18n } from "../../i18n";
 import LanguageSelect from "../util/LanguageSelect";
@@ -11,7 +11,24 @@ export function NewPage() {
   const { t } = useI18n();
   const [pasteText, setPasteText] = useState("");
   const [language, setLanguage] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canAnalyze = Boolean(pasteText.trim() && language);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "0px";
+
+    const lineHeight = Number.parseFloat(
+      window.getComputedStyle(textarea).lineHeight,
+    ) || 24;
+    const maxHeight = lineHeight * 10;
+    const contentHeight = textarea.scrollHeight;
+
+    textarea.style.height = `${Math.min(Math.max(contentHeight, lineHeight), maxHeight)}px`;
+    textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+  }, [pasteText]);
 
   const handleAnalyze = () => {
     if (!canAnalyze || !language) return;
@@ -43,16 +60,18 @@ export function NewPage() {
         <Music4 size={18} />
       </button>
 
-      <div className="flex min-h-52 w-[min(36rem,calc(100%-3rem))] flex-col rounded-2xl bg-neutral-50 p-4 shadow-sm transition-shadow focus-within:shadow-2xl">
+      <div className="flex w-[min(36rem,calc(100%-3rem))] flex-col rounded-2xl bg-neutral-50 p-4 shadow-sm transition-shadow focus-within:shadow-2xl">
         <textarea
+          ref={textareaRef}
+          rows={1}
           value={pasteText}
           onChange={(event) => setPasteText(event.target.value)}
           placeholder={t("Paste text")}
-          className="min-h-32 flex-1 resize-none bg-transparent px-1 text-base outline-none placeholder:text-neutral-400"
+          className="min-h-[1lh] max-h-[10lh] w-full resize-none bg-transparent px-1 text-base leading-6 outline-none placeholder:text-neutral-400"
           spellCheck={false}
         />
 
-        <div className="flex items-end justify-between gap-3">
+        <div className="mt-3 flex items-end justify-between gap-3">
           <LanguageSelect
             language={language}
             setLanguage={(nextLanguage) => setLanguage(nextLanguage?.lang ?? null)}

@@ -28,7 +28,7 @@ export default function ThemeToggle({
       className={
         compact
           ? "group inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          : "group relative inline-flex h-7 w-12 items-center rounded-full p-0.5 bg-neutral-300 transition-colors"
+          : "group relative inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-neutral-300 transition-colors"
       }
     >
       {compact ? (
@@ -46,21 +46,21 @@ export default function ThemeToggle({
       ) : (
         <>
           <div
-            className={`flex h-5 w-5 items-center justify-center rounded-full bg-neutral-50 transition-transform duration-200 ${
-              isDark ? "translate-x-5.5" : "translate-x-0.5"
+            className={`flex h-4 w-4 items-center justify-center rounded-full bg-neutral-50 transition-transform duration-200 ${
+              isDark ? "translate-x-4" : "translate-x-0"
             }`}
           />
           <SunMedium
-            size={14}
-            className={`pointer-events-none absolute left-1.75 text-neutral-400 transition-opacity duration-200 ${
+            size={11}
+            className={`pointer-events-none absolute left-1 text-neutral-400 transition-opacity duration-200 ${
               isDark
                 ? "opacity-0"
                 : "opacity-100"
             }`}
           />
           <MoonStar
-            size={14}
-            className={`pointer-events-none absolute right-1.75 text-neutral-400 transition-opacity duration-200 ${
+            size={11}
+            className={`pointer-events-none absolute right-1 text-neutral-400 transition-opacity duration-200 ${
               isDark
                 ? "opacity-100"
                 : "opacity-0"

@@ -18,7 +18,7 @@ On every task, read the nearest relevant `AGENTS.md` before exploring code.
 ## Where to look by task
 
 - Local analysis, lemma lookup, local content APIs: start in `backend`
-- Auth, comments, shared pages, mobile cloud APIs, landing pages: start in `central`
+- Auth, shared pages, mobile cloud APIs, landing pages: start in `central`
 - Web or mobile UI, Capacitor, extension UI: start in `frontend`
 - Desktop app boot, deep links, local player integration, packaged backend: start in `electron`
 - Logic reused by both servers: inspect `shared` only if the same behavior appears in both `backend` and `central`

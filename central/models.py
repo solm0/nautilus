@@ -10,7 +10,6 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
 )
-from datetime import datetime
 
 class User(Base):
   __tablename__ = "users"
@@ -65,52 +64,3 @@ class Annotation(Base):
     end_index = Column(Integer)
 
     created_at = Column(DateTime)
-
-class Mutual(Base):
-    __tablename__ = "mutuals"
-
-    id = Column(Integer, primary_key=True)
-    user1_id = Column(Integer, ForeignKey("users.id"), index=True)
-    user2_id = Column(Integer, ForeignKey("users.id"), index=True)
-
-    requester_id = Column(Integer, ForeignKey("users.id"))
-
-    status = Column(String, default="pending")
-    created_at = Column(DateTime)
-
-    __table_args__ = (
-        UniqueConstraint("user1_id", "user2_id"),
-    )
-
-class Comment(Base):
-    __tablename__ = "comments"
-
-    id = Column(Integer, primary_key=True)
-
-    annotation_id = Column(Integer, ForeignKey("annotations.id"), index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True)
-
-    parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True, index=True)
-
-    content = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    deleted_at = Column(DateTime, nullable=True)
-
-
-class Notification(Base):
-    __tablename__ = "notifications"
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, index=True)   # 받는 사람
-    actor_id = Column(Integer)              # 행동한 사람
-
-    type = Column(String)  # "comment" | "reply"
-
-    comment_id = Column(Integer, ForeignKey("comments.id"))
-    annotation_id = Column(Integer, ForeignKey("annotations.id"))
-
-    is_read = Column(Boolean, default=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow)

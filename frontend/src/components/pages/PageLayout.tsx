@@ -1388,7 +1388,6 @@ export default function PageLayout() {
                 ? "bg-neutral-200/55"
                 : "bg-neutral-transparent"
             }`}
-            hidden={location.pathname!=='/'}
           >
             {sidebarContent}
           </div>

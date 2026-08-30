@@ -21,8 +21,6 @@ from fastapi.staticfiles import StaticFiles
 from routers.auth_router import router as auth_router
 from routers.pages_router import router as pages_router
 from routers.lemmas_router import router as lemmas_router
-from routers.mutual_router import router as mutual_router
-from routers.comment_router import router as comment_router
 from routers.internal_router import router as internal_router
 from routers.mobile_router import router as mobile_router
 from routers.demo_router import router as demo_router
@@ -82,8 +80,6 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(pages_router)
 app.include_router(lemmas_router)
-app.include_router(mutual_router)
-app.include_router(comment_router)
 app.include_router(internal_router)
 app.include_router(mobile_router)
 app.include_router(demo_router)

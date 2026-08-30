@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime
 import json
 from typing import Optional
 
 from db import get_db
-from models import Page, Notebook, User, Annotation, Comment
+from models import Page, Notebook, User, Annotation
 from .auth_router import get_current_user
-from .comment_router import can_access_annotation
 
 router = APIRouter(prefix="/api", tags=["pages"])
 
@@ -533,23 +531,9 @@ def get_annotations_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    comment_counts = (
-        db.query(
-            Comment.annotation_id,
-            func.count(Comment.id).label("count")
-        )
-        .filter(Comment.deleted_at == None)
-        .group_by(Comment.annotation_id)
-        .subquery()
-    )
-
     query = (
-        db.query(Annotation, Page, comment_counts.c.count)
+        db.query(Annotation, Page)
         .join(Page, Annotation.page_id == Page.id)
-        .outerjoin(
-            comment_counts,
-            Annotation.id == comment_counts.c.annotation_id
-        )
         .filter(Annotation.user_id == current_user.id)
     )
 
@@ -567,7 +551,7 @@ def get_annotations_all(
     rows = query.all()
 
     items = []
-    for ann, page, count in rows[:limit]:
+    for ann, page in rows[:limit]:
         result = json.loads(page.result_json)
         text = result["text"]
 
@@ -582,7 +566,6 @@ def get_annotations_all(
             "page_name": page.name,
             "source": source,
             "created_at": ann.created_at,
-            "comment_count": count or 0,
             "user": {
                 "id": current_user.id,
                 "name": current_user.name,
@@ -605,8 +588,6 @@ def get_annotations_all(
 
 
 # ====== 단일 주석 조회 ======
-from models import Annotation, Comment, User
-
 @router.get("/annotations/{annotation_id}")
 def get_annotation(
     annotation_id: int,
@@ -617,7 +598,10 @@ def get_annotation(
         db.query(Annotation, User, Page)
         .join(User, Annotation.user_id == User.id)
         .join(Page, Annotation.page_id == Page.id)
-        .filter(Annotation.id == annotation_id)
+        .filter(
+            Annotation.id == annotation_id,
+            Annotation.user_id == current_user.id,
+        )
         .first()
     )
 
@@ -625,14 +609,6 @@ def get_annotation(
         raise HTTPException(404, "not found")
 
     a, u, p = row
-
-    if not can_access_annotation(db, current_user.id, a):
-        raise HTTPException(403, "forbidden")
-
-    count = db.query(Comment).filter(
-        Comment.annotation_id == annotation_id,
-        Comment.deleted_at.is_(None)
-    ).count()
 
     result = json.loads(p.result_json)
     text = result["text"]
@@ -648,7 +624,6 @@ def get_annotation(
         "page_name": p.name,
         "source": source,
         "created_at": a.created_at,
-        "comment_count": count,
         "user": {
             "id": u.id,
             "name": u.name,

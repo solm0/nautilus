@@ -11,7 +11,6 @@ import { Check, Pencil } from "lucide-react";
 import { type User } from "../../types";
 import Button, { IconButtonEvent } from "../util/Button";
 import { useLocation, useNavigate } from "react-router-dom";
-import MyCommentsModal from "./MyCommentsModal";
 import PackTable from "./PackTable";
 import ThemeToggle, { SettingToggle } from "../util/ToggleButton";
 import { useSettings } from "../useSettings";
@@ -287,7 +286,6 @@ export function UserProfile() {
         </div>
 
         <div className="flex gap-2">
-          <MyCommentsModal />
           <Button onClick={() => setOpenLogoutModal(true)} text={t("Logout")} />
         </div>
 
@@ -325,7 +323,7 @@ export function UserProfile() {
             ) : (
                 <>
                   <p className="pr-8 text-sm text-neutral-500">
-                    {t("Your data will all disappear. Pages, annotations, comments, mutuals, and saved language data will be removed permanently.")}
+                    {t("Your data will all disappear. Pages, annotations, and saved language data will be removed permanently.")}
                   </p>
                   {deleteError && (
                     <p className="text-sm text-red-600">{deleteError}</p>

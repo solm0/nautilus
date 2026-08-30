@@ -1,5 +1,5 @@
-import type { TimelineItem } from "./components/setting/Mutuals";
 import type { Annotation, TextAnalysisResult } from "./components/pageTypes";
+import type { TimelineItem } from "./types";
 import { getStoredToken, getStoredUser } from "./authSession";
 import { getAppPlatform, isElectronApp } from "./platform";
 import { centralFetch } from "./network";
@@ -209,7 +209,6 @@ function buildAnnotationFeedItem(annotation: Annotation): TimelineItem {
     page_name: `Offline page ${annotation.page_id}`,
     source: "user",
     type: annotation.type,
-    comment_count: 0,
   };
 }
 

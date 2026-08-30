@@ -1,11 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useInfiniteAnnotations } from "./useInfiniteAnnotations";
 import AnnotationCard from "./AnnotationCard";
-import { useSearchParams } from "react-router-dom";
-import { useInfiniteMutualTimeline } from "./useInfiniteMutualTimeline";
-import { AnnotationToolbar } from "./AnnotationToolbar";
-import { fetchAnnotationById } from "../../api";
-import type { TimelineItem } from "../setting/Mutuals";
+import type { TimelineItem } from "../../types";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
 import OfflineState from "../util/OfflineState";
 import { useI18n } from "../../i18n";
@@ -13,16 +9,7 @@ import { CENTRAL_RESTORED_EVENT } from "../../network";
 
 export default function Annotations() {
   const { t } = useI18n();
-  const [params, setParams] = useSearchParams()
-  const tab = params.get("tab") ?? "my"
-  
-  const my = useInfiniteAnnotations()
-  const mutual = useInfiniteMutualTimeline()
-  const active = tab === "my" ? my : mutual
-  const { items, load, hasMore, loading, offline } = active
-  const [pinned, setPinned] = useState<TimelineItem | null>(null);
-
-  const annotationId = params.get("id");
+  const { items, setItems, load, hasMore, loading, offline } = useInfiniteAnnotations()
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -40,13 +27,10 @@ export default function Annotations() {
   }, [hasMore, load, loading, offline]);
 
   useEffect(() => {
-    if (tab === "my" && my.items.length === 0 && !my.offline) {
-      void my.load();
+    if (items.length === 0 && !offline) {
+      void load();
     }
-    if (tab === "mutuals" && mutual.items.length === 0 && !mutual.offline) {
-      void mutual.load();
-    }
-  }, [my.items.length, my.load, my.offline, mutual.items.length, mutual.load, mutual.offline, tab]);
+  }, [items.length, load, offline]);
 
   useEffect(() => {
     if (!offline) return;
@@ -59,76 +43,17 @@ export default function Annotations() {
     return () => window.removeEventListener(CENTRAL_RESTORED_EVENT, handleCentralRestored);
   }, [load, offline]);
 
-  // 알림에서 왔을 시 해당 annotation prepend
-  useEffect(() => {
-    if (!annotationId) return;
-
-    const id = Number(annotationId);
-
-    void fetchAnnotationById(id).then(setPinned).catch(() => null);
-  }, [annotationId]);
-
   const handleUpdate = (updated: TimelineItem) => {
-    setPinned((prev) => prev?.id === updated.id ? updated : prev);
-
-    if (tab === "my") {
-      my.setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item));
-      return;
-    }
-
-    mutual.setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+    setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item));
   };
 
   const handleDelete = (id: number) => {
-    setPinned((prev) => prev?.id === id ? null : prev);
-
-    if (tab === "my") {
-      my.setItems((prev) => prev.filter((item) => item.id !== id));
-      return;
-    }
-
-    mutual.setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   return (
     <div className="flex flex-col gap-7 w-full h-full overflow-y-scroll pl-3 md:pl-6 bg-neutral-50">
-      <AnnotationToolbar />
-
-      {/* annotation?{id} */}
-      {pinned && (
-        <AnnotationCard
-          item={pinned}
-          autoOpenComments={true}
-          pinned={true}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-          readonlySnapshotActions={offline}
-          disablePageLink={tab === "mutuals"}
-        />
-      )}
-
-      <h2 className="top-0 pt-12 z-30 flex gap-4 sticky bg-neutral-50">
-        <span
-          className={tab === "my" ? "" : "text-neutral-400 hover:text-neutral-500 cursor-pointer transition-colors"}
-          onClick={() => {
-            const next = new URLSearchParams(params);
-            next.set("tab", "my");
-            setParams(next);
-          }}
-        >
-          {t("My")}
-        </span>
-        <span
-          className={tab === "mutuals" ? "" : "text-neutral-400 hover:text-neutral-500 cursor-pointer transition-colors"}
-          onClick={() => {
-            const next = new URLSearchParams(params);
-            next.set("tab", "mutuals");
-            setParams(next);
-          }}
-        >
-          {t("Mutuals")}
-        </span>
-      </h2>
+      <h2 className="top-0 pt-12 z-30 flex gap-4 sticky bg-neutral-50">{t("Annotations")}</h2>
 
       {offline && items.length > 0 ? (
         <p className="text-xs text-neutral-400">
@@ -145,11 +70,9 @@ export default function Annotations() {
           <AnnotationCard
             key={item.id}
             item={item}
-            autoOpenComments={false}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             readonlySnapshotActions={offline}
-            disablePageLink={tab === "mutuals"}
           />
         ))}
 

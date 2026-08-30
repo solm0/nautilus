@@ -218,7 +218,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "1. Information We Process",
         paragraphs: [
           "When you create an account or sign in, the App processes information such as your name, email address, password, and authentication token.",
-          "The App processes text, pages, language selections, annotations, comments, and social connections that you choose to create or save.",
+          "The App processes text, pages, language selections, and annotations that you choose to create or save.",
           "If you enable Android notification access, the App uses active media-session information such as the song title, artist, album, playback state, and the name of the player app. Although Android grants broad notification access, Nautilus does not use message or conversation content for this feature.",
           "The App stores preferences and downloaded language data on your device.",
         ],
@@ -227,7 +227,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "2. How Information Is Used",
         paragraphs: [
           "We use account information to sign you in and provide account features.",
-          "We use text and saved content to analyze language, save pages, and provide annotations and comments.",
+          "We use text and saved content to analyze language, save pages, and provide annotations.",
           "We use media-session information to identify the current song, find lyrics, and show optional now-playing alerts.",
           "We may use technical information needed to keep the service secure, reliable, and operational.",
         ],
@@ -243,7 +243,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "4. Sharing and Third-Party Services",
         paragraphs: [
           "To find lyrics, the App sends the current song title and artist name to the LRCLIB service at lrclib.net. It does not send your Nautilus account identifier with this request.",
-          "Information may be sent to Nautilus servers when needed for account, synchronization, language analysis, page, annotation, comment, and social features.",
+          "Information may be sent to Nautilus servers when needed for account, synchronization, language analysis, page, and annotation features.",
           "We do not sell personal information or use it for personalized or third-party advertising.",
         ],
       },
@@ -283,7 +283,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "1. 처리하는 정보",
         paragraphs: [
           "회원가입하거나 로그인할 때 이름, 이메일 주소, 비밀번호, 인증 토큰 등의 정보를 처리합니다.",
-          "사용자가 만들거나 저장한 텍스트, 페이지, 언어 선택, 주석, 댓글 및 이웃 관계를 처리합니다.",
+          "사용자가 만들거나 저장한 텍스트, 페이지, 언어 선택 및 주석을 처리합니다.",
           "Android 알림 접근을 허용하면 곡 제목, 아티스트, 앨범, 재생 상태 및 재생 앱 이름과 같은 활성 미디어 세션 정보를 사용합니다. Android는 넓은 알림 접근 권한을 부여하지만, Nautilus는 이 기능을 위해 메시지나 대화 내용을 사용하지 않습니다.",
           "앱 설정과 다운로드한 언어 데이터를 기기에 저장합니다.",
         ],
@@ -292,7 +292,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "2. 정보 이용 목적",
         paragraphs: [
           "계정 정보는 로그인과 계정 기능 제공에 사용합니다.",
-          "텍스트와 저장 콘텐츠는 언어 분석, 페이지 저장, 주석 및 댓글 기능 제공에 사용합니다.",
+          "텍스트와 저장 콘텐츠는 언어 분석, 페이지 저장 및 주석 기능 제공에 사용합니다.",
           "미디어 세션 정보는 현재 곡 확인, 가사 검색 및 선택적인 지금 재생 알림에 사용합니다.",
           "서비스의 보안, 안정성 및 운영에 필요한 기술 정보를 사용할 수 있습니다.",
         ],
@@ -308,7 +308,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "4. 정보 공유 및 외부 서비스",
         paragraphs: [
           "가사를 찾기 위해 현재 곡 제목과 아티스트 이름을 LRCLIB 서비스(lrclib.net)에 전송합니다. 이 요청에는 Nautilus 계정 식별자를 함께 보내지 않습니다.",
-          "계정, 동기화, 언어 분석, 페이지, 주석, 댓글 및 이웃 기능을 제공하는 데 필요한 정보는 Nautilus 서버로 전송될 수 있습니다.",
+          "계정, 동기화, 언어 분석, 페이지 및 주석 기능을 제공하는 데 필요한 정보는 Nautilus 서버로 전송될 수 있습니다.",
           "개인정보를 판매하거나 개인 맞춤 광고 또는 제3자 광고에 사용하지 않습니다.",
         ],
       },

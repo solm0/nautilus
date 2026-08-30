@@ -151,7 +151,9 @@ export default function PackTable() {
 
   function renderDesktopStatus(state: InstalledPack) {
     return state.lemma_installed ? (
-      <div className="text-xs px-1.5 rounded-full bg-green-200 text-green-700/60">C</div>
+      <div className="text-xs px-1.5 rounded-full bg-green-200 text-green-700/60">
+        {t("Installed")}
+      </div>
     ) : null;
   }
 
@@ -408,7 +410,7 @@ export default function PackTable() {
                                       : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >
-                                    {state.lemma_installed ? t("Core installed") : t("Install Core")}
+                                    {state.lemma_installed ? t("Installed") : t("Install")}
                                   </button>
                                 </div>
 
@@ -417,7 +419,7 @@ export default function PackTable() {
                                   onClick={() => handleUninstall(pack)}
                                   disabled={shouldDisableRemove}
                                   className="rounded-sm p-2 text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-transparent disabled:hover:text-neutral-600"
-                                  title={t("Remove Core")}
+                                  title={t("Remove language pack")}
                                 >
                                   <Trash2 size={14} />
                                 </button>

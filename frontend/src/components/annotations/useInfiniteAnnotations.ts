@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { fetchAnnotations, type AnnotationCursor } from "../../api";
 import { isNetworkError } from "../../network";
-import type { TimelineItem } from "../setting/Mutuals";
+import type { TimelineItem } from "../../types";
 
 export function useInfiniteAnnotations() {
   const [items, setItems] = useState<TimelineItem[]>([])

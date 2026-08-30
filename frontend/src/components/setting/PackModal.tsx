@@ -67,7 +67,6 @@ export default function PackModal({
   const installedRef = useRef(false);
 
   const langName = t(LANG_MAP[lang] || lang);
-  const assetLabel = t("Core");
 
   const stopPolling = () => {
     if (intervalRef.current !== null) {
@@ -176,7 +175,7 @@ export default function PackModal({
       <div className="flex flex-col gap-7 min-w-[320px]">
         <div className="flex flex-col gap-7">
           <h2 className="pr-6">
-            {langName} {version} {assetLabel} {t("installing")}
+            {langName} {version} {t("installing")}
           </h2>
 
           <p className="text-sm text-neutral-500">
