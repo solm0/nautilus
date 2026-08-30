@@ -7,7 +7,6 @@ import Button, { IconButton } from "../util/Button";
 import { ArrowUpRight, Pencil, Trash2 } from "lucide-react";
 import type { TimelineItem, User } from "../../types";
 import { isValidUrl } from "../pageview/AnnotationNew";
-import { UserIcon } from "../setting/Setting";
 import { useI18n } from "../../i18n";
 import PendingSyncBadge from "../util/PendingSyncBadge";
 
@@ -83,20 +82,12 @@ export default function AnnotationCard({
         relative w-full pb-7 pr-3 md:pr-6 flex flex-col gap-3 group max-w-300
       `}
     >
-      <div className="absolute top-10 left-3.5 h-[calc(100%-3rem)] w-1 border-l border-neutral-300" />
 
       {/* user & time & tools */}
       <div className={`
-        sticky bg-neutral-50 flex w-full gap-2 py-3 text-sm items-center z-30
-        top-16 md:top-20
+        flex w-full gap-2 text-xs items-center
         `}>
-        <UserIcon user={effectiveUser} />
         <div className="flex gap-2">
-          <span>
-            {effectiveUser?.id === user?.id || isPendingAnnotation
-              ? t("Me")
-              : (effectiveUser?.name ?? t("Unknown"))}
-          </span>
           <span className="text-neutral-400">
             {formatRelative(item.created_at, locale)}
           </span>
@@ -132,18 +123,18 @@ export default function AnnotationCard({
       `}>
         
         {/* source */}
-        <div className="flex-1 flex flex-col gap-2 items-end">
+        <div className="flex-1 flex flex-col gap-2 items-end text-sm">
+          <div className="w-full rounded-sm">
+            <p className="max-w-[33em]">{item.source}</p>
+          </div>
           <Link
             to={`/page/${item.page_id}`}
             state={{ annotationId: item.id }}
-            className="flex w-auto items-center gap-2 rounded-sm bg-neutral-200 px-2 py-1 text-sm transition-colors hover:bg-neutral-300"
+            className="flex w-auto items-center gap-2 rounded-sm text-sm"
           >
             <p>{item.page_name}</p>
             <ArrowUpRight size={15} />
           </Link>
-          <div className="w-full bg-neutral-200 p-2 rounded-sm">
-            <p className="max-w-[33em]">{item.source}</p>
-          </div>
         </div>
 
         {/* content */}

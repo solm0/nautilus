@@ -103,54 +103,6 @@ function AppVersionSection() {
   );
 }
 
-export function UserIcon({user}: {user?: User | null}) {
-  let hash = 0;
-  let color = "hsl(0, 0%, 80%)";
-  let textColor = "#fff";
-  let text = "";
-
-  if (user && user.email && user.name) {
-    for (let i = 0; i < user.email.length; i++) {
-      hash = user.email.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    const hue = Math.abs(hash % 360);
-
-    const saturation = 65;
-    const lightness = 55;
-
-    color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-
-    textColor = lightness > 60 ? "#111" : "#fff";
-
-
-    const trimmed = user.name.trim();
-
-    if (trimmed.includes(" ")) {
-      text = trimmed
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((v) => v[0])
-        .join("")
-        .toUpperCase();
-    } else text = trimmed.slice(0, 2).toUpperCase();
-  }
-
-  return (
-    <div
-      className="w-8 h-8 rounded-full flex items-center justify-center"
-      style={{
-        backgroundColor: color,
-        color: textColor,
-      }}
-    >
-      <span className="font-medium">
-        {text || null}
-      </span>
-    </div>
-  );
-}
-
 export function UserProfile() {
   const { t } = useI18n();
   const mobileApp = isCapacitorApp();
@@ -252,8 +204,6 @@ export function UserProfile() {
       <div className="flex flex-col gap-7 mb-14 items-start">
         <div className="flex flex-col gap-2 items-start">
           <div className="w-full flex items-center gap-3">
-
-            <UserIcon user={user} />
 
             {/* name */}
             {editing ? (
@@ -443,7 +393,7 @@ export default function Setting() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-start text-sm gap-3">
               <div className="flex items-center gap-2">
-                <span>{t("lemma info")}</span>
+                <span>{t("Lemma info")}</span>
                 <SettingToggle
                   settingKey="lemma_info"
                   value={settings.lemma_info}
@@ -452,17 +402,17 @@ export default function Setting() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-pretendard!">{t("theme")}</span>
+                <span>{t("Theme")}</span>
                 <ThemeToggle />
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-pretendard!">{t("System language")}</span>
+                <span>{t("System language")}</span>
                 <div className="flex gap-3">
                   <select
                     value={settings.system_language}
                     onChange={handleSystemLanguageChange}
-                    className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
+                    className="border border-neutral-200 rounded-sm py-0.5 text-sm focus:outline-none hover:bg-neutral-100"
                     >
                     <option value="en">en</option>
                     <option value="ko">ko</option>

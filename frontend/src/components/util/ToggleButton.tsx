@@ -28,7 +28,7 @@ export default function ThemeToggle({
       className={
         compact
           ? "group inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          : "group relative inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-neutral-300 transition-colors"
+          : "group relative inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-neutral-300 transition-colors my-0.5"
       }
     >
       {compact ? (
@@ -95,7 +95,7 @@ export function SettingToggle({
       title={settingKey}
       className={`
         relative inline-flex h-5 w-9 items-center rounded-full
-        p-0.5 transition-colors
+        p-0.5 transition-colors my-0.5
         ${value
           ? "bg-neutral-500"
           : "bg-neutral-300"

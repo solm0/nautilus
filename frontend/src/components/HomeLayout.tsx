@@ -106,7 +106,7 @@ export function Side() {
       >
         <div className="flex flex-col gap-3 min-w-[180px] p-2">
           <div className="flex items-center gap-2">
-            <span>{t("lemma info")}</span>
+            <span>{t("Lemma info")}</span>
             <SettingToggle
               settingKey="lemma_info"
               value={settings.lemma_info}
