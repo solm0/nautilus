@@ -21,6 +21,7 @@
     "cap:run:android": "npm run build && npx cap run android"
   },
   "dependencies": {
+    "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.0.0",
     "@capacitor/preferences": "^7.0.0",
     "@tailwindcss/vite": "^4.2.4",

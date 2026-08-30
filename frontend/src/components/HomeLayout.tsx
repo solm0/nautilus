@@ -15,11 +15,17 @@ import { CENTRAL_RESTORED_EVENT } from "../network";
 const LAST_PAGE_PATH_STORAGE_KEY = "last-page-path";
 const ONLINE_RECONNECT_GRACE_MS = 3000;
 
+function detectMobileLike() {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+}
+
 export function Side() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(detectMobileLike);
   const [openSettings, setOpenSettings] = useState(false);
   const {
       settings,
@@ -29,9 +35,7 @@ export function Side() {
 
   useEffect(() => {
     const check = () => {
-      const coarse = window.matchMedia("(pointer: coarse)").matches;
-      const mobile = coarse || window.innerWidth < 768;
-      setIsMobile(mobile);
+      setIsMobile(detectMobileLike());
     };
     check();
     window.addEventListener("resize", check);
@@ -62,7 +66,14 @@ export function Side() {
   const content = normalMenus.map((menu) => {
     const active = location.pathname === menu.path;
     return (
-      <IconButton key={menu.path} icon={menu.label} title={menu.title} onClick={() => handleMenuClick(menu.path)} active={active}/>
+      <IconButton
+        key={menu.path}
+        icon={menu.label}
+        title={menu.title}
+        onClick={() => handleMenuClick(menu.path)}
+        active={active}
+        mobileMenu={isMobile}
+      />
     );
   })
 
@@ -72,6 +83,7 @@ export function Side() {
       title={t("Settings")}
       onClick={() => navigate("/setting")}
       active={location.pathname === "/setting" || openSettings === true}
+      mobileMenu
     />
   ) : (
     <div
@@ -108,7 +120,7 @@ export function Side() {
 
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 h-14 w-full border-t bg-neutral-transparent border-neutral-200 flex justify-around p-3 text-sm items-center z-50 backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 h-16 w-full border-t bg-neutral-transparent border-neutral-200 flex justify-around p-3 text-sm items-center z-50 backdrop-blur-sm">
         {content}
         {settingsButtons}
       </div>

@@ -20,7 +20,6 @@
 }
 
 :root {
-  --accent: #aa3bff;
   --app-page-bg: #f7f6f4;
   --app-surface-bg: #fbfaf8;
   --app-border: #e2dfdb;
@@ -74,7 +73,6 @@
 }
 
 .dark {
-  --accent: #b985ff;
   --app-page-bg: #161514;
   --app-surface-bg: #282523;
   --app-border: #2d2a28;
@@ -149,7 +147,7 @@ h2 {
 }
 
 h3 {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: var(--font-weight-medium);
   font-family: var(--font-source);
 }
@@ -191,13 +189,7 @@ h3 {
   --color-red-800: var(--app-red-800);
   --color-red-900: var(--app-red-900);
 
-  --color-nt-blue: #2e3aff;
-  --color-nt-blue-rgb: 46 58 255;
-  --color-nt-navy: #1a1459;
-  --color-nt-teal: #45bbbc;
-  --color-nt-coral: #f29966;
-  --color-nt-mint: #c9eebb;
-  --color-nt-pearl: #f2f4f0;
+  --color-accent: #c9eebb;
 }
 
 html,

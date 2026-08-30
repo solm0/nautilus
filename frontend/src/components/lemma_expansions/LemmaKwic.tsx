@@ -153,7 +153,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
       <div
         className={[
           "transition-colors pointer-events-none absolute inset-0 z-0 h-10",
-          hovered.pos === t.pos ? "bg-nt-mint opacity-50" : "opacity-0",
+          hovered.pos === t.pos ? "bg-accent opacity-50" : "opacity-0",
         ].join(" ")}
       />
       <div className="relative z-10">
@@ -377,7 +377,7 @@ export default function LemmaKwic({
       </div>
 
       {loadingLemma && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
+        <div className="pointer-events-none absolute bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm md:bottom-4">
           {t("Fetching lemmas...")}
         </div>
       )}

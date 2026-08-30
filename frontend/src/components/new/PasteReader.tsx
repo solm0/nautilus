@@ -1,18 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FooterAction } from "./New";
 import type { TextAnalysisResult } from "../pageTypes";
 import { analyzeBlocks } from "../../api";
 import { useI18n } from "../../i18n";
 
 export default function PasteReader({
-  language, setAnalyzing, setResult, setFooterAction
+  language,
+  setAnalyzing,
+  setResult,
+  setFooterAction,
+  initialText = "",
+  autoAnalyze = false,
 }: {
   language: string
   setResult: (r: TextAnalysisResult | null) => void;
   setAnalyzing: (a: boolean) => void;
   setFooterAction: (action: FooterAction | null) => void;
+  initialText?: string;
+  autoAnalyze?: boolean;
 }) {
-  const [pasteText, setPasteText] = useState("");
+  const [pasteText, setPasteText] = useState(initialText);
+  const autoAnalyzeStartedRef = useRef(false);
   const { t } = useI18n();
 
   function textToBlocks(text: string) {
@@ -46,6 +54,13 @@ export default function PasteReader({
 
     return () => setFooterAction(null);
   }, [handlePasteAnalyze, pasteText, setFooterAction, t]);
+
+  useEffect(() => {
+    if (!autoAnalyze || autoAnalyzeStartedRef.current || !pasteText.trim()) return;
+
+    autoAnalyzeStartedRef.current = true;
+    void handlePasteAnalyze();
+  }, [autoAnalyze, handlePasteAnalyze, pasteText]);
 
 
   return (

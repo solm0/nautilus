@@ -72,7 +72,7 @@ export function Toolbar({
         className="w-full px-3 pt-3 pb-2.5 hover:bg-neutral-100 text-left flex items-center gap-2"
       >
         <Folder size={16} />
-        {t("Create folder")}
+        {t("Create notebook")}
       </button>
       <div className="mx-2 border-t border-neutral-200" />
       <Link

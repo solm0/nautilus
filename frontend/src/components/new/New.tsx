@@ -18,6 +18,14 @@ export type FooterAction = {
 
 export default function New() {
   const { t } = useI18n();
+  const location = useLocation();
+  const initialPasteText = typeof location.state?.pasteText === "string"
+    ? location.state.pasteText
+    : "";
+  const initialLanguage = typeof location.state?.language === "string"
+    ? location.state.language
+    : null;
+  const autoAnalyzeInitialText = location.state?.autoAnalyze === true;
   const [result, setResult] = useState<TextAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [footerAction, setFooterAction] = useState<FooterAction | null>(null);
@@ -31,10 +39,9 @@ export default function New() {
 
   const [language, setLanguage] = useState<{
     lang: string;
-  } | null>(null);
+  } | null>(initialLanguage ? { lang: initialLanguage } : null);
 
   // /notebook에서 생성한 page일 경우
-  const location = useLocation();
   const initialNotebookId = location.state?.notebookId ?? null;
   const [selectedNotebook, setSelectedNotebook] = useState<number | null>(initialNotebookId);
 
@@ -146,6 +153,8 @@ export default function New() {
               <PasteReader
                 key={language.lang}
                 language={language.lang}
+                initialText={initialPasteText}
+                autoAnalyze={autoAnalyzeInitialText}
                 setResult={setResult}
                 setAnalyzing={setAnalyzing}
                 setFooterAction={setFooterAction}

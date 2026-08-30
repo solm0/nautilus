@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Outlet, useLocation, useParams } from "react-router-dom";
-import { Menu, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Search, X } from "lucide-react";
 import { Preferences } from "@capacitor/preferences";
 
 import MoveModal from "./MoveModal";
@@ -33,11 +33,12 @@ import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
 const PINNED_STORAGE_KEY = "pages.sidebar.pinned";
 const LONG_PRESS_MS = 420;
 const DRAG_CANCEL_DISTANCE = 10;
-const SIDEBAR_CLOSE_SWIPE = 72;
 const ROOT_DROP_ID = -1;
-const MOBILE_SIDEBAR_MS = 220;
 const DRAG_SCROLL_EDGE_PX = 56;
 const DRAG_SCROLL_MAX_STEP = 18;
+const PAGE_BACK_SWIPE_START_PX = 28;
+const PAGE_BACK_SWIPE_DISTANCE_PX = 80;
+const MOBILE_PAGE_TRANSITION_MS = 280;
 
 export type Page = {
   id: number;
@@ -98,6 +99,12 @@ function sortByCreatedDesc<T extends { created_at: string }>(items: T[]) {
       new Date(b.created_at).getTime() -
       new Date(a.created_at).getTime()
   );
+}
+
+function detectMobileLike() {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
 }
 
 function parsePinnedIds(raw: string | null) {
@@ -164,6 +171,7 @@ export default function PageLayout() {
   const { t } = useI18n();
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPageId = id ? Number(id) : null;
   const mobileApp = isCapacitorApp();
 
@@ -189,15 +197,15 @@ export default function PageLayout() {
     null
   );
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
-  const [isMobileLike, setIsMobileLike] = useState(false);
-  const [sidebarOffsetX, setSidebarOffsetX] = useState(0);
+  const [isMobileLike, setIsMobileLike] = useState(detectMobileLike);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLanguages, setFilterLanguages] = useState<string[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<PageInputSource | null>(null);
-  const [mobileSidebarMounted, setMobileSidebarMounted] = useState(false);
-  const [mobileSidebarEntered, setMobileSidebarEntered] = useState(false);
+  const [mobilePageDragX, setMobilePageDragX] = useState(0);
+  const [mobilePageDragging, setMobilePageDragging] = useState(false);
+  const [mobilePageExiting, setMobilePageExiting] = useState(false);
 
   const initializedExpansionRef = useRef(false);
   const knownNotebookIdsRef = useRef<Set<number>>(new Set());
@@ -209,10 +217,9 @@ export default function PageLayout() {
   const rootDropRef = useRef<HTMLDivElement | null>(null);
   const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
   const flashTimeoutRef = useRef<number | null>(null);
-  const mobileSidebarTimeoutRef = useRef<number | null>(null);
-  const sidebarDragStartRef = useRef<number | null>(null);
+  const pageBackSwipeRef = useRef<{ startX: number; startY: number } | null>(null);
+  const mobilePageBackTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const sidebarDraggingRef = useRef(false);
   const hasLoadedOnceRef = useRef(false);
   const autoScrollFrameRef = useRef<number | null>(null);
   const autoScrollVelocityRef = useRef(0);
@@ -306,8 +313,7 @@ export default function PageLayout() {
 
   useEffect(() => {
     const updateMobileState = () => {
-      const coarse = window.matchMedia("(pointer: coarse)").matches;
-      setIsMobileLike(coarse || window.innerWidth < 768);
+      setIsMobileLike(detectMobileLike());
     };
 
     updateMobileState();
@@ -446,43 +452,14 @@ export default function PageLayout() {
       if (flashTimeoutRef.current) {
         window.clearTimeout(flashTimeoutRef.current);
       }
-      if (mobileSidebarTimeoutRef.current) {
-        window.clearTimeout(mobileSidebarTimeoutRef.current);
-      }
       if (autoScrollFrameRef.current) {
         window.cancelAnimationFrame(autoScrollFrameRef.current);
       }
+      if (mobilePageBackTimerRef.current) {
+        window.clearTimeout(mobilePageBackTimerRef.current);
+      }
     };
   }, []);
-
-  useEffect(() => {
-    if (!isMobileLike) {
-      setMobileSidebarMounted(false);
-      setMobileSidebarEntered(false);
-      return;
-    }
-
-    if (pageSidebarOpen) {
-      if (mobileSidebarTimeoutRef.current) {
-        window.clearTimeout(mobileSidebarTimeoutRef.current);
-      }
-      setMobileSidebarMounted(true);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setMobileSidebarEntered(true);
-        });
-      });
-      return;
-    }
-
-    setMobileSidebarEntered(false);
-    if (mobileSidebarTimeoutRef.current) {
-      window.clearTimeout(mobileSidebarTimeoutRef.current);
-    }
-    mobileSidebarTimeoutRef.current = window.setTimeout(() => {
-      setMobileSidebarMounted(false);
-    }, MOBILE_SIDEBAR_MS);
-  }, [isMobileLike, pageSidebarOpen]);
 
   useEffect(() => {
     dragStateRef.current = dragState;
@@ -1003,30 +980,81 @@ export default function PageLayout() {
     }
   };
 
-  const onSidebarTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!isMobileLike || !pageSidebarOpen) return;
-    sidebarDraggingRef.current = true;
-    sidebarDragStartRef.current = event.touches[0].clientX;
-  };
+  const startMobilePageExit = useCallback(() => {
+    if (!isMobileLike || currentPageId === null || mobilePageExiting) return;
 
-  const onSidebarTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!sidebarDraggingRef.current || sidebarDragStartRef.current === null) return;
+    setMobilePageDragging(false);
+    setMobilePageDragX(0);
+    setMobilePageExiting(true);
 
-    const delta = event.touches[0].clientX - sidebarDragStartRef.current;
-    setSidebarOffsetX(Math.min(0, delta));
-  };
-
-  const onSidebarTouchEnd = () => {
-    if (!sidebarDraggingRef.current) return;
-
-    const shouldClose = sidebarOffsetX < -SIDEBAR_CLOSE_SWIPE;
-    sidebarDraggingRef.current = false;
-    sidebarDragStartRef.current = null;
-    setSidebarOffsetX(0);
-
-    if (shouldClose) {
-      setPageSidebarOpen(false);
+    if (mobilePageBackTimerRef.current) {
+      window.clearTimeout(mobilePageBackTimerRef.current);
     }
+
+    mobilePageBackTimerRef.current = window.setTimeout(() => {
+      mobilePageBackTimerRef.current = null;
+      navigate("/");
+    }, MOBILE_PAGE_TRANSITION_MS);
+  }, [currentPageId, isMobileLike, mobilePageExiting, navigate]);
+
+  useEffect(() => {
+    if (!isMobileLike || currentPageId === null) return;
+
+    const handleMobilePageBack = () => startMobilePageExit();
+    window.addEventListener("nautilus:mobile-page-back", handleMobilePageBack);
+
+    return () => {
+      window.removeEventListener("nautilus:mobile-page-back", handleMobilePageBack);
+    };
+  }, [currentPageId, isMobileLike, startMobilePageExit]);
+
+  useEffect(() => {
+    if (currentPageId !== null) return;
+
+    setMobilePageDragX(0);
+    setMobilePageDragging(false);
+    setMobilePageExiting(false);
+  }, [currentPageId]);
+
+  const onPageTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobileLike || currentPageId === null || mobilePageExiting) return;
+
+    const touch = event.touches[0];
+    pageBackSwipeRef.current = touch.clientX <= PAGE_BACK_SWIPE_START_PX
+      ? { startX: touch.clientX, startY: touch.clientY }
+      : null;
+  };
+
+  const onPageTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = pageBackSwipeRef.current;
+    if (!start) return;
+
+    const touch = event.touches[0];
+    const deltaX = Math.max(0, touch.clientX - start.startX);
+    const deltaY = Math.abs(touch.clientY - start.startY);
+
+    if (deltaX <= deltaY) return;
+
+    setMobilePageDragging(true);
+    setMobilePageDragX(deltaX);
+  };
+
+  const onPageTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = pageBackSwipeRef.current;
+    pageBackSwipeRef.current = null;
+    if (!start) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.startX;
+    const deltaY = Math.abs(touch.clientY - start.startY);
+
+    if (deltaX >= PAGE_BACK_SWIPE_DISTANCE_PX && deltaX > deltaY) {
+      startMobilePageExit();
+      return;
+    }
+
+    setMobilePageDragging(false);
+    setMobilePageDragX(0);
   };
 
   const closeSearch = () => {
@@ -1349,57 +1377,26 @@ export default function PageLayout() {
 
   return (
     <>
-      <div className="flex w-full h-full">
-        {isMobileLike && !pageSidebarOpen ? (
-          <button
-            type="button"
-            className="absolute left-3 top-10 z-[40] flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-neutral-50/90 text-neutral-700 shadow-md backdrop-blur-sm"
-            onClick={() => setPageSidebarOpen(true)}
-            title={t("Open pages")}
+      <div className="relative flex w-full h-full overflow-hidden">
+        {isMobileLike ? (
+          <div
+            ref={rootDropRef}
+            className={`relative h-full w-full overflow-hidden pt-11 pb-14 transition-colors ${
+              currentPageId !== null ? "pointer-events-none" : ""
+            } ${
+              dragTargetNotebookId === ROOT_DROP_ID
+                ? "bg-neutral-200/55"
+                : "bg-neutral-transparent"
+            }`}
+            hidden={location.pathname!=='/'}
           >
-            <Menu size={18} />
-          </button>
-        ) : null}
-
-        {isMobileLike && mobileSidebarMounted ? (
-          <div className="fixed inset-0 z-[40] md:hidden">
-            <button
-              type="button"
-              className="absolute inset-0 bg-neutral-950/40 transition-opacity duration-200"
-              style={{ opacity: mobileSidebarEntered ? 1 : 0 }}
-              onClick={() => setPageSidebarOpen(false)}
-              aria-label={t("Close pages sidebar")}
-            />
-            <div
-              className="absolute inset-y-0 left-0 overflow-hidden border-r border-neutral-200 bg-neutral-50 shadow-2xl transition-[width,transform] duration-200"
-              style={{
-                width: mobileSidebarEntered ? "min(91.666667vw, 24rem)" : "0px",
-                transform: `translateX(${mobileSidebarEntered ? sidebarOffsetX : 0}px)`,
-                transition: sidebarDraggingRef.current
-                  ? "none"
-                  : `width ${MOBILE_SIDEBAR_MS}ms ease, transform ${MOBILE_SIDEBAR_MS}ms ease`,
-              }}
-              onTouchStart={onSidebarTouchStart}
-              onTouchMove={onSidebarTouchMove}
-              onTouchEnd={onSidebarTouchEnd}
-            >
-              <div
-                ref={rootDropRef}
-                className={`relative h-full overflow-y-auto pt-11 transition-colors ${
-                  dragTargetNotebookId === ROOT_DROP_ID
-                    ? "bg-neutral-200/55"
-                    : "bg-neutral-50"
-                }`}
-              >
-                {sidebarContent}
-              </div>
-            </div>
+            {sidebarContent}
           </div>
         ) : (
           <div
             ref={rootDropRef}
             className={`relative shrink-0 flex flex-col pt-11 transition-[width,color] duration-200 ${
-              pageSidebarOpen
+              currentPageId === null || pageSidebarOpen
                 ? "w-64 overflow-y-auto"
                 : "w-0 overflow-hidden"
             } ${
@@ -1412,13 +1409,38 @@ export default function PageLayout() {
           </div>
         )}
 
-        <div
-          className={`relative flex-1 h-full shrink-0 bg-neutral-50 ${
-            location.pathname === "/" && "bg-transparent"
-          }`}
-        >
-          <Outlet />
-        </div>
+        {!isMobileLike || currentPageId !== null ? (
+          <div
+            className={`${
+              isMobileLike
+                ? "absolute inset-0 z-10 h-full w-full"
+                : "relative flex-1 h-full shrink-0"
+            } bg-neutral-50 ${
+              location.pathname === "/" && "bg-transparent"
+            }`}
+            style={isMobileLike ? {
+              transform: mobilePageExiting
+                ? "translateX(100%)"
+                : `translateX(${mobilePageDragX}px)`,
+              transition: mobilePageDragging
+                ? "none"
+                : `transform ${MOBILE_PAGE_TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              boxShadow: mobilePageDragX > 0 || mobilePageExiting
+                ? "-12px 0 28px rgb(0 0 0 / 0.12)"
+                : "none",
+            } : undefined}
+            onTouchStart={onPageTouchStart}
+            onTouchMove={onPageTouchMove}
+            onTouchEnd={onPageTouchEnd}
+            onTouchCancel={() => {
+              pageBackSwipeRef.current = null;
+              setMobilePageDragging(false);
+              setMobilePageDragX(0);
+            }}
+          >
+            <Outlet />
+          </div>
+        ) : null}
       </div>
 
       {dragState ? (

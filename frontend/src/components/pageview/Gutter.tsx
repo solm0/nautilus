@@ -25,27 +25,27 @@ export function Gutter({
   const container = containerRef.current;
 
   useEffect(() => {
-    function handleClick(event: MouseEvent) {
-      if (!setEmojiPicker) return;
-
+    function handlePointerDown(event: PointerEvent) {
       const target = event.target as HTMLElement;
 
-      if (
-        target.closest(".EmojiPickerReact")
-      ) {
+      if (target.closest("[data-gutter-annotation]")) {
         return;
       }
 
-      setEmojiPicker(null);
+      setHoverRange(null);
+
+      if (!target.closest(".EmojiPickerReact")) {
+        setEmojiPicker?.(null);
+      }
     }
 
-    window.addEventListener("mousedown", handleClick);
+    window.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
-      window.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("pointerdown", handlePointerDown);
     };
 
-  }, []);
+  }, [setEmojiPicker, setHoverRange]);
 
   if (!container) return;
   const containerRect = container.getBoundingClientRect();
@@ -72,7 +72,7 @@ export function Gutter({
   });
 
   return (
-    <div className="w-6 md:w-0 relative">
+    <div className="absolute top-0 right-0 z-20 w-0 opacity-50 md:relative md:top-auto md:right-auto md:z-auto md:opacity-100">
       {groups.map((group, i) => (
         <div
           key={i}
@@ -92,19 +92,31 @@ export function Gutter({
             return (
               <div
                 key={j}
+                data-gutter-annotation="true"
                 className={`
-                  h-6 w-6 rounded text-neutral-300 transition-colors flex items-center justify-center
-                  ${disableEmojiEdit ? "pointer-events-none cursor-default opacity-50" : "cursor-pointer hover:text-neutral-500"}
-                  ${annotationId === annotation.id ? 'bg-neutral-200' : 'bg-transparent'}
-                  ${annotation.type !== 'emoji' && !disableEmojiEdit ? 'hover:bg-neutral-200' : ''}
+                  h-6 w-6 rounded text-neutral-700 transition-colors flex items-center justify-center
+                  ${disableEmojiEdit ? "pointer-events-none cursor-default opacity-50" : "cursor-pointer"}
+                  ${annotationId === annotation.id ? 'bg-neutral-100' : 'bg-transparent'}
+                  ${!disableEmojiEdit && 'hover:bg-neutral-100'}
                 `}
-              onMouseEnter={() =>
+              onPointerEnter={() =>
                 setHoverRange({
                   start: annotation.start_index,
                   end: annotation.end_index,
                 })
               }
-              onMouseLeave={() => setHoverRange(null)}
+              onPointerDown={() =>
+                setHoverRange({
+                  start: annotation.start_index,
+                  end: annotation.end_index,
+                })
+              }
+              onPointerLeave={(event) => {
+                if (event.pointerType !== "touch") {
+                  setHoverRange(null);
+                }
+              }}
+              onPointerCancel={() => setHoverRange(null)}
               onClick={(e) => {
                 if (annotation.type === "emoji") {
 
@@ -130,13 +142,13 @@ export function Gutter({
               }}
             >
               {annotation.type === "emoji" ? (
-                <span className={`leading-none text-xl transition-transform ease-in-out ${disableEmojiEdit ? "" : "hover:scale-150"}`}>
+                <span className={`leading-none text-xl`}>
                   {annotation.content}
                 </span>
               ) : annotation.type === "link" ? (
-                <Link size={14} className={`${annotationId === annotation.id && 'text-neutral-600'}`} />
+                <Link size={14} className={`${annotationId === annotation.id && 'text-neutral-700'}`} />
               ) : (
-                <MessageSquareMore size={14} className={`${annotationId === annotation.id && 'text-neutral-600'}`} />
+                <MessageSquareMore size={14} className={`${annotationId === annotation.id && 'text-neutral-700'}`} />
               )}
               </div>
             );

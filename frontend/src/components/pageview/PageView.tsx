@@ -443,7 +443,7 @@ export default function PageView() {
           </ResponsiveSideLayout>
 
           {loadingLemma && !loadingPage && !noPack && (
-            <div className="pointer-events-none absolute bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
+            <div className="pointer-events-none absolute bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm md:bottom-4">
               {t("Fetching lemmas...")}
             </div>
           )}

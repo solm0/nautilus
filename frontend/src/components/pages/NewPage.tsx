@@ -1,32 +1,75 @@
 import { useNavigate } from "react-router-dom";
-import FluidBackground from "../FluidBackground";
-import { Music4 } from "lucide-react";
+import { ArrowUp, Music4 } from "lucide-react";
+import { useState } from "react";
 import { useNowPlaying } from "../lyric/useNowPlaying";
-import Logotype from "../svgs/Logotype";
 import { useI18n } from "../../i18n";
+import LanguageSelect from "../util/LanguageSelect";
 
 export function NewPage() {
   const navigate = useNavigate();
   const { hasTrack } = useNowPlaying();
   const { t } = useI18n();
+  const [pasteText, setPasteText] = useState("");
+  const [language, setLanguage] = useState<string | null>(null);
+  const canAnalyze = Boolean(pasteText.trim() && language);
+
+  const handleAnalyze = () => {
+    if (!canAnalyze || !language) return;
+
+    navigate("/new", {
+      state: {
+        pasteText,
+        language,
+        autoAnalyze: true,
+      },
+    });
+  };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <FluidBackground />
+    <div className="relative flex h-full w-full items-center justify-center bg-neutral-transparent">
       <button
         type="button"
         onClick={() => navigate("/lyric")}
-        className="fixed top-10 right-4 md:right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 hover:opacity-70 transition-opacity"
+        className="fixed right-4 bottom-20 md:right-6 md:bottom-6 z-20 isolate flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 hover:opacity-70 transition-opacity"
         title={t("Lyrics")}
       >
-        <Music4 size={18} />
         {hasTrack ? (
-          <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-nt-coral" />
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 rounded-full bg-neutral-50 animate-ping motion-reduce:animate-none"
+            style={{ animationDuration: "2.4s" }}
+          />
         ) : null}
+        <Music4 size={18} />
       </button>
-      <div className="flex flex-col gap-14">
-        <div className="w-64 transition-opacity mix-blend-overlay select-none">
-          <Logotype className="fill-white stroke-0" />
+
+      <div className="flex min-h-52 w-[min(36rem,calc(100%-3rem))] flex-col rounded-2xl bg-neutral-50 p-4 shadow-sm transition-shadow focus-within:shadow-2xl">
+        <textarea
+          value={pasteText}
+          onChange={(event) => setPasteText(event.target.value)}
+          placeholder={t("Paste text")}
+          className="min-h-32 flex-1 resize-none bg-transparent px-1 text-base outline-none placeholder:text-neutral-400"
+          spellCheck={false}
+        />
+
+        <div className="flex items-end justify-between gap-3">
+          <LanguageSelect
+            language={language}
+            setLanguage={(nextLanguage) => setLanguage(nextLanguage?.lang ?? null)}
+          />
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={!canAnalyze}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+              canAnalyze
+                ? "bg-neutral-900 text-neutral-50 hover:bg-neutral-700"
+                : "cursor-default bg-neutral-200 text-neutral-400"
+            }`}
+            title={t("Done")}
+          >
+            <ArrowUp size={18} />
+          </button>
         </div>
       </div>
     </div>

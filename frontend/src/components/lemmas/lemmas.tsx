@@ -156,7 +156,7 @@ export default function Lemmas(){
 
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
 
-        <h2 className="top-0 pt-8 md:pt-12 z-30">{t("My Lemmas")}</h2>
+        <h2 className="top-0 pt-12 z-30">{t("My Lemmas")}</h2>
 
         {offline && grouped.length > 0 ? (
           <p className="text-xs text-neutral-400">

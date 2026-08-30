@@ -11,7 +11,6 @@ import { Check, Pencil } from "lucide-react";
 import { type User } from "../../types";
 import Button, { IconButtonEvent } from "../util/Button";
 import { useLocation, useNavigate } from "react-router-dom";
-import Mutuals from "./Mutuals";
 import MyCommentsModal from "./MyCommentsModal";
 import PackTable from "./PackTable";
 import ThemeToggle, { SettingToggle } from "../util/ToggleButton";
@@ -71,8 +70,8 @@ function AppVersionSection() {
   }
 
   return (
-    <section className="w-full flex flex-col gap-4 pt-8 md:pt-12 items-start">
-      <h2 className="font-pretendard!">{t("App version")}</h2>
+    <section className="w-full flex flex-col gap-7 items-start">
+      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("App version")}</h3>
       <div className="flex items-center gap-2 text-sm">
         <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
@@ -437,13 +436,14 @@ export default function Setting() {
   return (
     <>
       <div className="w-full h-full overflow-y-scroll overflow-x-hidden flex flex-col gap-7 pr-3 z-30 pl-3 md:pl-6 bg-neutral-50 pb-7">
+        <h2 className="top-0 pt-12 z-30">{t("Settings")}</h2>
+
         <AppVersionSection />
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Preferences")}</h2>
+
+        <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Preferences")}</h3>
         <section className="w-full h-auto mb-14 flex flex-col gap-7">
           <div className="flex flex-col gap-4">
-            <h3 className="font-pretendard!">{t("Page view")}</h3>
-            <div className="flex flex-col items-start text-sm gap-2">
-
+            <div className="flex flex-col items-start text-sm gap-3">
               <div className="flex items-center gap-2">
                 <span>{t("lemma info")}</span>
                 <SettingToggle
@@ -452,111 +452,104 @@ export default function Setting() {
                   toggleSetting={toggleSetting}
                 />
               </div>
-            </div>
-          </div>
 
+              <div className="flex items-center gap-2">
+                <span className="font-pretendard!">{t("theme")}</span>
+                <ThemeToggle />
+              </div>
 
-          <div className="flex items-center gap-4">
-            <h3 className="font-pretendard!">{t("Theme")}</h3>
-            <div>
-              <ThemeToggle />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <div className="flex flex-wrap items-center gap-5">
-              <h3 className="font-pretendard!">{t("System language")}</h3>
-              <div className="flex gap-3 h-9">
-                <select
-                  value={settings.system_language}
-                  onChange={handleSystemLanguageChange}
-                  className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
-                  >
-                  <option value="en">en</option>
-                  <option value="ko">ko</option>
-                </select>
-                {pendingLanguageChange ? (
-                  <Button
-                  text={t("Relaunch")}
-                  onClick={() => {
-                    void relaunchApp();
-                  }}
-                  black
-                  />
-                ) : null}
+              <div className="flex items-center gap-2">
+                <span className="font-pretendard!">{t("System language")}</span>
+                <div className="flex gap-3">
+                  <select
+                    value={settings.system_language}
+                    onChange={handleSystemLanguageChange}
+                    className="border border-neutral-200 rounded-sm py-1 text-sm focus:outline-none hover:bg-neutral-100"
+                    >
+                    <option value="en">en</option>
+                    <option value="ko">ko</option>
+                  </select>
+                  {pendingLanguageChange ? (
+                    <Button
+                    text={t("Relaunch")}
+                    onClick={() => {
+                      void relaunchApp();
+                    }}
+                    black
+                    />
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
-          {mobileApp && (
-            <div className="flex flex-col gap-4">
-              <h3 className="font-pretendard!">{t("Notifications")}</h3>
-              <div className="flex flex-col items-start text-sm gap-2">
-                <div className="flex items-center gap-2">
-                  <span>{t("now playing alerts")}</span>
-                  <button
-                    type="button"
-                    onClick={handleNowPlayingNotificationsToggle}
-                    aria-pressed={settings.now_playing_notifications}
-                    title={t("now playing alerts")}
+        </section>
+
+        {mobileApp && (
+          <>
+            <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Notifications")}</h3>
+            <section className="w-full h-auto mb-14 flex flex-col gap-7 items-start text-sm">
+              <div className="flex items-center gap-2">
+                <span>{t("now playing alerts")}</span>
+                <button
+                  type="button"
+                  onClick={handleNowPlayingNotificationsToggle}
+                  aria-pressed={settings.now_playing_notifications}
+                  title={t("now playing alerts")}
+                  className={`
+                    relative inline-flex h-5 w-9 items-center rounded-full
+                    p-0.5 transition-colors
+                    ${
+                      settings.now_playing_notifications
+                        ? "bg-neutral-700"
+                        : "bg-neutral-300"
+                    }
+                  `}
+                >
+                  <div
                     className={`
-                      relative inline-flex h-5 w-9 items-center rounded-full
-                      p-0.5 transition-colors
+                      h-4 w-4 rounded-full bg-white shadow-sm
+                      transition-transform duration-200
                       ${
                         settings.now_playing_notifications
-                          ? "bg-neutral-700"
-                          : "bg-neutral-300"
+                          ? "translate-x-4"
+                          : "translate-x-0"
                       }
                     `}
-                  >
-                    <div
-                      className={`
-                        h-4 w-4 rounded-full bg-white shadow-sm
-                        transition-transform duration-200
-                        ${
-                          settings.now_playing_notifications
-                            ? "translate-x-4"
-                            : "translate-x-0"
-                        }
-                      `}
-                    />
-                  </button>
-                </div>
-                {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
-                  <button
-                    type="button"
-                    className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
-                    onClick={() => setOpenNotificationModal(true)}
-                  >
-                    {t("Notifications are blocked on this device. Open settings.")}
-                  </button>
-                )}
-                <a
-                  href={ANDROID_PRIVACY_POLICY_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-neutral-500 underline underline-offset-2"
-                >
-                  {t("Android app privacy policy")}
-                </a>
+                  />
+                </button>
               </div>
-            </div>
-          )}
-        </section>
+              {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
+                <button
+                  type="button"
+                  className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
+                  onClick={() => setOpenNotificationModal(true)}
+                >
+                  {t("Notifications are blocked on this device. Open settings.")}
+                </button>
+              )}
+              <a
+                href={ANDROID_PRIVACY_POLICY_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-neutral-500 underline underline-offset-2"
+              >
+                {t("Android app privacy policy")}
+              </a>
+            </section>
+          </>
+        )}
 
-        <h2 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Language packs")}</h2>
-        <p className="text-sm">
-          {mobileApp
-            ? t("Activate only the languages you want to use on this device.")
-            : t("To reduce storage, keep a single language version.")}
-        </p>
+        <h3 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Language packs")}</h3>
         <section className="w-full h-auto mb-14 flex flex-col gap-4">
+          <p className="text-sm">
+            {mobileApp
+              ? t("Activate only the languages you want to use on this device.")
+              : t("To reduce storage, keep a single language version.")}
+          </p>
           <PackTable />
         </section>
-        
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Mutuals")}</h2>
-        <Mutuals />
 
-        <h2 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("Profile")}</h2>
+        <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Profile")}</h3>
         <UserProfile />
       </div>
 

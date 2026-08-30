@@ -49,13 +49,14 @@ export function LinkButton({
 }
 
 export function IconButton({
-  icon, onClick, disabled = false, title, active = false
+  icon, onClick, disabled = false, title, active = false, mobileMenu = false
 }: {
   icon: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   title?: string;
   active?: boolean;
+  mobileMenu?: boolean;
 }) {
   return (
     <button
@@ -63,7 +64,10 @@ export function IconButton({
       className={`
         aspect-square p-1 rounded transition-colors cursor-pointer flex items-center justify-center
         ${disabled ? 'opacity-40 pointer-events-none' : 'opacity-100 pointer-events-auto'}
-        ${active ? 'bg-neutral-400/40' : 'bg-transparent hover:bg-neutral-400/20'}
+        ${mobileMenu 
+          ? active ? '' : 'text-neutral-400'
+          : active ? 'bg-neutral-400/40' : 'bg-transparent hover:bg-neutral-400/20'
+        }
       `}
       onClick={() => onClick()}
       title={title}

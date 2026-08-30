@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { registerPlugin } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 
 import {
   matchPath,
@@ -47,32 +47,9 @@ const PAGE_SIDEBAR_OPEN_STORAGE_KEY = "pages.sidebar.open";
 const LayoutContext =
   createContext<LayoutContextType | null>(null);
 
-type PluginListenerHandle = {
-  remove: () => Promise<void>;
-};
-
-type BackButtonEvent = {
-  canGoBack: boolean;
-};
-
 type URLOpenListenerEvent = {
   url: string;
 };
-
-type CapacitorAppPlugin = {
-  addListener(
-    eventName: "backButton",
-    listenerFunc: (event: BackButtonEvent) => void
-  ): Promise<PluginListenerHandle>;
-  addListener(
-    eventName: "appUrlOpen",
-    listenerFunc: (event: URLOpenListenerEvent) => void
-  ): Promise<PluginListenerHandle>;
-  exitApp: () => Promise<void>;
-  getLaunchUrl: () => Promise<{ url: string | null }>;
-};
-
-const CapacitorApp = registerPlugin<CapacitorAppPlugin>("App");
 
 function loadPageSidebarOpen() {
   if (typeof window === "undefined") return true;
@@ -145,7 +122,7 @@ export default function RootLayout() {
     if (!isCapacitorApp()) return;
 
     let isCancelled = false;
-    let listenerHandle: PluginListenerHandle | null = null;
+    let listenerHandle: Awaited<ReturnType<typeof CapacitorApp.addListener>> | null = null;
 
     const attach = async () => {
       try {
@@ -155,8 +132,9 @@ export default function RootLayout() {
             return;
           }
 
-          if (pageSidebarOpen && isPagePath) {
-            setPageSidebarOpen(false);
+          if (isPagePath) {
+            setPageSidebarOpen(true);
+            window.dispatchEvent(new Event("nautilus:mobile-page-back"));
             return;
           }
 
@@ -191,7 +169,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     let isCancelled = false;
-    let urlListenerHandle: PluginListenerHandle | null = null;
+    let urlListenerHandle: Awaited<ReturnType<typeof CapacitorApp.addListener>> | null = null;
     let removeElectronListener: (() => void) | void;
 
     const openLyricRoute = () => {
@@ -231,7 +209,7 @@ export default function RootLayout() {
       try {
         const launch = await CapacitorApp.getLaunchUrl();
         if (!isCancelled) {
-          navigateFromUrl(launch.url);
+          navigateFromUrl(launch?.url);
         }
 
         urlListenerHandle = await CapacitorApp.addListener("appUrlOpen", (event: URLOpenListenerEvent) => {

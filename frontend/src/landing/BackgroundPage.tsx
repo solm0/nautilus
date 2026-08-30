@@ -99,7 +99,7 @@ function Citation({ id }: { id: string }) {
 
   return (
     <span
-      className="group relative inline-block cursor-help rounded-sm text-nt-blue underline decoration-dotted underline-offset-3 outline-none focus-visible:ring-2 focus-visible:ring-nt-blue/40"
+      className="group relative inline-block cursor-help rounded-sm text-accent underline decoration-dotted underline-offset-3 outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
       tabIndex={0}
       aria-label={`${id}: ${basis.source}. ${basis.summary}`}
     >

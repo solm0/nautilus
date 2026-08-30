@@ -24,7 +24,7 @@ const STYLE = {
 
   circleRInner:        4.5,
   circleColorInternal: "var(--color-neutral-600)",
-  circleColorLeaf:     "var(--color-nt-mint)",
+  circleColorLeaf:     "var(--color-accent)",
 
   textColor:           "var(--color-neutral-600)",
   textHaloColor:       "var(--color-neutral-100)",

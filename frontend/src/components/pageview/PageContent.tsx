@@ -317,46 +317,68 @@ export default function PageContent({
     : finalSelection
       ? [finalSelection.start, finalSelection.end]
       : null;
+  const selectionRangeKey = range ? `${range[0]}:${range[1]}` : "";
+  const hoverRangeKey = hoverRange ? `${hoverRange.start}:${hoverRange.end}` : "";
+  const panelRangeKey =
+    panelData?.type === "annotation:view" || panelData?.type === "annotation:new"
+      ? `${panelData.data.start_index}:${panelData.data.end_index}`
+      : "";
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const selectedNodes = Array.from(
-      container.querySelectorAll<HTMLElement>("[data-gap-fill-active='true']")
-    );
-
-    const allTokenNodes = Array.from(
-      container.querySelectorAll<HTMLElement>("[data-idx]")
-    );
-
-    for (const node of allTokenNodes) {
-      node.style.removeProperty("--selection-gap-width");
-    }
-
-    for (let i = 0; i < selectedNodes.length - 1; i += 1) {
-      const current = selectedNodes[i];
-      const next = selectedNodes[i + 1];
-
-      const currentRect = current.getBoundingClientRect();
-      const nextRect = next.getBoundingClientRect();
-
-      const sameLine =
-        Math.abs(currentRect.top - nextRect.top) <=
-        Math.max(currentRect.height, nextRect.height) * 0.45;
-
-      if (!sameLine) continue;
-
-      const gapWidth = nextRect.left - currentRect.right;
-
-      if (gapWidth <= 0) continue;
-
-      current.style.setProperty(
-        "--selection-gap-width",
-        `${gapWidth}px`
+    const measureGapWidths = () => {
+      const selectedNodes = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-gap-fill-active='true']")
       );
-    }
-  }, [range, blocks, pageId, settings.lemma_info]);
+
+      const allTokenNodes = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-idx]")
+      );
+
+      for (const node of allTokenNodes) {
+        node.style.removeProperty("--selection-gap-width");
+      }
+
+      for (let i = 0; i < selectedNodes.length - 1; i += 1) {
+        const current = selectedNodes[i];
+        const next = selectedNodes[i + 1];
+
+        const currentRect = current.getBoundingClientRect();
+        const nextRect = next.getBoundingClientRect();
+
+        const sameLine =
+          Math.abs(currentRect.top - nextRect.top) <=
+          Math.max(currentRect.height, nextRect.height) * 0.45;
+
+        if (!sameLine) continue;
+
+        const gapWidth = nextRect.left - currentRect.right;
+
+        if (gapWidth <= 0) continue;
+
+        current.style.setProperty(
+          "--selection-gap-width",
+          `${gapWidth}px`
+        );
+      }
+    };
+
+    measureGapWidths();
+
+    const resizeObserver = new ResizeObserver(measureGapWidths);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, [
+    blocks,
+    hoverRangeKey,
+    pageId,
+    panelRangeKey,
+    selectionRangeKey,
+    settings.lemma_info,
+  ]);
 
   function copySelection() {
     if (!finalSelection) return;
@@ -551,8 +573,8 @@ export default function PageContent({
                 : "font-[280]"
             }
             ${info && 'hover:font-[500]'}
-            ${isInHover || isInPanel || isInPanelLemma && 'font-bold'}
-            ${hasGapFillHighlight && 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]'}
+            ${isInPanelLemma ? 'font-bold' : ''}
+            ${hasGapFillHighlight ? 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]' : ''}
             ${isSelected && !isStart && !isEnd && 'bg-neutral-200! after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
             ${isStart && 'bg-linear-to-r from-neutral-300 to-neutral-200 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
             ${isEnd && 'bg-linear-to-r from-neutral-200 to-neutral-300'}

@@ -107,7 +107,7 @@ export default function Annotations() {
         />
       )}
 
-      <h2 className="top-0 pt-8 md:pt-12 z-30 flex gap-4 sticky bg-neutral-50">
+      <h2 className="top-0 pt-12 z-30 flex gap-4 sticky bg-neutral-50">
         <span
           className={tab === "my" ? "" : "text-neutral-400 hover:text-neutral-500 cursor-pointer transition-colors"}
           onClick={() => {
