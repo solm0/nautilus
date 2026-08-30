@@ -126,7 +126,6 @@ def lookup(req: LookupRequest, request: Request):
         req.lemma,
         req.pos,
         req.language,
-        max_k=20
     )
 
     return {
@@ -184,7 +183,6 @@ def lookup_batch(req: BatchRequest, request: Request):
                 lemma,
                 pos,
                 lang,
-                max_k=10
             ),
             "is_favorite": global_key in liked_set
         }

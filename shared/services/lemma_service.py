@@ -114,7 +114,10 @@ def find_match_indices(tokens, lemma, pos):
     return indices
 
 
-def sample_kwic(line_ids, lemma, pos, lang: str, max_k=20):
+KWIC_EXAMPLE_LIMIT = 12
+
+
+def sample_kwic(line_ids, lemma, pos, lang: str, max_k=KWIC_EXAMPLE_LIMIT):
     data = _load_language(lang)
     pack_db = data["pack_db"]
 
