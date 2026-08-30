@@ -20,6 +20,7 @@ from sqlite_pack_writer import (
     write_manifest,
 )
 from build_config import get_release_dir, get_version
+from model_setup import ensure_language_model
 from progress import ProgressLogger, log
 
 LANG = "ru"
@@ -79,6 +80,7 @@ def valid_lemma(lemma: str) -> bool:
     return bool(VALID_RE.fullmatch(lemma))
 
 
+ensure_language_model(LANG, log=log)
 nlp = spacy.load("ru_core_news_md", disable=["ner"])
 nlp.max_length = 10_000_000
 morph = MorphAnalyzer()

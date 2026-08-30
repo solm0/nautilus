@@ -20,6 +20,7 @@ from sqlite_pack_writer import (
     write_manifest,
 )
 from build_config import get_release_dir, get_version
+from model_setup import ensure_language_model
 from progress import ProgressLogger, log
 
 
@@ -243,6 +244,7 @@ def merge_punctuation_tokens(tokens: list[dict]):
     return merged
 
 
+ensure_language_model(LANG, log=log)
 nlp = stanza.Pipeline(
     lang="ko",
     processors="tokenize,pos,lemma",

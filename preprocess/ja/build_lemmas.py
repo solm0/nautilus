@@ -19,6 +19,7 @@ from sqlite_pack_writer import (
     write_manifest,
 )
 from build_config import get_release_dir, get_version
+from model_setup import ensure_language_model
 from progress import ProgressLogger, log
 from furigana import contains_kanji, extract_lemma_readings
 
@@ -80,18 +81,7 @@ def representative_morph(morphs: list[dict]):
     return morphs[0] if morphs else None
 
 
-def ensure_model():
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-
-    if not (MODEL_DIR / "ja").exists():
-        stanza.download(
-            lang="ja",
-            model_dir=str(MODEL_DIR),
-            processors="tokenize,pos,lemma",
-        )
-
-
-ensure_model()
+ensure_language_model(LANG, log=log)
 
 nlp = stanza.Pipeline(
     lang="ja",

@@ -21,6 +21,7 @@ from sqlite_pack_writer import (
     write_manifest,
 )
 from build_config import get_release_dir, get_version
+from model_setup import ensure_language_model
 from progress import ProgressLogger, log
 
 # =====================
@@ -103,11 +104,7 @@ def valid_lemma(lemma: str) -> bool:
 # NLP
 # =====================
 
-# 최초 1회만:
-#
-# import classla
-# classla.download("mk", dir=str(MODEL_DIR), processors="tokenize,pos,lemma")
-
+ensure_language_model(LANG, log=log)
 nlp = classla.Pipeline(
     lang="mk",
     processors="tokenize,pos,lemma",

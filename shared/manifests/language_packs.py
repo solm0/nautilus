@@ -202,6 +202,15 @@ PACK_RELEASES = {
     "ru": [
         build_pack(
             "ru",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "rus_wikipedia_2021_300K, rus-ru_web-public_2019_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
+        build_pack(
+            "ru",
             "1.1.0",
             [
                 {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
@@ -218,6 +227,15 @@ PACK_RELEASES = {
         ),
     ],
     "de": [
+        build_pack(
+            "de",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "deu_wikipedia_2021_300K, deu-de_web_2021_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
         build_pack(
             "de",
             "1.1.0",
@@ -238,6 +256,15 @@ PACK_RELEASES = {
     "en": [
         build_pack(
             "en",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "eng-simple_wikipedia_2021_300K, eng-uk_web-public_2018_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
+        build_pack(
+            "en",
             "1.1.0",
             [
                 {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
@@ -254,6 +281,15 @@ PACK_RELEASES = {
         ),
     ],
     "sr": [
+        build_pack(
+            "sr",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "srp_wikipedia_2021_300K, srp-rs_web_2016_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
         build_pack(
             "sr",
             "1.1.0",
@@ -274,6 +310,15 @@ PACK_RELEASES = {
     "mk": [
         build_pack(
             "mk",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "mkd_wikipedia_2021_300K, mkd-mk_web_2015_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
+        build_pack(
+            "mk",
             "1.1.0",
             [
                 {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
@@ -290,6 +335,15 @@ PACK_RELEASES = {
         ),
     ],
     "sq": [
+        build_pack(
+            "sq",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "sqi_wikipedia_2021_300K, sqi_news_2020_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
         build_pack(
             "sq",
             "1.1.0",
@@ -310,6 +364,15 @@ PACK_RELEASES = {
     "ko": [
         build_pack(
             "ko",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "kor_wikipedia_2021_300K, kor-kr_web_2020_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
+        build_pack(
+            "ko",
             "1.1.0",
             [
                 {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
@@ -326,6 +389,15 @@ PACK_RELEASES = {
         ),
     ],
     "ja": [
+        build_pack(
+            "ja",
+            "1.1.2",
+            [
+                {"Data source": "Leipzig Corpora Collection, University of Leipzig"},
+                {"Corpora used": "jpn_wikipedia_2021_300K, jpn-jp_web_2020_1M"},
+                {"Note": "deleted related words"},
+            ],
+        ),
         build_pack(
             "ja",
             "1.1.1",

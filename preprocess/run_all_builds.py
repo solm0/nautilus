@@ -14,6 +14,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
 from shared.manifests import PACKS
+from model_setup import ensure_language_models
 
 
 PREPROCESS_DIR = ROOT_DIR / "preprocess"
@@ -237,6 +238,10 @@ def main():
     log(
         f"Build start: version={args.version}, jobs={jobs}, languages={', '.join(langs)}"
     )
+
+    log("Checking build-time language models")
+    ensure_language_models(langs, log=log)
+    log("Build-time language models ready")
 
     failures = run_parallel(
         langs,
