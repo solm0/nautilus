@@ -113,8 +113,6 @@ export default function PackTable() {
   }
 
   async function reload() {
-    setLoading(true);
-
     try {
       const installedData = await getInstalled();
       invalidateInstalledLanguagesCache();
@@ -376,22 +374,24 @@ export default function PackTable() {
 
                           <div className="flex-1">
                             {mobileApp ? (
-                              state.installed ? (
-                                <Button
-                                  onClick={() => handleUninstall(pack)}
-                                  text={t("Deactivate")}
-                                  black
-                                  fit
-                                  disabled={isHiddenVersion}
-                                />
-                              ) : (
-                                <Button
-                                  onClick={() => handleActivate(pack)}
-                                  text={t("Activate")}
-                                  fit
-                                  disabled={offline || isHiddenVersion}
-                                />
-                              )
+                              <div onClick={(event) => event.stopPropagation()}>
+                                {state.installed ? (
+                                  <Button
+                                    onClick={() => handleUninstall(pack)}
+                                    text={t("Deactivate")}
+                                    black
+                                    fit
+                                    disabled={isHiddenVersion}
+                                  />
+                                ) : (
+                                  <Button
+                                    onClick={() => handleActivate(pack)}
+                                    text={t("Activate")}
+                                    fit
+                                    disabled={offline || isHiddenVersion}
+                                  />
+                                )}
+                              </div>
                             ) : (
                               <div
                                 className="flex items-start justify-end gap-2"
