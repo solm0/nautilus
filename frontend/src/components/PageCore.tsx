@@ -663,7 +663,7 @@ export default function PageCore({
             style={{ userSelect: "text", WebkitUserSelect: "text" }}
           >
 
-            <h1 className="w-full text-4xl select-text leading-[1.3em]">
+            <h1 className="w-full text-4xl select-text leading-[1.3em] font-bold">
               {pageName?.trim() || "Untitled page"}
             </h1>
 
@@ -898,7 +898,7 @@ export default function PageCore({
                 className={`
                   relative z-1 flex w-full max-w-[48em] flex-wrap content-start justify-between
                   after:basis-0 after:flex-auto after:content-['']
-                  transition-all duration-300 origin-left
+                  transition-all duration-300 origin-left gap-y-1
                   ${language === "ko" || language === "ja" ? "leading-10" : ""}
                   ${block.tokens?.length === 0 && 'h-[1.7em] shrink-0'}
                   ${visualState.blockMinHeightClass}
@@ -965,7 +965,7 @@ export default function PageCore({
                       <span className="grid">
                         <span
                           aria-hidden="true"
-                          className="invisible col-start-1 row-start-1 font-[500]"
+                          className="invisible col-start-1 row-start-1"
                         >
                           {token.surface}
                         </span>

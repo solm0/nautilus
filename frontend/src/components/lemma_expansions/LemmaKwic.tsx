@@ -66,10 +66,11 @@ function highlightIntersect(
   return s.map((ch, idx) => (
     <span
       key={idx}
-      className={
+      className={`${
         matched.has(idx)
-          ? "bg-neutral-200 z-10 h-full flex items-center"
+          ? "bg-neutral-200/50 z-10 h-full flex items-center"
           : "z-10 h-full flex items-center"
+        } font-semibold`
       }
     >
       {ch}
@@ -132,7 +133,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
   const renderToken = (t: Token, j: number) => (
     <div
       key={j}
-      className="relative isolate h-full flex items-center px-1 shrink-0"
+      className="relative isolate h-full flex items-center px-1 shrink-0 font-medium"
       onMouseEnter={(e) =>
         setHovered({
           pos: t.pos,
@@ -352,7 +353,7 @@ export default function LemmaKwic({
     >
       <div className="absolute top-2 right-3 z-30 ml-auto bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
         <IconButton
-          icon={<AlignCenterVertical size={16} />}
+          icon={<AlignCenterVertical className="w-4 h-4 md:w-3.5 md:h-3.5" />}
           onClick={() => rowRefs.current.forEach((r) => r?.setCenter())}
           title={t("Align center")}
         />

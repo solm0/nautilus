@@ -42,7 +42,7 @@ type InteractionState =
     }
   | null;
 
-const MOBILE_SHEET_HEIGHT = "calc(100% - 6rem)";
+const MOBILE_SHEET_HEIGHT = "calc(100% - 10rem)";
 const HEADER_HEIGHT = 24;
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 280;
@@ -696,10 +696,10 @@ export default function ResponsiveSideLayout({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div
+          {/* <div
             className="shrink-0 pt-2 pb-6"
             onClick={onClose}
-          />
+          /> */}
 
           <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
         </div>
@@ -743,8 +743,8 @@ export default function ResponsiveSideLayout({
         className={`
           pointer-events-auto fixed overflow-hidden transition-[opacity,transform,top,height,background-color] duration-220 will-change-transform drop-shadow-xl
           ${isDocked
-            ? "cursor-grab rounded-t-lg bg-neutral-300 hover:bg-neutral-400 active:cursor-grabbing"
-            : "rounded-sm bg-neutral-100 border border-neutral-200"}
+            ? "cursor-grab rounded-t-lg bg-neutral-200 hover:bg-neutral-300 active:cursor-grabbing"
+            : "rounded-2xl bg-neutral-50 border border-neutral-200/50"}
         `}
         style={desktopStyle}
         onPointerDown={handlePanelPointerDown}

@@ -1,4 +1,4 @@
-import { FileInput, Languages, X } from "lucide-react";
+import { FileInput, Filter, Languages, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
@@ -32,7 +32,7 @@ function FilterSelect({
       className={`relative flex min-w-0 items-center ${
         selectedValue
           ? "w-auto max-w-full shrink rounded-full bg-neutral-400/15 text-neutral-700"
-          : "shrink-0 text-neutral-500 hover:text-neutral-700"
+          : "shrink-0 text-neutral-700"
       }`}
     >
       <label
@@ -108,16 +108,17 @@ export function PageFilters({
   ];
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-xs pl-0.5">
+    <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden text-xs pl-0.5">
+      <Filter size={12} className="text-neutral-500 opacity-65 mx-1" />
       <FilterSelect
-        icon={<Languages size={13} />}
+        icon={<Languages size={14} />}
         options={languageOptions}
         selectedValue={selectedLanguage}
         title={t("Filter by language")}
         onChange={onLanguageChange}
       />
       <FilterSelect
-        icon={<FileInput size={13} />}
+        icon={<FileInput size={14} />}
         options={sourceOptions}
         selectedValue={selectedSource}
         title={t("Filter by input method")}

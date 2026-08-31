@@ -220,8 +220,6 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Could not delete account.": "계정을 삭제하지 못했습니다.",
     "Language packs": "언어팩",
     "Pin": "고정",
-    "Pinned": "고정됨",
-    "pinned": "고정됨",
     "Please verify your email before logging in.": "로그인하기 전에 이메일 인증을 완료해주세요.",
     "Post": "게시",
     "Remove language pack": "언어팩 제거",

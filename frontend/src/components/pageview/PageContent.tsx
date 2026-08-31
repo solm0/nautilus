@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import PageCore from "../PageCore";
 import { getNearestTokenIndex, getTextForRange, getTokenRect } from "../pageUtils";
 import { IconButton } from "../util/Button";
-import { Check, Copy, Link, MessageSquareMore, Smile } from "lucide-react";
+import { Link, MessageSquareMore, Smile } from "lucide-react";
 import type { Annotation, EmojiAnnotation, LemmaData, TextBlock } from "../pageTypes";
 import { Gutter } from "./Gutter";
 import type { SidePanelState } from "./PageView";
@@ -90,7 +90,6 @@ export default function PageContent({
     end: number;
   } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [hasCopied, setHasCopied] = useState(false);
   
   const pointerDownRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -160,8 +159,7 @@ export default function PageContent({
                 openLemmaPanelByKey(key);
               }}
               className={[
-                clickable ? "cursor-pointer text-neutral-700 hover:font-medium" : "",
-                clickable ? "" : "text-neutral-700",
+                clickable ? "cursor-pointer" : "",
               ].filter(Boolean).join(" ")}
             >
               {morph.surface}
@@ -378,33 +376,6 @@ export default function PageContent({
     settings.lemma_info,
   ]);
 
-  function copySelection() {
-    if (!finalSelection) return;
-
-    const text = getTextForRange(blocks, finalSelection);
-    const tempElement = document.createElement("span");
-    tempElement.textContent = text;
-    tempElement.style.position = "fixed";
-    tempElement.style.top = "-9999px";
-
-    document.body.appendChild(tempElement);
-
-    const range = document.createRange();
-    range.selectNodeContents(tempElement);
-
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-
-    try {
-      document.execCommand("copy");
-    } catch {}
-
-    setHasCopied(true);
-    setTimeout(() => setHasCopied(false), 3000);
-    document.body.removeChild(tempElement);
-  }
-
   useEffect(() => {
     function handleCopy(event: ClipboardEvent) {
       if (!finalSelection) return;
@@ -565,18 +536,18 @@ export default function PageContent({
           },
           className: `
             font-source px-1 transition-all text-[18px] md:text-[20px]
-            ${
-              info
-                ? `${language === 'ko' || language === 'ja' ? 'font-[480]' : 'font-[370]'}`
-                : "font-[280]"
-            }
-            ${info && 'hover:font-[500]'}
+            ${info && 'hover:font-[600]'}
             ${isInPanelLemma ? 'font-bold' : ''}
             ${hasGapFillHighlight ? 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]' : ''}
             ${isSelected && !isStart && !isEnd && 'bg-neutral-200! after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
             ${isStart && 'bg-linear-to-r from-neutral-300 to-neutral-200 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-200 after:content-[\"\"]'}
             ${isEnd && 'bg-linear-to-r from-neutral-200 to-neutral-300'}
-          `,
+            ${
+              info
+                ? 'font-semibold'
+                : "font-medium text-neutral-400"
+            }
+            `,
           "data-gap-fill-active":
             isSelected || isInPanel || isInHover ? "true" : undefined,
         };
@@ -596,70 +567,64 @@ export default function PageContent({
         <>
           {menu && (
             <div
-              className="absolute flex gap-1 items-center"
-              style={{ left: menu.x, top: menu.y + 5 }}
+              className="absolute flex items-center gap-0.5 bg-neutral-50 w-auto h-8 px-1.5 py-1 border border-neutral-300/50 rounded-lg drop-shadow-xl"
+              style={{ left: menu.x, top: menu.y - 6 }}
             >
-              <div className="w-7 h-7 bg-neutral-800 text-neutral-100 rounded-full flex items-center justify-center  drop-shadow-lg">
-                <IconButton icon={hasCopied ? <Check size={15} /> : <Copy size={15} />} onClick={copySelection} title={t("copy text")} />
-              </div>
+              <IconButton
+                icon={<MessageSquareMore size={15} />}
+                onClick={() => {
+                  if (!setPanelData || !pageId || !finalSelection) return;
+                  
+                  setPanelData({
+                    type: "annotation:new",
+                    data: {
+                      page_id: pageId,
+                      type: "memo",
+                      content: "",
+                      start_index: finalSelection.start,
+                      end_index: finalSelection.end,
+                    }
+                  });
+                  setMenu(null);
+                }}
+                title={t("new memo")}
+              />
+              <IconButton
+                icon={<Link size={15} />}
+                onClick={() => {
+                  if (!setPanelData || !pageId || !finalSelection) return;
 
-              <div className="flex gap-1 items-center bg-neutral-50 w-auto h-8 p-1 border border-neutral-200 rounded-sm drop-shadow-lg">
-                <IconButton
-                  icon={<MessageSquareMore size={15} />}
-                  onClick={() => {
-                    if (!setPanelData || !pageId || !finalSelection) return;
-                    
-                    setPanelData({
-                      type: "annotation:new",
-                      data: {
-                        page_id: pageId,
-                        type: "memo",
-                        content: "",
-                        start_index: finalSelection.start,
-                        end_index: finalSelection.end,
-                      }
-                    });
-                    setMenu(null);
-                  }}
-                  title={t("new memo")}
-                />
-                <IconButton
-                  icon={<Link size={15} />}
-                  onClick={() => {
-                    if (!setPanelData || !pageId || !finalSelection) return;
+                  setPanelData({
+                    type: "annotation:new",
+                    data: {
+                      page_id: pageId,
+                      type: "link",
+                      content: "",
+                      start_index: finalSelection.start,
+                      end_index: finalSelection.end,
+                    }
+                  });
+                  setMenu(null);
+                }}
+                title={t("new link")}
+              />
+              <IconButton
+                icon={<Smile size={15} />}
+                onClick={() => {
 
-                    setPanelData({
-                      type: "annotation:new",
-                      data: {
-                        page_id: pageId,
-                        type: "link",
-                        content: "",
-                        start_index: finalSelection.start,
-                        end_index: finalSelection.end,
-                      }
-                    });
-                    setMenu(null);
-                  }}
-                  title={t("new link")}
-                />
-                <IconButton
-                  icon={<Smile size={15} />}
-                  onClick={() => {
+                  if (!pageId || !finalSelection) return;
 
-                    if (!pageId || !finalSelection) return;
-
-                    setEmojiPicker({
-                      x: menu.x,
-                      y: menu.y + 90,
-                      selection: {
-                        start: finalSelection.start,
-                        end: finalSelection.end,
-                      }
-                    });
-                  }}
-                  title={t("new emoji")}
-                />
-              </div>
+                  setEmojiPicker({
+                    x: menu.x,
+                    y: menu.y + 90,
+                    selection: {
+                      start: finalSelection.start,
+                      end: finalSelection.end,
+                    }
+                  });
+                }}
+                title={t("new emoji")}
+              />
 
             </div>
           )}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Pin, Search, X } from "lucide-react";
 import { Preferences } from "@capacitor/preferences";
 
 import MoveModal from "./MoveModal";
@@ -1109,10 +1109,7 @@ export default function PageLayout() {
       ) : null}
 
       {!showFilteredResults && pinnedPages.length > 0 ? (
-        <div className="pl-2 mr-2 mb-1 pb-1 border-b border-neutral-400/50">
-          <div className="py-1 h-8 text-xs opacity-60 flex items-center">
-            {t("Pinned")}
-          </div>
+        <div className="pl-2 pt-2 mr-2 mb-1 pb-1 border-b border-neutral-400/70">
           <div className="flex flex-col">
             {pinnedPages.map((page) => (
               <PageCard
@@ -1140,13 +1137,7 @@ export default function PageLayout() {
         </div>
       ) : null}
 
-      <div ref={sidebarScrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        {!showFilteredResults ?
-          <div className="pl-2 mr-2 py-1 text-xs opacity-60 h-8 flex items-center">
-            {t("Pages")}
-          </div>
-          : <div className="h-1"></div>
-        }
+      <div ref={sidebarScrollRef} className="min-h-0 flex-1 overflow-y-auto pt-2">
         {sidebarListContent}
       </div>
     </div>
