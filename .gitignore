@@ -47,3 +47,4 @@ dist-electron
 outputs
 
 note.md
+*.sqlite
