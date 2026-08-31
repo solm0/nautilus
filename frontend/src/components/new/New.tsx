@@ -43,7 +43,7 @@ export default function New() {
 
   // /notebook에서 생성한 page일 경우
   const initialNotebookId = location.state?.notebookId ?? null;
-  const [selectedNotebook, setSelectedNotebook] = useState<number | null>(initialNotebookId);
+  const [selectedNotebook, setSelectedNotebook] = useState<string | null>(initialNotebookId);
 
   const navigate = useNavigate();
 
@@ -251,7 +251,7 @@ export default function New() {
               value={selectedNotebook ?? ""}
               onChange={(e) =>
                 setSelectedNotebook(
-                  e.target.value ? Number(e.target.value) : null
+                  e.target.value || null
                 )
               }
               className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"

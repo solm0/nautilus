@@ -14,7 +14,7 @@ from runtime_paths import get_runtime_package_root, is_packaged_backend
 from shared.manifests import get_runtime_package_spec
 
 
-MARKER_NAME = ".nautilus-overlay.json"
+MARKER_NAME = ".lema-overlay.json"
 
 
 def _get_package_root(package_name: str) -> Path | None:

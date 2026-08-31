@@ -14,7 +14,8 @@ type I18nContextValue = {
   t: (key: string, params?: TranslationParams) => string;
 };
 
-const STORAGE_KEY = "nautilus_settings";
+const STORAGE_KEY = "lema_settings";
+const LEGACY_STORAGE_KEY = "nautilus_settings";
 
 const translations: Record<AppLocale, Record<string, string>> = {
   en: {
@@ -36,9 +37,21 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Already have an account?": "이미 계정이 있나요?",
     "Allow notifications?": "알림을 허용할까요?",
     "Android app privacy policy": "Android 앱 개인정보처리방침",
-    "To show now playing alerts on this device, allow notifications for Nautilus in Android settings.": "이 기기에서 지금 재생 알림을 보려면 Android 설정에서 Nautilus 알림을 허용하세요.",
+    "Local library": "로컬 라이브러리",
+    "Pages, notebooks, and annotations are stored only on this device. Export a backup to move or restore them on another device.": "페이지, 노트북, 주석은 이 기기에만 저장됩니다. 다른 기기로 옮기거나 복구하려면 백업을 내보내세요.",
+    "Export library": "라이브러리 내보내기",
+    "Exporting...": "내보내는 중...",
+    "Import and merge": "가져와서 병합",
+    "Importing...": "가져오는 중...",
+    "Import keeps existing data and merges the selected library. Conflicting copies are preserved separately.": "기존 데이터는 유지하고 선택한 라이브러리를 병합합니다. 충돌하는 복사본은 따로 보존됩니다.",
+    "Library exported.": "라이브러리를 내보냈습니다.",
+    "Could not export library.": "라이브러리를 내보내지 못했습니다.",
+    "Could not import library.": "라이브러리를 가져오지 못했습니다.",
+    "Import complete: {pages} pages, {notebooks} notebooks, {annotations} annotations, {conflicts} conflicts.": "병합 완료: 페이지 {pages}개, 노트북 {notebooks}개, 주석 {annotations}개, 충돌 복사본 {conflicts}개.",
+    "Your account and cloud favorites will be deleted. The local library on this device will remain.": "계정과 클라우드 즐겨찾기가 삭제됩니다. 이 기기의 로컬 라이브러리는 유지됩니다.",
+    "To show now playing alerts on this device, allow notifications for Lema in Android settings.": "이 기기에서 지금 재생 알림을 보려면 Android 설정에서 Lema 알림을 허용하세요.",
     "Turn on notifications": "알림 켜기",
-    "Nautilus can show now playing alerts while the app is in the background. Allow notifications in Android settings to use this feature.": "Nautilus는 앱이 백그라운드에 있을 때도 지금 재생 알림을 보여줄 수 있습니다. 이 기능을 사용하려면 Android 설정에서 알림을 허용하세요.",
+    "Lema can show now playing alerts while the app is in the background. Allow notifications in Android settings to use this feature.": "Lema는 앱이 백그라운드에 있을 때도 지금 재생 알림을 보여줄 수 있습니다. 이 기능을 사용하려면 Android 설정에서 알림을 허용하세요.",
     "Annotations": "주석",
     "App version": "앱 버전",
     "Back to login": "로그인으로 돌아가기",
@@ -202,7 +215,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Dark mode on": "다크 모드 켜짐",
     "A new version({version}) is available.": "새 버전({version})을 사용할 수 있습니다.",
     "Android needs notification access to inspect active media sessions. macOS should work automatically with supported desktop players.": "Android에서는 활성 미디어 세션을 확인하려면 알림 접근 권한이 필요합니다. macOS는 지원되는 데스크톱 플레이어에서 자동으로 동작해야 합니다.",
-    "Nautilus uses Android notification access only to read the current song and player. It sends the song title and artist to LRCLIB to find lyrics. You can keep using other features without allowing access.": "Nautilus는 현재 곡과 재생 앱을 확인할 때만 Android 알림 접근 권한을 사용합니다. 가사를 찾기 위해 곡 제목과 가수 이름을 LRCLIB에 보냅니다. 허용하지 않아도 다른 기능은 계속 사용할 수 있습니다.",
+    "Lema uses Android notification access only to read the current song and player. It sends the song title and artist to LRCLIB to find lyrics. You can keep using other features without allowing access.": "Lema는 현재 곡과 재생 앱을 확인할 때만 Android 알림 접근 권한을 사용합니다. 가사를 찾기 위해 곡 제목과 가수 이름을 LRCLIB에 보냅니다. 허용하지 않아도 다른 기능은 계속 사용할 수 있습니다.",
     "Could not load latest version.": "최신 버전을 불러오지 못했습니다.",
     "Could not delete account.": "계정을 삭제하지 못했습니다.",
     "Language packs": "언어팩",
@@ -262,7 +275,7 @@ function readStoredLocale(): AppLocale {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return "en";
 
     const parsed = JSON.parse(raw) as {

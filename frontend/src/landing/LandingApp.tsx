@@ -103,6 +103,9 @@ function buildReleaseCatalogFromHfTree(entries: HfTreeEntry[]): ReleaseCatalog {
       const artifactFolder = parts[3];
       const filename = parts[parts.length - 1];
       const platformKey = {
+        "lema-electron-macos": "macOS",
+        "lema-electron-linux": "Linux",
+        "lema-electron-windows": "Windows",
         "nautilus-electron-macos": "macOS",
         "nautilus-electron-linux": "Linux",
         "nautilus-electron-windows": "Windows",
@@ -280,7 +283,7 @@ function LandingApp() {
             </h1>
             <div className="max-w-3xl text-base md:text-lg leading-7 text-neutral-600 flex flex-col items-start gap-4">
               <p>
-                Nautilus는 외국어 콘텐츠의 독해를 문맥 정보를 활용해 돕는 도구입니다.
+                Lema는 외국어 콘텐츠의 독해를 문맥 정보를 활용해 돕는 도구입니다.
               </p>
               <Link to={'/landing/background/index.html'} className="bg-neutral-900 text-neutral-50 py-2 px-4 rounded-lg hover:rounded-3xl transition-all text-base">
                 설계 배경 →

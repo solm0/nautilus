@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import type { SidePanelState } from "./PageView";
 import type { Annotation } from "../pageTypes";
 import { deleteAnnotation, updateAnnotation } from "../../api";
-import { deletePendingAnnotation, updatePendingAnnotation } from "../../offlineData";
 import { isValidUrl } from "./AnnotationNew";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { Pencil, Trash2 } from "lucide-react";
@@ -13,20 +12,17 @@ export default function AnnotationView({
   panel,
   setPanel,
   setAnnotations,
-  offline,
 }: {
   panel: SidePanelState;
   setPanel: React.Dispatch<React.SetStateAction<SidePanelState | null>>
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  offline: boolean;
 }) {
   const { t } = useI18n();
   const annotationPanel =
     panel?.type === "annotation:view" ? panel : null;
 
   if (!annotationPanel || !annotationPanel.data.id) return;
-  const isLocalAnnotation = annotationPanel.data.id < 0;
-  const canMutate = isLocalAnnotation || !offline;
+  const canMutate = true;
 
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(annotationPanel.data.content);
@@ -57,11 +53,7 @@ export default function AnnotationView({
     setMsg(null);
 
     try {
-      if (isLocalAnnotation) {
-        await deletePendingAnnotation(id);
-      } else {
-        await deleteAnnotation(id);
-      }
+      await deleteAnnotation(id);
       setAnnotations(prev => prev.filter(a => a.id !== id));
       setOpenModal(false);
       setPanel(null);
@@ -87,9 +79,7 @@ export default function AnnotationView({
     }
 
     try {
-      const updated = isLocalAnnotation
-        ? await updatePendingAnnotation(id, nextValue)
-        : await updateAnnotation(id, nextValue);
+      const updated = await updateAnnotation(id, nextValue);
       setValue(updated.content);
 
       // 1. 리스트 업데이트
@@ -98,10 +88,9 @@ export default function AnnotationView({
       );
 
       // 2. panel도 업데이트 (이게 핵심)
-      setPanel(prev =>
-        prev
-          ? { ...prev, data: updated }
-          : prev
+      setPanel(prev => prev?.type === "annotation:view"
+        ? { ...prev, data: updated }
+        : prev
       );
 
       setEditing(false);

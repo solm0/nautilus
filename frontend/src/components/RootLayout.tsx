@@ -134,7 +134,7 @@ export default function RootLayout() {
 
           if (isPagePath) {
             setPageSidebarOpen(true);
-            window.dispatchEvent(new Event("nautilus:mobile-page-back"));
+            window.dispatchEvent(new Event("lema:mobile-page-back"));
             return;
           }
 
@@ -188,12 +188,12 @@ export default function RootLayout() {
     const navigateFromUrl = (url: string | null | undefined) => {
       if (!url) return;
 
-      if (url.startsWith("nautilus://lyric")) {
+      if (/^(?:lema|nautilus):\/\/lyric/.test(url)) {
         openLyricRoute();
         return;
       }
 
-      const match = url.match(/^nautilus:\/\/page\/(\d+)(?:[/?#].*)?$/);
+      const match = url.match(/^(?:lema|nautilus):\/\/page\/([^/?#]+)(?:[/?#].*)?$/);
       if (match?.[1]) {
         openPageRoute(match[1]);
       }
@@ -302,7 +302,7 @@ export default function RootLayout() {
         onClose={() => setOpenNotificationPrompt(false)}
         onOpenSettings={handleOpenNotificationSettings}
         title="Turn on notifications"
-        body="Nautilus can show now playing alerts while the app is in the background. Allow notifications in Android settings to use this feature."
+        body="Lema can show now playing alerts while the app is in the background. Allow notifications in Android settings to use this feature."
       />
     </LayoutContext.Provider>
   );

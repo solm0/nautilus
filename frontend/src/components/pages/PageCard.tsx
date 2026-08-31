@@ -17,11 +17,8 @@ import {
 import type { Notebook, Page } from "./PageLayout";
 import { MiniPopup } from "../util/MiniPopup";
 import { IconButtonEvent } from "../util/Button";
-import { CENTRAL_API, authHeaders } from "../../api";
 import { useI18n } from "../../i18n";
-import { renamePendingNotebook, renamePendingPage } from "../../offlineData";
-import PendingSyncBadge from "../util/PendingSyncBadge";
-import { centralFetch } from "../../network";
+import { renameLocalItem } from "../../localLibrary";
 import { isCapacitorApp } from "../../platform";
 
 const LONG_PRESS_MS = 420;
@@ -94,7 +91,7 @@ export default function PageCard({
 }: {
   item: PageCardItem;
   level: number;
-  currentPageId: number | null;
+  currentPageId: string | null;
   expanded?: boolean;
   reload: () => Promise<void>;
   isMobileLike: boolean;
@@ -136,8 +133,7 @@ export default function PageCard({
   const createPageOpen = createPopupId ? openPopupId === createPopupId : false;
 
   const isActivePage = page?.id === currentPageId;
-  const isPendingItem = Boolean(page?.pending_sync || notebook?.pending_sync);
-  const disableServerActions = offline && !isPendingItem;
+  const disableServerActions = false;
 
   const leftPadding = 4 + level * 24;
 
@@ -194,35 +190,7 @@ export default function PageCard({
     const nextName = value.trim();
     if (!nextName) return;
 
-    if (item.type === "page" && item.page.pending_sync) {
-      await renamePendingPage(item.page.id, nextName);
-      setEditing(false);
-      setOpenPopupId(null);
-      await reload();
-      return;
-    }
-
-    if (item.type === "notebook" && item.notebook.pending_sync) {
-      await renamePendingNotebook(item.notebook.id, nextName);
-      setEditing(false);
-      setOpenPopupId(null);
-      await reload();
-      return;
-    }
-
-    const headers = authHeaders();
-    if (!headers) throw new Error("unauthorized");
-
-    const endpoint =
-      item.type === "page"
-        ? `/pages/${item.page.id}`
-        : `/notebooks/${item.notebook.id}`;
-
-    await centralFetch(CENTRAL_API + endpoint, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ name: nextName }),
-    });
+    await renameLocalItem(item.type, item.type === "page" ? item.page.id : item.notebook.id, nextName);
 
     setEditing(false);
     setOpenPopupId(null);
@@ -278,7 +246,6 @@ export default function PageCard({
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (page && onPagePointerDown) {
-      if (offline && (!isPendingItem || !isMobileLike)) return;
       onPagePointerDown(event);
       return;
     }
@@ -328,7 +295,7 @@ export default function PageCard({
         <ActionButton
           icon={<FilePlus2 size={13} />}
           label={t("Create page")}
-          disabled={offline && !notebook.pending_sync}
+          disabled={false}
           onClick={() => {
             navigate("/new?mode=paste", { state: { notebookId: notebook.id } });
             setOpenPopupId(null);
@@ -350,7 +317,7 @@ export default function PageCard({
         <ActionButton
           icon={<Folder size={13} />}
           label={t("Move")}
-          disabled={offline}
+          disabled={false}
           onClick={() => {
             onMove();
             setOpenPopupId(null);
@@ -444,7 +411,6 @@ export default function PageCard({
               <p className="truncate text-sm text-neutral-800 select-none">
                 {item.type === "page" ? item.page.name : item.notebook.name}
               </p>
-              {isPendingItem ? <PendingSyncBadge /> : null}
               {page ? (
                 <span className="shrink-0 text-[11px] text-neutral-400 select-none">
                   {page.language}
@@ -472,13 +438,12 @@ export default function PageCard({
                 icon={<FilePlus2 size={14} />}
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (offline && !notebook?.pending_sync) return;
                   setOpenPopupId((current) =>
                     current === createPopupId ? null : createPopupId
                   );
                 }}
                 title={t("Create Page")}
-                disabled={offline && !notebook?.pending_sync}
+                disabled={false}
               />
               <MiniPopup
                 open={createPageOpen}
@@ -521,4 +486,3 @@ export default function PageCard({
     </div>
   );
 }
-

@@ -13,7 +13,7 @@ except ModuleNotFoundError:
 
 
 def get_static_data_root() -> Path:
-    override = os.getenv("NAUTILUS_DATA_STATIC_ROOT")
+    override = os.getenv("LEMA_DATA_STATIC_ROOT") or os.getenv("NAUTILUS_DATA_STATIC_ROOT")
     if override:
         return Path(override).resolve()
 

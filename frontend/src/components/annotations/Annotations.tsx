@@ -47,7 +47,7 @@ export default function Annotations() {
     setItems((prev) => prev.map((item) => item.id === updated.id ? updated : item));
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -72,7 +72,7 @@ export default function Annotations() {
             item={item}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
-            readonlySnapshotActions={offline}
+            readonlySnapshotActions={false}
           />
         ))}
 

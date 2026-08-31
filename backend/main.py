@@ -8,6 +8,7 @@ import uvicorn
 from routers.lemmas_router import router as lemmas_router
 from routers.lang_router import router as lang_router
 from routers.content_router import router as content_router
+from routers.library_router import router as library_router
 from runtime_paths import get_frontend_dist_dir
 
 app = FastAPI()
@@ -32,6 +33,7 @@ app.add_middleware(
 app.include_router(content_router)
 app.include_router(lemmas_router)
 app.include_router(lang_router)
+app.include_router(library_router)
 
 
 @app.get("/", include_in_schema=False)
@@ -74,8 +76,8 @@ def serve_frontend_asset(full_path: str):
 
 
 def run() -> None:
-    port = int(os.getenv("NAUTILUS_BACKEND_PORT", "8010"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    port = int(os.getenv("LEMA_BACKEND_PORT") or os.getenv("NAUTILUS_BACKEND_PORT", "8010"))
+    uvicorn.run(app, host="127.0.0.1", port=port)
 
 
 if __name__ == "__main__":

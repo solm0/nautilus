@@ -152,7 +152,7 @@ function BackgroundPage() {
         <h1 className="mb-6 text-3xl font-bold">설계 배경</h1>
 
         <p className="mb-3.5 py-[1em] text-lg font-medium leading-7 max-w-[40rem]">
-          Nautilus는 '어휘를 암기하지 않고 여러 문맥에서 반복 노출로 습득한다'는 아이디어를 인터페이스로 구현한 것이다. 그러기 위해 필요한 조건들(커버리지, 반복 횟수, 마찰 없는 검색)을 하나씩 기능으로 옮겼다.
+          Lema는 '어휘를 암기하지 않고 여러 문맥에서 반복 노출로 습득한다'는 아이디어를 인터페이스로 구현한 것이다. 그러기 위해 필요한 조건들(커버리지, 반복 횟수, 마찰 없는 검색)을 하나씩 기능으로 옮겼다.
         </p>
 
         {contentBlocks.map((block, index) => {

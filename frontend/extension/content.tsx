@@ -20,8 +20,8 @@ import {
   signupWithPassword,
 } from "./api";
 
-const PANEL_HOST_ID = "nautilus-extension-host";
-const PANEL_DISPOSE_EVENT = "nautilus-extension:dispose";
+const PANEL_HOST_ID = "lema-extension-host";
+const PANEL_DISPOSE_EVENT = "lema-extension:dispose";
 
 type SelectedEntry = {
   id: string;
@@ -40,7 +40,6 @@ type OverlayRect = {
   rect: DOMRect;
 };
 
-type AuthIntent = "save" | null;
 
 function inferLanguage() {
   const lang = document.documentElement.lang.trim().toLowerCase();
@@ -56,22 +55,6 @@ function inferLanguage() {
 type InstalledLanguageOption = {
   lang: string;
 };
-
-function isAuthTokenError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-
-  if (error instanceof ExtensionRequestError && error.status === 401) {
-    return true;
-  }
-
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("invalid token") ||
-    message.includes("expired") ||
-    message.includes("401") ||
-    message === "unauthorized"
-  );
-}
 
 function isConnectionError(error: unknown) {
   if (error instanceof ExtensionRequestError && error.status === 0) return true;
@@ -408,7 +391,7 @@ function AuthModal({
       <div style={modalCardStyle}>
         <div style={modalHeaderStyle}>
           <div>
-            <div style={eyebrowStyle}>Nautilus</div>
+            <div style={eyebrowStyle}>Lema</div>
             <h2 style={modalTitleStyle}>{authed ? "Account" : mode === "login" ? "Login" : "Create account"}</h2>
           </div>
           <button type="button" onClick={onClose} style={ghostButtonStyle}>
@@ -440,7 +423,7 @@ function AuthModal({
             <div style={modalSectionStyle}>
               <p style={modalParagraphStyle}>
                 {mode === "login"
-                  ? "Sign in to save selected page regions into Nautilus."
+                  ? "Sign in to sync favorite lemmas across devices."
                   : "Create your account here, then continue from the same page."}
               </p>
               {mode === "signup" ? (
@@ -514,7 +497,6 @@ function OverlayApp() {
   const pageDragRef = useRef<SelectionDragState | null>(null);
   const elementIdsRef = useRef(new WeakMap<HTMLElement, string>());
   const nextIdRef = useRef(1);
-  const pendingAuthIntentRef = useRef<AuthIntent>(null);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<SelectedEntry[]>([]);
@@ -542,7 +524,7 @@ function OverlayApp() {
     const existing = elementIdsRef.current.get(element);
     if (existing) return existing;
 
-    const nextId = `nautilus-selection-${nextIdRef.current}`;
+    const nextId = `lema-selection-${nextIdRef.current}`;
     nextIdRef.current += 1;
     elementIdsRef.current.set(element, nextId);
     return nextId;
@@ -910,7 +892,7 @@ function OverlayApp() {
     return false;
   };
 
-  const runSaveFlow = async (skipAuthCheck = false) => {
+  const runSaveFlow = async () => {
     setUiCollapsed(false);
 
     if (selectedBlocks.length === 0) {
@@ -934,14 +916,6 @@ function OverlayApp() {
         return;
       }
 
-      if (!skipAuthCheck && !authed) {
-        pendingAuthIntentRef.current = "save";
-        setAuthMode("login");
-        setAuthOpen(true);
-        setMessage("Login is required before saving.");
-        return;
-      }
-
       setMessage("Analyzing selected text...");
       const language = selectedLanguage;
       const analyzed = await analyzeTextBlocks(
@@ -962,17 +936,6 @@ function OverlayApp() {
       clearSelection();
       setSelectionMode(false);
     } catch (error) {
-      if (isAuthTokenError(error)) {
-        await logoutExtensionAuth();
-        setAuthed(false);
-        pendingAuthIntentRef.current = "save";
-        setAuthMode("login");
-        setAuthMessage("Your session expired. Please log in again.");
-        setAuthOpen(true);
-        setMessage("Your session expired. Please log in again.");
-        return;
-      }
-
       setMessage(saveErrorMessage(error));
     } finally {
       setSaveBusy(false);
@@ -996,10 +959,6 @@ function OverlayApp() {
       setAuthed(true);
       setAuthOpen(false);
 
-      if (pendingAuthIntentRef.current === "save") {
-        pendingAuthIntentRef.current = null;
-        await runSaveFlow(true);
-      }
     } catch (error) {
       setAuthMessage(loginErrorMessage(error));
     } finally {
@@ -1037,7 +996,6 @@ function OverlayApp() {
       await logoutExtensionAuth();
       setAuthed(false);
       setAuthOpen(false);
-      pendingAuthIntentRef.current = null;
     } catch (error) {
       setAuthMessage(logoutErrorMessage(error));
     } finally {
@@ -1066,7 +1024,7 @@ function OverlayApp() {
               ...collapsedTabStyle,
               ...(collapsedHovered ? collapsedTabHoveredStyle : null),
             }}
-            title="Open Nautilus"
+            title="Open Lema"
           >
             <span style={collapsedDotStyle} />
             <span style={collapsedLabelStyle}>N</span>
@@ -1081,7 +1039,7 @@ function OverlayApp() {
         >
           <div style={panelHeaderStyle}>
             <div>
-              <div style={eyebrowStyle}>Nautilus</div>
+              <div style={eyebrowStyle}>Lema</div>
               <div style={panelTitleStyle}>
                 {selectionMode ? "Selection mode on" : "Ready"}
               </div>
@@ -1144,11 +1102,11 @@ function OverlayApp() {
           </p>
 
           <div style={fieldStackStyle}>
-            <label style={fieldLabelStyle} htmlFor="nautilus-title-input">
+            <label style={fieldLabelStyle} htmlFor="lema-title-input">
               Title
             </label>
             <input
-              id="nautilus-title-input"
+              id="lema-title-input"
               type="text"
               value={title || selectedBlocks[0]?.preview || ""}
               onChange={(event) => setTitle(event.target.value)}
@@ -1158,7 +1116,7 @@ function OverlayApp() {
           </div>
 
           <div style={fieldStackStyle}>
-            <label style={fieldLabelStyle} htmlFor="nautilus-language-select">
+            <label style={fieldLabelStyle} htmlFor="lema-language-select">
               Language
             </label>
             {languagesLoading ? (
@@ -1169,7 +1127,7 @@ function OverlayApp() {
               </button>
             ) : (
               <select
-                id="nautilus-language-select"
+                id="lema-language-select"
                 value={selectedLanguage ?? ""}
                 onChange={(event) => setSelectedLanguage(event.target.value)}
                 style={panelSelectStyle}
@@ -1288,7 +1246,6 @@ function OverlayApp() {
           onClose={() => {
             setAuthOpen(false);
             setAuthMessage(null);
-            pendingAuthIntentRef.current = null;
           }}
           onModeChange={(mode) => {
             setAuthMode(mode);
@@ -1669,10 +1626,10 @@ function mountPanel() {
   }
 
   const shadow = host.shadowRoot ?? host.attachShadow({ mode: "open" });
-  let mount = shadow.getElementById("nautilus-root");
+  let mount = shadow.getElementById("lema-root");
   if (!mount) {
     mount = document.createElement("div");
-    mount.id = "nautilus-root";
+    mount.id = "lema-root";
     shadow.appendChild(mount);
   }
 

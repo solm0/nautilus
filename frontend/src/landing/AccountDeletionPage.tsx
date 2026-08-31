@@ -23,13 +23,13 @@ type Copy = {
 
 const copy: Record<Locale, Copy> = {
   en: {
-    title: "Delete your Nautilus account",
+    title: "Delete your Lema account",
     intro:
-      "Enter the email address and password for your Nautilus account. Your credentials are used only to verify account ownership before deletion.",
+      "Enter the email address and password for your Lema account. Your credentials are used only to verify account ownership before deletion.",
     warningTitle: "This action is permanent",
     warningItems: [
       "Your account and profile will be deleted.",
-      "Saved pages, notebooks, annotations, and favorites will be deleted.",
+      "Cloud favorites will be deleted. Local pages, notebooks, and annotations on your devices will remain.",
       "Deleted data cannot be restored.",
     ],
     email: "Email address",
@@ -38,19 +38,19 @@ const copy: Record<Locale, Copy> = {
     submit: "Delete account permanently",
     submitting: "Deleting account…",
     successTitle: "Your account has been deleted",
-    successBody: "Your Nautilus account and related server data were deleted successfully.",
+    successBody: "Your Lema account and related server data were deleted successfully. Local libraries on your devices remain.",
     invalidCredentials: "The email address or password is incorrect.",
     emailNotVerified: "Verify your email address before deleting your account.",
     genericError: "We could not delete your account. Please try again.",
   },
   ko: {
-    title: "Nautilus 계정 삭제",
+    title: "Lema 계정 삭제",
     intro:
-      "Nautilus 계정의 이메일 주소와 비밀번호를 입력해 주세요. 입력한 인증 정보는 계정 소유자를 확인한 뒤 계정을 삭제하는 데에만 사용됩니다.",
+      "Lema 계정의 이메일 주소와 비밀번호를 입력해 주세요. 입력한 인증 정보는 계정 소유자를 확인한 뒤 계정을 삭제하는 데에만 사용됩니다.",
     warningTitle: "삭제 후에는 되돌릴 수 없습니다",
     warningItems: [
       "계정과 프로필이 삭제됩니다.",
-      "저장한 페이지, 노트북, 주석 및 즐겨찾기가 삭제됩니다.",
+      "클라우드 즐겨찾기가 삭제됩니다. 기기의 로컬 페이지, 노트북, 주석은 유지됩니다.",
       "삭제된 데이터는 복구할 수 없습니다.",
     ],
     email: "이메일 주소",
@@ -59,7 +59,7 @@ const copy: Record<Locale, Copy> = {
     submit: "계정 영구 삭제",
     submitting: "계정 삭제 중…",
     successTitle: "계정이 삭제되었습니다",
-    successBody: "Nautilus 계정과 서버에 저장된 관련 데이터가 삭제되었습니다.",
+    successBody: "Lema 계정과 서버에 저장된 관련 데이터가 삭제되었습니다. 기기의 로컬 라이브러리는 유지됩니다.",
     invalidCredentials: "이메일 주소 또는 비밀번호가 올바르지 않습니다.",
     emailNotVerified: "계정을 삭제하려면 먼저 이메일 인증을 완료해 주세요.",
     genericError: "계정을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",

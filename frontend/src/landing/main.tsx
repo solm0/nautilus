@@ -74,10 +74,10 @@ type PrivacyCopy = Record<
 
 const chromePrivacyCopy: PrivacyCopy = {
   en: {
-    title: "Nautilus Chrome Extension Privacy Policy",
+    title: "Lema Chrome Extension Privacy Policy",
     updatedAt: "Last updated: July 17, 2026",
     intro:
-      "The Nautilus Chrome Extension (the \"Extension\") works with the Nautilus app to analyze and save text selected from web pages. This Privacy Policy explains what information the Extension processes, why it is used, and with whom it may be shared.",
+      "The Lema Chrome Extension (the \"Extension\") works with the Lema desktop app to analyze and save text selected from web pages. This Privacy Policy explains what information the Extension processes, why it is used, and with whom it may be shared.",
     sections: [
       {
         heading: "1. Information We Process",
@@ -100,29 +100,29 @@ const chromePrivacyCopy: PrivacyCopy = {
         paragraphs: [
           "To sign users in and maintain authentication.",
           "To provide text analysis for content selected by the user.",
-          "To save analyzed pages and results in the Nautilus app or Nautilus service.",
-          "To open saved pages again in the Nautilus app.",
+          "To save analyzed pages and results in the Lema desktop app's local library.",
+          "To open saved pages again in the Lema desktop app.",
           "To maintain service security, reliability, and error handling.",
         ],
       },
       {
         heading: "4. Sharing and Disclosure",
         paragraphs: [
-          "The Extension may share information only as needed with the Nautilus app, Nautilus local services, and Nautilus servers in order to provide its core functionality.",
+          "The Extension communicates with Lema's local desktop service for analysis and page storage. Account credentials and favorite-lemma changes may be sent to Lema servers.",
           "We do not sell user information and do not use it for personalized advertising or third-party advertising purposes.",
         ],
       },
       {
         heading: "5. Local Communication",
         paragraphs: [
-          "The Extension may communicate with a local service running on the user's device in order to work with the Nautilus desktop app. This communication is limited to the core functionality of the Extension.",
+          "The Extension may communicate with a local service running on the user's device in order to work with the Lema desktop app. This communication is limited to the core functionality of the Extension.",
         ],
       },
       {
         heading: "6. Retention and Deletion",
         paragraphs: [
           "Authentication tokens may be stored in browser extension storage, and users can remove them by signing out.",
-          "Pages and account-related data saved on the server can be deleted through the Nautilus desktop or mobile app.",
+          "Saved pages remain in the desktop app's local library until the user deletes them or clears the app data. Cloud favorites can be removed in Lema or by deleting the account.",
         ],
       },
       {
@@ -140,10 +140,10 @@ const chromePrivacyCopy: PrivacyCopy = {
     ],
   },
   ko: {
-    title: "Nautilus Chrome 확장 프로그램 개인정보처리방침",
+    title: "Lema Chrome 확장 프로그램 개인정보처리방침",
     updatedAt: "최종 업데이트: 2026년 7월 17일",
     intro:
-      "Nautilus Chrome 확장 프로그램(이하 \"확장 프로그램\")은 Nautilus 앱과 연동하여 웹페이지의 선택 텍스트를 분석하고 저장하는 기능을 제공합니다. 본 개인정보처리방침은 확장 프로그램이 어떤 정보를 처리하는지, 어떤 목적으로 사용하는지, 누구와 공유하는지를 설명합니다.",
+      "Lema Chrome 확장 프로그램(이하 \"확장 프로그램\")은 Lema 데스크톱 앱과 연동하여 웹페이지의 선택 텍스트를 분석하고 로컬에 저장하는 기능을 제공합니다. 본 개인정보처리방침은 확장 프로그램이 어떤 정보를 처리하는지, 어떤 목적으로 사용하는지, 누구와 공유하는지를 설명합니다.",
     sections: [
       {
         heading: "1. 처리하는 정보",
@@ -166,29 +166,29 @@ const chromePrivacyCopy: PrivacyCopy = {
         paragraphs: [
           "사용자 계정 로그인 및 인증 유지",
           "선택한 텍스트의 분석 기능 제공",
-          "분석 결과와 페이지를 Nautilus 앱 또는 Nautilus 서비스에 저장",
-          "저장된 페이지를 Nautilus 앱에서 다시 열 수 있도록 지원",
+          "분석 결과와 페이지를 Lema 데스크톱 앱의 로컬 라이브러리에 저장",
+          "저장된 페이지를 Lema 데스크톱 앱에서 다시 열 수 있도록 지원",
           "서비스 보안 유지, 오류 대응, 기능 안정성 확보",
         ],
       },
       {
         heading: "4. 정보 공유 및 제공",
         paragraphs: [
-          "확장 프로그램은 위 목적 달성을 위해 필요한 범위에서만 Nautilus 앱, Nautilus 로컬 서비스, Nautilus 서버와 정보를 공유할 수 있습니다.",
+          "확장 프로그램은 분석과 페이지 저장을 위해 Lema 로컬 서비스와 통신합니다. 계정 인증과 표제어 즐겨찾기는 Lema 서버와 통신할 수 있습니다.",
           "당사는 사용자의 정보를 판매하지 않으며, 개인 맞춤 광고 또는 제3자 광고 목적에 사용하지 않습니다.",
         ],
       },
       {
         heading: "5. 로컬 통신에 관한 안내",
         paragraphs: [
-          "확장 프로그램은 Nautilus 데스크톱 앱과 연동하기 위해 사용자의 기기에서 실행 중인 로컬 서비스와 통신할 수 있습니다. 이 통신은 확장 프로그램의 핵심 기능 제공을 위한 목적에 한해 이루어집니다.",
+          "확장 프로그램은 Lema 데스크톱 앱과 연동하기 위해 사용자의 기기에서 실행 중인 로컬 서비스와 통신할 수 있습니다. 이 통신은 확장 프로그램의 핵심 기능 제공을 위한 목적에 한해 이루어집니다.",
         ],
       },
       {
         heading: "6. 보관 및 삭제",
         paragraphs: [
           "인증 토큰은 브라우저의 확장 프로그램 저장소에 저장될 수 있으며, 사용자는 로그아웃을 통해 이를 제거할 수 있습니다.",
-          "서버에 저장된 페이지 및 계정 관련 정보의 삭제는 Nautilus 데스크탑 또는 모바일 앱을 통해 할 수 있습니다.",
+          "저장한 페이지는 사용자가 삭제하거나 앱 데이터를 지울 때까지 데스크톱 로컬 라이브러리에 유지됩니다. 클라우드 즐겨찾기는 Lema에서 지우거나 계정을 삭제해 제거할 수 있습니다.",
         ],
       },
       {
@@ -209,18 +209,18 @@ const chromePrivacyCopy: PrivacyCopy = {
 
 const androidPrivacyCopy: PrivacyCopy = {
   en: {
-    title: "Nautilus Android App Privacy Policy",
-    updatedAt: "Last updated: July 20, 2026",
+    title: "Lema Android App Privacy Policy",
+    updatedAt: "Last updated: August 31, 2026",
     intro:
-      "The Nautilus Android app (the \"App\") helps users read and analyze foreign-language text and find lyrics for music playing on their device. This Privacy Policy explains what information the App processes, why it is used, and when it is shared.",
+      "The Lema Android app (the \"App\") helps users read and analyze foreign-language text and find lyrics for music playing on their device. This Privacy Policy explains what information the App processes, why it is used, and when it is shared.",
     sections: [
       {
         heading: "1. Information We Process",
         paragraphs: [
           "When you create an account or sign in, the App processes information such as your name, email address, password, and authentication token.",
           "The App processes text, pages, language selections, and annotations that you choose to create or save.",
-          "If you enable Android notification access, the App uses active media-session information such as the song title, artist, album, playback state, and the name of the player app. Although Android grants broad notification access, Nautilus does not use message or conversation content for this feature.",
-          "The App stores preferences and downloaded language data on your device.",
+          "If you enable Android notification access, the App uses active media-session information such as the song title, artist, album, playback state, and the name of the player app. Although Android grants broad notification access, Lema does not use message or conversation content for this feature.",
+          "The App stores preferences, downloaded language data, pages, notebooks, and annotations on your device.",
         ],
       },
       {
@@ -242,22 +242,22 @@ const androidPrivacyCopy: PrivacyCopy = {
       {
         heading: "4. Sharing and Third-Party Services",
         paragraphs: [
-          "To find lyrics, the App sends the current song title and artist name to the LRCLIB service at lrclib.net. It does not send your Nautilus account identifier with this request.",
-          "Information may be sent to Nautilus servers when needed for account, synchronization, language analysis, page, and annotation features.",
+          "To find lyrics, the App sends the current song title and artist name to the LRCLIB service at lrclib.net. It does not send your Lema account identifier with this request.",
+          "Account data, favorite-lemma changes, and text submitted for mobile language analysis may be sent to Lema servers. Pages, notebooks, and annotations are stored in the device's local library and are not synchronized to Lema servers.",
           "We do not sell personal information or use it for personalized or third-party advertising.",
         ],
       },
       {
         heading: "5. Storage and Retention",
         paragraphs: [
-          "Device preferences, authentication information, cached lyrics, and downloaded language data may be stored locally on your device.",
-          "Account-related content stored on Nautilus servers is retained while needed to provide the service or until you delete it or delete your account, subject to legal and security requirements.",
+          "Device preferences, authentication information, cached lyrics, downloaded language data, pages, notebooks, and annotations may be stored locally on your device.",
+          "Account information and cloud favorites stored on Lema servers are retained while needed to provide the service or until you delete them or delete your account, subject to legal and security requirements.",
         ],
       },
       {
         heading: "6. Deletion and Control",
         paragraphs: [
-          "You can delete saved content in the App and delete your account from the profile section. You can remove local App data by clearing the App's storage or uninstalling it.",
+          "You can delete saved content in the App and delete your account from the profile section. Deleting your account does not delete the local library. You can remove local App data by clearing the App's storage or uninstalling it.",
           "You can revoke Android permissions and special access from the device settings at any time.",
         ],
       },
@@ -274,18 +274,18 @@ const androidPrivacyCopy: PrivacyCopy = {
     ],
   },
   ko: {
-    title: "Nautilus Android 앱 개인정보처리방침",
-    updatedAt: "최종 업데이트: 2026년 7월 20일",
+    title: "Lema Android 앱 개인정보처리방침",
+    updatedAt: "최종 업데이트: 2026년 8월 31일",
     intro:
-      "Nautilus Android 앱(이하 \"앱\")은 외국어 텍스트를 읽고 분석하며, 기기에서 재생 중인 음악의 가사를 찾을 수 있도록 돕습니다. 본 개인정보처리방침은 앱이 어떤 정보를 처리하고, 왜 사용하며, 언제 공유하는지 설명합니다.",
+      "Lema Android 앱(이하 \"앱\")은 외국어 텍스트를 읽고 분석하며, 기기에서 재생 중인 음악의 가사를 찾을 수 있도록 돕습니다. 본 개인정보처리방침은 앱이 어떤 정보를 처리하고, 왜 사용하며, 언제 공유하는지 설명합니다.",
     sections: [
       {
         heading: "1. 처리하는 정보",
         paragraphs: [
           "회원가입하거나 로그인할 때 이름, 이메일 주소, 비밀번호, 인증 토큰 등의 정보를 처리합니다.",
           "사용자가 만들거나 저장한 텍스트, 페이지, 언어 선택 및 주석을 처리합니다.",
-          "Android 알림 접근을 허용하면 곡 제목, 아티스트, 앨범, 재생 상태 및 재생 앱 이름과 같은 활성 미디어 세션 정보를 사용합니다. Android는 넓은 알림 접근 권한을 부여하지만, Nautilus는 이 기능을 위해 메시지나 대화 내용을 사용하지 않습니다.",
-          "앱 설정과 다운로드한 언어 데이터를 기기에 저장합니다.",
+          "Android 알림 접근을 허용하면 곡 제목, 아티스트, 앨범, 재생 상태 및 재생 앱 이름과 같은 활성 미디어 세션 정보를 사용합니다. Android는 넓은 알림 접근 권한을 부여하지만, Lema는 이 기능을 위해 메시지나 대화 내용을 사용하지 않습니다.",
+          "앱 설정, 다운로드한 언어 데이터, 페이지, 노트북, 주석을 기기에 저장합니다.",
         ],
       },
       {
@@ -307,22 +307,22 @@ const androidPrivacyCopy: PrivacyCopy = {
       {
         heading: "4. 정보 공유 및 외부 서비스",
         paragraphs: [
-          "가사를 찾기 위해 현재 곡 제목과 아티스트 이름을 LRCLIB 서비스(lrclib.net)에 전송합니다. 이 요청에는 Nautilus 계정 식별자를 함께 보내지 않습니다.",
-          "계정, 동기화, 언어 분석, 페이지 및 주석 기능을 제공하는 데 필요한 정보는 Nautilus 서버로 전송될 수 있습니다.",
+          "가사를 찾기 위해 현재 곡 제목과 아티스트 이름을 LRCLIB 서비스(lrclib.net)에 전송합니다. 이 요청에는 Lema 계정 식별자를 함께 보내지 않습니다.",
+          "계정 정보, 표제어 즐겨찾기, 모바일 언어 분석을 위한 텍스트는 Lema 서버로 전송될 수 있습니다. 페이지, 노트북, 주석은 기기의 로컬 라이브러리에 저장되며 Lema 서버와 동기화되지 않습니다.",
           "개인정보를 판매하거나 개인 맞춤 광고 또는 제3자 광고에 사용하지 않습니다.",
         ],
       },
       {
         heading: "5. 저장 및 보관",
         paragraphs: [
-          "앱 설정, 인증 정보, 캐시된 가사 및 다운로드한 언어 데이터는 사용자의 기기에 저장될 수 있습니다.",
-          "Nautilus 서버의 계정 관련 콘텐츠는 서비스 제공에 필요한 동안 또는 사용자가 해당 콘텐츠나 계정을 삭제할 때까지 보관될 수 있습니다. 법률 및 보안상 필요한 경우는 예외입니다.",
+          "앱 설정, 인증 정보, 캐시된 가사, 다운로드한 언어 데이터, 페이지, 노트북, 주석은 사용자의 기기에 저장될 수 있습니다.",
+          "Lema 서버의 계정 정보와 클라우드 즐겨찾기는 서비스 제공에 필요한 동안 또는 사용자가 해당 데이터나 계정을 삭제할 때까지 보관될 수 있습니다. 법률 및 보안상 필요한 경우는 예외입니다.",
         ],
       },
       {
         heading: "6. 삭제 및 통제",
         paragraphs: [
-          "앱에서 저장 콘텐츠를 삭제할 수 있으며 프로필에서 계정을 삭제할 수 있습니다. 앱 저장공간을 지우거나 앱을 제거하면 기기에 저장된 로컬 데이터를 삭제할 수 있습니다.",
+          "앱에서 저장 콘텐츠를 삭제할 수 있으며 프로필에서 계정을 삭제할 수 있습니다. 계정을 삭제해도 로컬 라이브러리는 유지됩니다. 앱 저장공간을 지우거나 앱을 제거하면 기기에 저장된 로컬 데이터를 삭제할 수 있습니다.",
           "Android 기기 설정에서 언제든지 권한과 특별 접근을 해제할 수 있습니다.",
         ],
       },
@@ -386,7 +386,7 @@ function PrivacyPage({
 
         {accountDeletionHref ? (
           <a href={accountDeletionHref} style={accountDeletionLinkStyle}>
-            Delete Nautilus account / Nautilus 계정 삭제
+            Delete Lema account / Lema 계정 삭제
           </a>
         ) : null}
       </div>

@@ -1,4 +1,4 @@
-import { isElectronApp } from "./platform";
+import { isCapacitorApp, isElectronApp } from "./platform";
 import type { User } from "./types";
 
 const SESSION_STORAGE_KEY = "auth-session-v1";
@@ -163,7 +163,7 @@ export function clearStoredSession() {
 }
 
 export function getOfflineSessionUser() {
-  if (!isElectronApp()) {
+  if (!isElectronApp() && !isCapacitorApp()) {
     return null;
   }
 

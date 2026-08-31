@@ -10,7 +10,7 @@ def is_packaged_backend() -> bool:
 
 
 def get_backend_root() -> Path:
-    override = os.getenv("NAUTILUS_BACKEND_ROOT")
+    override = os.getenv("LEMA_BACKEND_ROOT") or os.getenv("NAUTILUS_BACKEND_ROOT")
 
     if override:
         return Path(override).resolve()
@@ -21,8 +21,8 @@ def get_backend_root() -> Path:
     return Path(__file__).resolve().parent
 
 
-def _resolve_override(name: str) -> Path | None:
-    value = os.getenv(name)
+def _resolve_override(name: str, legacy_name: str | None = None) -> Path | None:
+    value = os.getenv(name) or (os.getenv(legacy_name) if legacy_name else None)
     if not value:
         return None
 
@@ -30,7 +30,7 @@ def _resolve_override(name: str) -> Path | None:
 
 
 def get_static_data_root() -> Path:
-    override = _resolve_override("NAUTILUS_DATA_STATIC_ROOT")
+    override = _resolve_override("LEMA_DATA_STATIC_ROOT", "NAUTILUS_DATA_STATIC_ROOT")
 
     if override is not None:
         return override
@@ -39,7 +39,7 @@ def get_static_data_root() -> Path:
 
 
 def get_runtime_root() -> Path:
-    override = _resolve_override("NAUTILUS_RUNTIME_ROOT")
+    override = _resolve_override("LEMA_RUNTIME_ROOT", "NAUTILUS_RUNTIME_ROOT")
 
     if override is not None:
         return override
@@ -48,7 +48,7 @@ def get_runtime_root() -> Path:
 
 
 def get_runtime_state_root() -> Path:
-    override = _resolve_override("NAUTILUS_RUNTIME_STATE_ROOT")
+    override = _resolve_override("LEMA_RUNTIME_STATE_ROOT", "NAUTILUS_RUNTIME_STATE_ROOT")
 
     if override is not None:
         return override
@@ -57,7 +57,7 @@ def get_runtime_state_root() -> Path:
 
 
 def get_runtime_package_root() -> Path:
-    override = _resolve_override("NAUTILUS_RUNTIME_PACKAGE_ROOT")
+    override = _resolve_override("LEMA_RUNTIME_PACKAGE_ROOT", "NAUTILUS_RUNTIME_PACKAGE_ROOT")
 
     if override is not None:
         return override
@@ -66,7 +66,7 @@ def get_runtime_package_root() -> Path:
 
 
 def get_stanza_model_root() -> Path:
-    override = _resolve_override("NAUTILUS_STANZA_MODEL_ROOT")
+    override = _resolve_override("LEMA_STANZA_MODEL_ROOT", "NAUTILUS_STANZA_MODEL_ROOT")
 
     if override is not None:
         return override
@@ -75,7 +75,7 @@ def get_stanza_model_root() -> Path:
 
 
 def get_classla_model_root() -> Path:
-    override = _resolve_override("NAUTILUS_CLASSLA_MODEL_ROOT")
+    override = _resolve_override("LEMA_CLASSLA_MODEL_ROOT", "NAUTILUS_CLASSLA_MODEL_ROOT")
 
     if override is not None:
         return override
@@ -84,7 +84,7 @@ def get_classla_model_root() -> Path:
 
 
 def get_frontend_dist_dir() -> Path | None:
-    override = os.getenv("NAUTILUS_FRONTEND_DIST")
+    override = os.getenv("LEMA_FRONTEND_DIST") or os.getenv("NAUTILUS_FRONTEND_DIST")
 
     if override:
         path = Path(override).resolve()

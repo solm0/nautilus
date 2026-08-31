@@ -123,7 +123,7 @@ export default function PageView() {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    const requestedPageId = Number(id);
+    const requestedPageId = id;
 
     const run = async () => {
       if (fetchedRef.current) return;
@@ -151,7 +151,7 @@ export default function PageView() {
               )
             : [],
         );
-        setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
+        setOffline(false);
         const favorites = await getFavorites();
         if (!active) return;
         setFavoriteKeys(new Set(favorites));
@@ -300,19 +300,19 @@ export default function PageView() {
 
   const handleAddMetadata = async (value: string) => {
     if (!id) return;
-    const data = await addPageMetadata(Number(id), value);
+    const data = await addPageMetadata(id, value);
     setPageMetadata(data.metadata);
   };
 
   const handleUpdateMetadata = async (metadataIndex: number, value: string) => {
     if (!id) return;
-    const data = await updatePageMetadata(Number(id), metadataIndex, value);
+    const data = await updatePageMetadata(id, metadataIndex, value);
     setPageMetadata(data.metadata);
   };
 
   const handleDeleteMetadata = async (metadataIndex: number) => {
     if (!id) return;
-    const data = await deletePageMetadata(Number(id), metadataIndex);
+    const data = await deletePageMetadata(id, metadataIndex);
     setPageMetadata(data.metadata);
   };
 
@@ -390,13 +390,12 @@ export default function PageView() {
               onAddMetadata={offline || Number(id) < 0 ? undefined : handleAddMetadata}
               onUpdateMetadata={offline || Number(id) < 0 ? undefined : handleUpdateMetadata}
               onDeleteMetadata={offline || Number(id) < 0 ? undefined : handleDeleteMetadata}
-              pageId={Number(id)}
+              pageId={id}
               panelData={panel}
               language={language ?? ""}
               setPanelData={setPanel}
               scrollRef={(fn) => (scrollRef.current = fn)}
               setAnnotations={setAnnotations}
-              offline={offline}
               horizontalAlign={
                 panelPlacement === "left"
                   ? "right"
@@ -429,7 +428,6 @@ export default function PageView() {
                 panel={panel}
                 setPanel={setPanel}
                 setAnnotations={setAnnotations}
-                offline={offline}
               />
             )}
 

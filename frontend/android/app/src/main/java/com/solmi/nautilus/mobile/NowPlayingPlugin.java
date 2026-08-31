@@ -1,4 +1,4 @@
-package com.solmi.nautilus.mobile;
+package com.solmi.lema.mobile;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,7 +28,7 @@ import java.util.List;
 
 @CapacitorPlugin(name = "NowPlaying")
 public class NowPlayingPlugin extends Plugin {
-    private static final String PREFERENCES_NAME = "nautilus_now_playing";
+    private static final String PREFERENCES_NAME = "lema_now_playing";
     private static final String NOTIFICATIONS_ENABLED_KEY = "notifications_enabled";
 
     @PluginMethod

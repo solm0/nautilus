@@ -101,6 +101,9 @@ def build_release_catalog_from_tree(entries: list[dict[str, Any]]):
             filename = parts[-1]
 
             platform_key = {
+                "lema-electron-macos": "macOS",
+                "lema-electron-linux": "Linux",
+                "lema-electron-windows": "Windows",
                 "nautilus-electron-macos": "macOS",
                 "nautilus-electron-linux": "Linux",
                 "nautilus-electron-windows": "Windows",

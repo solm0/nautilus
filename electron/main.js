@@ -9,12 +9,44 @@ let mainWindow;
 let backendProcess;
 let backendReady = false;
 let backendStartError = null;
-const DEEP_LINK_PROTOCOL = "nautilus";
+const DEEP_LINK_PROTOCOL = "lema";
+const LEGACY_DEEP_LINK_PROTOCOL = "nautilus";
 const pendingDeepLinks = [];
 const DEV_BACKEND_PORT = 8010;
 
 function getOfflineStatePath() {
   return path.join(app.getPath("userData"), "offline", "offline-state.json");
+}
+
+function getLegacyUserDataRoots() {
+  const appDataRoot = app.getPath("appData");
+  return ["Nautilus", "nautilus-electron", "nautilus"]
+    .map((name) => path.join(appDataRoot, name))
+    .filter((candidate) => candidate !== app.getPath("userData"));
+}
+
+async function pathExists(target) {
+  try {
+    await fs.access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function migrateLegacyUserData() {
+  const destinationRoot = app.getPath("userData");
+  const relativePaths = ["offline", "language-data", "language-models", "runtime"];
+
+  for (const sourceRoot of getLegacyUserDataRoots()) {
+    for (const relativePath of relativePaths) {
+      const source = path.join(sourceRoot, relativePath);
+      const destination = path.join(destinationRoot, relativePath);
+      if (!(await pathExists(source)) || await pathExists(destination)) continue;
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.cp(source, destination, { recursive: true, errorOnExist: false });
+    }
+  }
 }
 
 async function readOfflineStateFile() {
@@ -25,6 +57,14 @@ async function readOfflineStateFile() {
     return JSON.parse(raw);
   } catch (error) {
     if (error?.code === "ENOENT") {
+      for (const legacyRoot of getLegacyUserDataRoots()) {
+        try {
+          const raw = await fs.readFile(path.join(legacyRoot, "offline", "offline-state.json"), "utf8");
+          return JSON.parse(raw);
+        } catch (legacyError) {
+          if (legacyError?.code !== "ENOENT") throw legacyError;
+        }
+      }
       return null;
     }
 
@@ -37,6 +77,28 @@ async function writeOfflineStateFile(value) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(value), "utf8");
   return true;
+}
+
+async function saveLibraryExport(value) {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Export Lema library",
+    defaultPath: path.join(app.getPath("documents"), `lema-library-${new Date().toISOString().slice(0, 10)}.lema`),
+    filters: [{ name: "Lema Library", extensions: ["lema"] }],
+  });
+  if (result.canceled || !result.filePath) return null;
+  await fs.writeFile(result.filePath, JSON.stringify(value), "utf8");
+  return { ok: true, path: result.filePath };
+}
+
+async function openLibraryImport() {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Import Lema library",
+    properties: ["openFile"],
+    filters: [{ name: "Lema Library", extensions: ["lema", "json"] }],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const raw = await fs.readFile(result.filePaths[0], "utf8");
+  return JSON.parse(raw);
 }
 
 function mergeSearchPath(existingPath, extraEntries) {
@@ -60,7 +122,7 @@ if (!gotSingleInstanceLock) {
 function extractDeepLink(argv = []) {
   return argv.find((value) =>
     typeof value === "string" &&
-    value.startsWith(`${DEEP_LINK_PROTOCOL}://`)
+    (value.startsWith(`${DEEP_LINK_PROTOCOL}://`) || value.startsWith(`${LEGACY_DEEP_LINK_PROTOCOL}://`))
   ) ?? null;
 }
 
@@ -286,7 +348,7 @@ async function startBackend() {
 
   const args = isPackaged
     ? []
-    : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "0.0.0.0"];
+    : ["-m", "uvicorn", "main:app", "--reload", "--port", String(DEV_BACKEND_PORT), "--host", "127.0.0.1"];
 
   const userDataRoot = app.getPath("userData");
   const runtimeRoot = path.join(userDataRoot, "runtime");
@@ -294,12 +356,19 @@ async function startBackend() {
   const dataStaticRoot = path.join(userDataRoot, "language-data", "static");
   const stanzaModelRoot = path.join(userDataRoot, "language-models", "stanza");
   const classlaModelRoot = path.join(userDataRoot, "language-models", "classla");
+  const libraryDbPath = path.join(userDataRoot, "library", "lema.sqlite");
 
   const env = {
     ...process.env,
+    LEMA_BACKEND_ROOT: backendCwd,
     NAUTILUS_BACKEND_ROOT: backendCwd,
     ...(isPackaged
         ? {
+          LEMA_RUNTIME_ROOT: runtimeRoot,
+          LEMA_RUNTIME_PACKAGE_ROOT: runtimePackageRoot,
+          LEMA_DATA_STATIC_ROOT: dataStaticRoot,
+          LEMA_STANZA_MODEL_ROOT: stanzaModelRoot,
+          LEMA_CLASSLA_MODEL_ROOT: classlaModelRoot,
           NAUTILUS_RUNTIME_ROOT: runtimeRoot,
           NAUTILUS_RUNTIME_PACKAGE_ROOT: runtimePackageRoot,
           NAUTILUS_DATA_STATIC_ROOT: dataStaticRoot,
@@ -307,9 +376,13 @@ async function startBackend() {
           NAUTILUS_CLASSLA_MODEL_ROOT: classlaModelRoot,
         }
       : {}),
+    LEMA_FRONTEND_DIST: isPackaged
+      ? path.join(backendCwd, "frontend")
+      : path.join(__dirname, "..", "frontend", "dist"),
     NAUTILUS_FRONTEND_DIST: isPackaged
       ? path.join(backendCwd, "frontend")
       : path.join(__dirname, "..", "frontend", "dist"),
+    LEMA_LIBRARY_DB_PATH: libraryDbPath,
   };
 
   if (isPackaged && process.platform === "darwin") {
@@ -541,6 +614,8 @@ app.whenReady().then(async () => {
     app.setAsDefaultProtocolClient(DEEP_LINK_PROTOCOL);
   }
 
+  await migrateLegacyUserData();
+
   if (!(await ensureBackendReady())) {
     return;
   }
@@ -554,6 +629,8 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("offline-state:read", async () => readOfflineStateFile());
   ipcMain.handle("offline-state:write", async (_event, value) => writeOfflineStateFile(value));
+  ipcMain.handle("library:export", async (_event, value) => saveLibraryExport(value));
+  ipcMain.handle("library:import", async () => openLibraryImport());
 
   dispatchDeepLink(extractDeepLink(process.argv));
 

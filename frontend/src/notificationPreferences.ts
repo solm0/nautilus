@@ -2,7 +2,8 @@ import { registerPlugin } from "@capacitor/core";
 
 import { isCapacitorApp } from "./platform";
 
-const PROMPT_SEEN_KEY = "nautilus_notification_prompt_seen";
+const PROMPT_SEEN_KEY = "lema_notification_prompt_seen";
+const LEGACY_PROMPT_SEEN_KEY = "nautilus_notification_prompt_seen";
 
 type AndroidNotificationPlugin = {
   getNotificationPermissionStatus(): Promise<NotificationPermissionStatus>;
@@ -16,7 +17,8 @@ export type AppNotificationPermissionStatus = NotificationPermissionStatus;
 
 export function hasSeenNotificationPrompt() {
   if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(PROMPT_SEEN_KEY) === "true";
+  return window.localStorage.getItem(PROMPT_SEEN_KEY) === "true"
+    || window.localStorage.getItem(LEGACY_PROMPT_SEEN_KEY) === "true";
 }
 
 export function markNotificationPromptSeen() {

@@ -26,6 +26,8 @@ declare global {
       relaunchApp?: () => Promise<void>;
       readOfflineState?: () => Promise<unknown>;
       writeOfflineState?: (value: unknown) => Promise<boolean>;
+      saveLibraryExport?: (value: unknown) => Promise<{ ok: boolean; path?: string } | null>;
+      openLibraryImport?: () => Promise<unknown | null>;
     };
   }
 }

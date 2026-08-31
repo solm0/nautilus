@@ -24,12 +24,12 @@ function isAllowedFetchUrl(rawUrl: string) {
 function isAllowedOpenUrl(rawUrl: string) {
   const parsed = parseUrl(rawUrl);
   if (!parsed) return false;
-  if (parsed.protocol === "nautilus:") return true;
+  if (parsed.protocol === "lema:") return true;
   return isAllowedFetchUrl(rawUrl);
 }
 
 type RequestMessage = {
-  type: "nautilus:request";
+  type: "lema:request";
   input: {
     url: string;
     init?: RequestInit;
@@ -37,14 +37,14 @@ type RequestMessage = {
 };
 
 type ProbeLocalMessage = {
-  type: "nautilus:probe-local";
+  type: "lema:probe-local";
   input: {
     localApi: string;
   };
 };
 
 type OpenUrlMessage = {
-  type: "nautilus:open-url";
+  type: "lema:open-url";
   input: {
     url: string;
   };
@@ -107,7 +107,7 @@ if (chrome.action?.onClicked) {
 chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   const message = rawMessage as ExtensionMessage;
 
-  if (message.type === "nautilus:request") {
+  if (message.type === "lema:request") {
     void proxyRequest(message.input.url, message.input.init)
       .then((result) => sendResponse(result))
       .catch((error: unknown) => {
@@ -120,12 +120,12 @@ chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
     return true;
   }
 
-  if (message.type === "nautilus:probe-local") {
+  if (message.type === "lema:probe-local") {
     void probeLocal(message.input.localApi).then(sendResponse);
     return true;
   }
 
-  if (message.type === "nautilus:open-url") {
+  if (message.type === "lema:open-url") {
     if (!isAllowedOpenUrl(message.input.url)) {
       sendResponse({ ok: false, error: "blocked open URL" });
       return false;

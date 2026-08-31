@@ -11,7 +11,7 @@ def hasReleaseSigning =
     releaseKeyPassword
 
 android {
-    namespace "com.solmi.nautilus.mobile"
+    namespace "com.solmi.lema.mobile"
     compileSdk rootProject.ext.compileSdkVersion
     signingConfigs {
         release {
@@ -24,7 +24,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.solmi.nautilus.mobile"
+        applicationId "com.solmi.lema.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 10000
@@ -63,6 +63,8 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    implementation "androidx.room:room-runtime:2.8.4"
+    annotationProcessor "androidx.room:room-compiler:2.8.4"
 }
 
 apply from: 'capacitor.build.gradle'

@@ -100,7 +100,7 @@ def create_token(user_id: int):
 async def send_email(email: str, link: str):
 
   message = MessageSchema(
-    subject="[Nautilus] Account action",
+    subject="[Lema] Account action",
     recipients=[email],
     body=f"To reset your password, click the link below.\n아래 링크를 클릭하여 비밀번호를 재설정하세요.\n{link}",
     subtype="plain"
@@ -252,7 +252,7 @@ def render_reset_page(token: str) -> HTMLResponse:
   safe_token = token.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
   body = f"""
       <h1>Reset password</h1>
-      <p>Enter a new password for your Nautilus account.</p>
+      <p>Enter a new password for your Lema account.</p>
       <form id="reset-form">
         <label>
           <input id="password" type="password" minlength="1" autocomplete="new-password" required />

@@ -40,7 +40,7 @@ const ScrollFillLogo = forwardRef<SVGGElement>(function ScrollFillLogo(_, ref) {
     <svg
       viewBox="0 0 48 48"
       role="img"
-      aria-label="Nautilus"
+      aria-label="Lema"
       className="block size-full overflow-visible"
     >
       <defs>

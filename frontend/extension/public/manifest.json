@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Nautilus",
+  "name": "Lema",
   "version": "0.0.1",
-  "description": "Analyze page text in place with Nautilus.",
+  "description": "Analyze page text in place with Lema.",
   "permissions": [
     "storage",
     "tabs",

@@ -11,15 +11,13 @@ export function Gutter({
   setPanelData,
   annotationId,
   setEmojiPicker,
-  offline = false,
 }: {
   annotations?: Annotation[];
   containerRef: RefObject<HTMLDivElement | null>;
   setHoverRange: (r: { start: number; end: number } | null) => void;
   setPanelData?: (p: SidePanelState | null) => void;
-  annotationId?: number;
+  annotationId?: string;
   setEmojiPicker?: React.Dispatch<React.SetStateAction<any>>;
-  offline?: boolean;
 }) {
   const groups: { top: number; items: Annotation[] }[] = [];
   const container = containerRef.current;
@@ -84,10 +82,7 @@ export function Gutter({
           className="flex gap-0.5"
         >
           {group.items.map((annotation, j) => {
-            const disableEmojiEdit =
-              annotation.type === "emoji" &&
-              offline &&
-              (annotation.id ?? 0) >= 0;
+            const disableEmojiEdit = false;
 
             return (
               <div

@@ -1,40 +1,32 @@
 import { useEffect, useState } from "react";
-import { deleteAnnotation, updateAnnotation, verifyToken } from "../../api";
+import { deleteAnnotation, updateAnnotation } from "../../api";
 import { formatRelative } from "../util/time";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { Link } from "react-router-dom";
 import Button, { IconButton } from "../util/Button";
 import { ArrowUpRight, Pencil, Trash2 } from "lucide-react";
-import type { TimelineItem, User } from "../../types";
+import type { TimelineItem } from "../../types";
 import { isValidUrl } from "../pageview/AnnotationNew";
 import { useI18n } from "../../i18n";
-import PendingSyncBadge from "../util/PendingSyncBadge";
 
 export default function AnnotationCard({
   item, onUpdate, onDelete, readonlySnapshotActions = false,
 }: {
   item: TimelineItem;
   onUpdate?: (item: TimelineItem) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
   readonlySnapshotActions?: boolean;
 }) {
   const { locale, t } = useI18n();
   const [openModal, setOpenModal] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
 
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(item.content);
   const [msg, setMsg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [canSave, setCanSave] = useState(item.content.trim().length > 0);
-  const isPendingAnnotation = item.pending_sync || item.id < 0;
-  const effectiveUser = item.user ?? (isPendingAnnotation ? user : null);
-  const disableSnapshotActions = readonlySnapshotActions && !isPendingAnnotation;
+  const disableSnapshotActions = readonlySnapshotActions;
   
-  useEffect(() => {
-    verifyToken().then(setUser);
-  }, []);
-
   useEffect(() => {
     setCanSave(value.trim().length > 0);
   }, [value]);
@@ -92,9 +84,7 @@ export default function AnnotationCard({
             {formatRelative(item.created_at, locale)}
           </span>
         </div>
-        {isPendingAnnotation ? <PendingSyncBadge /> : null}
-
-        {(effectiveUser?.id === user?.id || isPendingAnnotation) && item.type && !editing && (
+        {item.type && !editing && (
           <div className="gap-1 ml-auto hidden group-hover:flex">
             {item.type !== 'emoji' &&
               <IconButton

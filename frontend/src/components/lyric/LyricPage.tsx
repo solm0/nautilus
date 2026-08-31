@@ -237,7 +237,7 @@ export default function LyricPage() {
   const [saveProgress, setSaveProgress] = useState<
     SavePageProgress | "analyzing" | "fetching-lemmas" | null
   >(null);
-  const [savedPageId, setSavedPageId] = useState<number | null>(null);
+  const [savedPageId, setSavedPageId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
 

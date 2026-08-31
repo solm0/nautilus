@@ -1,7 +1,7 @@
 {
-  "name": "nautilus-electron",
+  "name": "lema-electron",
   "version": "1.0.2",
-  "description": "electron app for nautilus",
+  "description": "Lema desktop app",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -14,8 +14,14 @@
     "build:linux": "electron-builder --linux"
   },
   "build": {
-    "appId": "com.solmi.nautilus",
-    "productName": "Nautilus",
+    "appId": "com.solmi.lema",
+    "productName": "Lema",
+    "protocols": [
+      {
+        "name": "Lema",
+        "schemes": ["lema"]
+      }
+    ],
     "directories": {
       "output": "dist-electron"
     },

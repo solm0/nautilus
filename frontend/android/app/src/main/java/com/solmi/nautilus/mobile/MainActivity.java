@@ -1,4 +1,4 @@
-package com.solmi.nautilus.mobile;
+package com.solmi.lema.mobile;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,6 +15,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(NowPlayingPlugin.class);
+        registerPlugin(LemaLibraryPlugin.class);
         super.onCreate(savedInstanceState);
         handleDeepLinkIntent(getIntent());
     }

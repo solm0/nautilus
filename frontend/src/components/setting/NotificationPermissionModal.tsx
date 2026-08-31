@@ -15,7 +15,7 @@ export default function NotificationPermissionModal({
   onClose,
   onOpenSettings,
   title = "Allow notifications?",
-  body = "To show now playing alerts on this device, allow notifications for Nautilus in Android settings.",
+  body = "To show now playing alerts on this device, allow notifications for Lema in Android settings.",
 }: Props) {
   const { t } = useI18n();
   return (

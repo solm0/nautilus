@@ -5,12 +5,11 @@ export type User = {
 }
 
 export type TimelineItem = {
-  id: number;
+  id: string;
   content: string;
   created_at: string;
-  pending_sync?: boolean;
   user?: User;
-  page_id: number;
+  page_id: string;
   page_name: string;
   source: string;
   type?: "link" | "memo" | "emoji";

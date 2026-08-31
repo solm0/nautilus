@@ -28,6 +28,7 @@ import { clearStoredSession, updateStoredUser } from "../../authSession";
 import OfflineState from "../util/OfflineState";
 import { isNetworkError } from "../../network";
 import { ANDROID_PRIVACY_POLICY_URL } from "../../config";
+import { exportLocalLibrary, importLocalLibrary } from "../../localLibrary";
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -99,6 +100,68 @@ function AppVersionSection() {
           <Button text={t("Download now")} onClick={openDownloadPage} black />
         </div>
       )}
+    </section>
+  );
+}
+
+function LocalLibrarySection() {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState<"export" | "import" | null>(null);
+  const [message, setMessage] = useState("");
+
+  async function handleExport() {
+    setBusy("export");
+    setMessage("");
+    try {
+      const result = await exportLocalLibrary();
+      if (result) setMessage(t("Library exported."));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t("Could not export library."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleImport() {
+    setBusy("import");
+    setMessage("");
+    try {
+      const result = await importLocalLibrary();
+      if (!result) return;
+      window.dispatchEvent(new Event("lema:library-changed"));
+      setMessage(t("Import complete: {pages} pages, {notebooks} notebooks, {annotations} annotations, {conflicts} conflicts.", result));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t("Could not import library."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="w-full flex flex-col gap-7 items-start">
+      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">
+        {t("Local library")}
+      </h3>
+      <p className="max-w-xl text-sm text-neutral-600">
+        {t("Pages, notebooks, and annotations are stored only on this device. Export a backup to move or restore them on another device.")}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          text={busy === "export" ? t("Exporting...") : t("Export library")}
+          onClick={() => void handleExport()}
+          disabled={busy !== null}
+          black
+        />
+        <Button
+          text={busy === "import" ? t("Importing...") : t("Import and merge")}
+          onClick={() => void handleImport()}
+          disabled={busy !== null}
+        />
+      </div>
+      <p className="text-xs text-neutral-500">
+        {t("Import keeps existing data and merges the selected library. Conflicting copies are preserved separately.")}
+      </p>
+      {message ? <p className="text-sm text-neutral-700">{message}</p> : null}
     </section>
   );
 }
@@ -273,7 +336,7 @@ export function UserProfile() {
             ) : (
                 <>
                   <p className="pr-8 text-sm text-neutral-500">
-                    {t("Your data will all disappear. Pages, annotations, and saved language data will be removed permanently.")}
+                    {t("Your account and cloud favorites will be deleted. The local library on this device will remain.")}
                   </p>
                   {deleteError && (
                     <p className="text-sm text-red-600">{deleteError}</p>
@@ -388,8 +451,8 @@ export default function Setting() {
 
         <AppVersionSection />
 
-        <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Preferences")}</h3>
-        <section className="w-full h-auto mb-14 flex flex-col gap-7">
+        <section className="w-full flex flex-col gap-7 items-start">
+          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Preferences")}</h3>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-start text-sm gap-3">
               <div className="flex items-center gap-2">
@@ -433,62 +496,62 @@ export default function Setting() {
         </section>
 
         {mobileApp && (
-          <>
+          <section className="w-full flex flex-col gap-7 items-start">
             <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Notifications")}</h3>
-            <section className="w-full h-auto mb-14 flex flex-col gap-7 items-start text-sm">
-              <div className="flex items-center gap-2">
-                <span>{t("now playing alerts")}</span>
-                <button
-                  type="button"
-                  onClick={handleNowPlayingNotificationsToggle}
-                  aria-pressed={settings.now_playing_notifications}
-                  title={t("now playing alerts")}
+            <div className="flex items-center gap-2 text-sm">
+              <span>{t("now playing alerts")}</span>
+              <button
+                type="button"
+                onClick={handleNowPlayingNotificationsToggle}
+                aria-pressed={settings.now_playing_notifications}
+                title={t("now playing alerts")}
+                className={`
+                  relative inline-flex h-5 w-9 items-center rounded-full
+                  p-0.5 transition-colors
+                  ${
+                    settings.now_playing_notifications
+                      ? "bg-neutral-700"
+                      : "bg-neutral-300"
+                  }
+                `}
+              >
+                <div
                   className={`
-                    relative inline-flex h-5 w-9 items-center rounded-full
-                    p-0.5 transition-colors
+                    h-4 w-4 rounded-full bg-white shadow-sm
+                    transition-transform duration-200
                     ${
                       settings.now_playing_notifications
-                        ? "bg-neutral-700"
-                        : "bg-neutral-300"
+                        ? "translate-x-4"
+                        : "translate-x-0"
                     }
                   `}
-                >
-                  <div
-                    className={`
-                      h-4 w-4 rounded-full bg-white shadow-sm
-                      transition-transform duration-200
-                      ${
-                        settings.now_playing_notifications
-                          ? "translate-x-4"
-                          : "translate-x-0"
-                      }
-                    `}
-                  />
-                </button>
-              </div>
-              {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
-                <button
-                  type="button"
-                  className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
-                  onClick={() => setOpenNotificationModal(true)}
-                >
-                  {t("Notifications are blocked on this device. Open settings.")}
-                </button>
-              )}
-              <a
-                href={ANDROID_PRIVACY_POLICY_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-neutral-500 underline underline-offset-2"
+                />
+              </button>
+            </div>
+            {settings.now_playing_notifications && notificationPermission && !notificationPermission.granted && (
+              <button
+                type="button"
+                className="text-left text-xs text-neutral-500 underline underline-offset-2 cursor-pointer"
+                onClick={() => setOpenNotificationModal(true)}
               >
-                {t("Android app privacy policy")}
-              </a>
-            </section>
-          </>
+                {t("Notifications are blocked on this device. Open settings.")}
+              </button>
+            )}
+            <a
+              href={ANDROID_PRIVACY_POLICY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-neutral-500 underline underline-offset-2"
+            >
+              {t("Android app privacy policy")}
+            </a>
+          </section>
         )}
 
-        <h3 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Language packs")}</h3>
-        <section className="w-full h-auto mb-14 flex flex-col gap-4">
+        <LocalLibrarySection />
+
+        <section className="w-full flex flex-col gap-7">
+          <h3 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Language packs")}</h3>
           <p className="text-sm">
             {mobileApp
               ? t("Activate only the languages you want to use on this device.")
@@ -497,8 +560,10 @@ export default function Setting() {
           <PackTable />
         </section>
 
-        <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Profile")}</h3>
-        <UserProfile />
+        <section className="w-full flex flex-col gap-7 items-start">
+          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Profile")}</h3>
+          <UserProfile />
+        </section>
       </div>
 
       <NotificationPermissionModal

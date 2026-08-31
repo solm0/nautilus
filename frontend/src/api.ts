@@ -1,5 +1,5 @@
 import type { Annotation, PageSource, TextAnalysisResult } from "./components/pageTypes"
-import type { TimelineItem, User } from "./types";
+import type { User } from "./types";
 import {
   clearStoredSession,
   getOfflineSessionUser,
@@ -13,19 +13,10 @@ import {
   writePackCatalogSnapshot,
 } from "./packCatalogSnapshot";
 import {
-  cacheAnnotationsSnapshot,
   cacheFavoriteLemmaKeys,
-  cacheNotebooksSnapshot,
-  cachePageDetailSnapshot,
-  cachePagesSnapshot,
-  getOfflineAnnotationsFeed,
   getOfflineFavoriteKeys,
-  getOfflineNotebooks,
-  getOfflinePageDetail,
-  getOfflinePages,
-  queueOfflineAnnotationCreate,
   queueOfflineFavoriteToggle,
-  queueOfflinePageCreate,
+  syncOfflineOutbox,
 } from "./offlineData";
 import { getAppPlatform, isCapacitorApp, isElectronApp } from "./platform";
 import {
@@ -34,6 +25,17 @@ import {
   getEnabledMobileLanguages,
 } from "./mobilePacks";
 import { centralFetch } from "./network";
+import {
+  createLocalAnnotation,
+  createLocalPage,
+  deleteLocalAnnotation,
+  getLocalPage,
+  listLocalAnnotations,
+  listLocalNotebooks,
+  listLocalPages,
+  setLocalPageMetadata,
+  updateLocalAnnotation,
+} from "./localLibrary";
 
 const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
 const DEFAULT_ELECTRON_LOCAL_API = "http://localhost:8010/api";
@@ -361,7 +363,7 @@ export type SavePageProgress = "saving";
 export async function savePage(
   result: TextAnalysisResult,
   name: string,
-  notebookId: number | null,
+  notebookId: string | null,
   language: string,
   options?: {
     source?: PageSource;
@@ -369,205 +371,49 @@ export async function savePage(
     onProgress?: (stage: SavePageProgress) => void;
   },
 ) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  const payload = {
+  options?.onProgress?.("saving");
+  return createLocalPage({
     result,
     name,
-    notebook_id: notebookId,
+    notebookId,
     language,
     source: options?.source ?? "user",
     metadata: options?.metadata ?? [],
-  };
-
-  let res: Response;
-
-  try {
-    options?.onProgress?.("saving");
-    res = await centralFetch(CENTRAL_API + "/pages", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    return queueOfflinePageCreate({
-      result,
-      name,
-      notebookId,
-      language,
-      source: options?.source ?? "user",
-      metadata: options?.metadata ?? [],
-    });
-  }
-
-  if (res.status === 401) {
-    throw new Error("unauthorized");
-  } else if (!res.ok) {
-    throw new Error("save failed");
-  }
-
-  const data = await res.json();
-  return data.id;
+  });
 }
 
-export async function addPageMetadata(pageId: number, value: string) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ value }),
-  });
-
-  if (!res.ok) {
-    throw new Error("metadata save failed");
-  }
-
-  return res.json() as Promise<{ metadata: string[] }>;
+export async function addPageMetadata(pageId: string, value: string) {
+  const page = await getLocalPage(pageId);
+  return setLocalPageMetadata(pageId, [...(page.metadata ?? []), value]);
 }
 
 export async function updatePageMetadata(
-  pageId: number,
+  pageId: string,
   metadataIndex: number,
   value: string,
 ) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ value }),
-  });
-
-  if (!res.ok) {
-    throw new Error("metadata update failed");
-  }
-
-  return res.json() as Promise<{ metadata: string[] }>;
+  const page = await getLocalPage(pageId);
+  const metadata = [...(page.metadata ?? [])];
+  metadata[metadataIndex] = value;
+  return setLocalPageMetadata(pageId, metadata);
 }
 
-export async function deletePageMetadata(pageId: number, metadataIndex: number) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  const res = await centralFetch(`${CENTRAL_API}/pages/${pageId}/metadata/${metadataIndex}`, {
-    method: "DELETE",
-    headers,
-  });
-
-  if (!res.ok) {
-    throw new Error("metadata delete failed");
-  }
-
-  return res.json() as Promise<{ metadata: string[] }>;
+export async function deletePageMetadata(pageId: string, metadataIndex: number) {
+  const page = await getLocalPage(pageId);
+  const metadata = (page.metadata ?? []).filter((_, index) => index !== metadataIndex);
+  return setLocalPageMetadata(pageId, metadata);
 }
 
 export async function fetchPages () {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  try {
-    const res = await centralFetch(CENTRAL_API + "/pages", { headers });
-    const data = await res.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error("pages response was not an array");
-    }
-
-    if (isElectronApp()) {
-      await cachePagesSnapshot(data);
-      return getOfflinePages();
-    }
-
-    return data;
-  } catch (error) {
-    if (isElectronApp()) {
-      return getOfflinePages();
-    }
-    throw error;
-  }
+  return listLocalPages();
 };
 
 export async function fetchNotebooks() {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  try {
-    const res = await centralFetch(CENTRAL_API + "/notebooks", { headers });
-    const data = await res.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error("notebooks response was not an array");
-    }
-
-    if (isElectronApp()) {
-      await cacheNotebooksSnapshot(data);
-    }
-    return data;
-  } catch (error) {
-    if (isElectronApp()) {
-      return getOfflineNotebooks();
-    }
-    throw error;
-  }
+  return listLocalNotebooks();
 }
 
-export async function fetchPageDetail(pageId: number) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  try {
-    const [pageRes, annRes] = await Promise.all([
-      centralFetch(`${CENTRAL_API}/pages/${pageId}`, { headers }),
-      centralFetch(`${CENTRAL_API}/pages/${pageId}/annotations`, { headers }),
-    ]);
-
-    if (!pageRes.ok) {
-      throw new Error("page fetch failed");
-    }
-
-    const pageData = await pageRes.json();
-    const annotations = annRes.ok ? await annRes.json() : [];
-    const detail = {
-      id: pageId,
-      name: pageData.name ?? "",
-      created_at: pageData.created_at ?? new Date().toISOString(),
-      notebook_id: pageData.notebook_id ?? null,
-      language: pageData.language,
-      source: pageData.source ?? "user",
-      metadata: Array.isArray(pageData.metadata) ? pageData.metadata : [],
-      result: pageData.result as TextAnalysisResult,
-      annotations: Array.isArray(annotations) ? annotations : [],
-    };
-
-    await cachePageDetailSnapshot(detail);
-    return detail;
-  } catch {
-    const offlineDetail = await getOfflinePageDetail(pageId);
-
-    if (!offlineDetail) {
-      throw new Error("page fetch failed");
-    }
-
-    return offlineDetail;
-  }
+export async function fetchPageDetail(pageId: string) {
+  return getLocalPage(pageId);
 }
 
 const CYR_TO_LAT_MAP: Record<string, string> = {
@@ -648,6 +494,12 @@ export async function setFavorite(
     throw new Error("not authenticated");
   }
 
+  if (isElectronApp() || isCapacitorApp()) {
+    await queueOfflineFavoriteToggle(key, next);
+    const synced = await syncOfflineOutbox();
+    return { ok: true, offline: !synced };
+  }
+
   let res: Response;
 
   try {
@@ -682,51 +534,35 @@ export async function getFavorites(): Promise<string[]> {
 
     const data = await res.json()
     const items = data.items as string[];
-    if (isElectronApp()) {
+    if (isElectronApp() || isCapacitorApp()) {
       await cacheFavoriteLemmaKeys(items);
       return getOfflineFavoriteKeys();
     }
     return items;
   } catch (error) {
-    if (isElectronApp()) {
+    if (isElectronApp() || isCapacitorApp()) {
       return getOfflineFavoriteKeys();
     }
     throw error;
   }
 }
 
-export async function deleteAnnotation(id: number) {
-  const headers = authHeaders()
-  if (!headers) throw new Error("no token")
-
-  const res = await centralFetch(`${CENTRAL_API}/annotations/${id}`, {
-    method: "DELETE",
-    headers,
-  });
-  if (!res.ok) throw new Error("delete failed");
+export async function deleteAnnotation(id: string) {
+  await deleteLocalAnnotation(id);
   return true;
 }
 
-export async function updateAnnotation(id: number, content: string) {
-  const headers = authHeaders()
-  if (!headers) throw new Error("no token")
-
-  const res = await centralFetch(`${CENTRAL_API}/annotations/${id}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ content }),
-  });
-  if (!res.ok) throw new Error("update failed");
-  return res.json();
+export async function updateAnnotation(id: string, content: string) {
+  return updateLocalAnnotation(id, content);
 }
 
 // get all annotations
 
 export type AnnotationItem = {
-  id: number;
+  id: string;
   type: "link" | "memo" | "emoji";
   content: string;
-  page_id: number;
+  page_id: string;
   page_name: string;
   source: string;
   created_at: string;
@@ -735,76 +571,16 @@ export type AnnotationItem = {
 
 export type AnnotationCursor = {
   created_at: string;
-  id: number;
+  id: string;
 } | null;
 
 export async function fetchAnnotations(cursor: AnnotationCursor) {
-  const headers = authHeaders();
-  if (!headers) throw new Error("unauthorized");
-
-  const params = new URLSearchParams();
-  params.append("limit", "20");
-
-  if (cursor) {
-    params.append("cursor_created_at", cursor.created_at);
-    params.append("cursor_id", String(cursor.id));
-  }
-
-  try {
-    const res = await centralFetch(`${CENTRAL_API}/annotations?${params.toString()}`, {
-      headers,
-    });
-
-    if (!res.ok) throw new Error("fetch failed");
-
-    const data = await res.json() as {
-      items: TimelineItem[];
-      next_cursor: AnnotationCursor;
-    };
-
-    if (!cursor) {
-      await cacheAnnotationsSnapshot(data.items);
-    } else {
-      await cacheAnnotationsSnapshot([
-        ...(await getOfflineAnnotationsFeed()),
-        ...data.items,
-      ]);
-    }
-
-    return {
-      ...data,
-      offline: false,
-    };
-  } catch {
-    return {
-      items: await getOfflineAnnotationsFeed(),
-      next_cursor: null,
-      offline: true,
-    };
-  }
+  if (cursor) return { items: [], next_cursor: null, offline: false };
+  return { items: await listLocalAnnotations(), next_cursor: null, offline: false };
 }
 
 export async function createAnnotation(annotation: Annotation) {
-  const headers = authHeaders();
-  if (!headers) {
-    throw new Error("unauthorized");
-  }
-
-  try {
-    const response = await centralFetch(`${CENTRAL_API}/annotations`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(annotation),
-    });
-
-    if (!response.ok) {
-      throw new Error("annotation create failed");
-    }
-
-    return await response.json() as Annotation;
-  } catch {
-    return queueOfflineAnnotationCreate(annotation);
-  }
+  return createLocalAnnotation(annotation);
 }
 
 // packs 목록

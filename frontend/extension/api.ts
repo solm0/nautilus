@@ -9,8 +9,9 @@ const FALLBACK_LOCAL_APIS = [
   "http://127.0.0.1:8000/api",
 ];
 const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
-const DEFAULT_DEEPLINK_BASE = "nautilus://page/";
-const TOKEN_STORAGE_KEY = "nautilus_extension_token";
+const DEFAULT_DEEPLINK_BASE = "lema://page/";
+const TOKEN_STORAGE_KEY = "lema_extension_token";
+const LEGACY_TOKEN_STORAGE_KEY = "nautilus_extension_token";
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -101,7 +102,7 @@ async function sendMessage<T>(message: unknown) {
 
 async function probeSpecificLocalApi(localApi: string) {
   const result = await sendMessage<{ ok: boolean }>({
-    type: "nautilus:probe-local",
+    type: "lema:probe-local",
     input: {
       localApi,
     },
@@ -165,8 +166,11 @@ async function parseResponse<T>(response: ExtensionResponse) {
 
 async function getToken() {
   try {
-    const result = await chrome.storage.local.get(TOKEN_STORAGE_KEY);
-    const token = result[TOKEN_STORAGE_KEY];
+    const result = await chrome.storage.local.get([TOKEN_STORAGE_KEY, LEGACY_TOKEN_STORAGE_KEY]);
+    const token = result[TOKEN_STORAGE_KEY] ?? result[LEGACY_TOKEN_STORAGE_KEY];
+    if (!result[TOKEN_STORAGE_KEY] && typeof token === "string" && token.length > 0) {
+      await chrome.storage.local.set({ [TOKEN_STORAGE_KEY]: token });
+    }
     return typeof token === "string" && token.length > 0 ? token : null;
   } catch (error) {
     if (isExtensionContextInvalidatedError(error)) {
@@ -246,7 +250,7 @@ export async function signupWithPassword(name: string, email: string, password: 
 
 export async function logoutExtensionAuth() {
   try {
-    await chrome.storage.local.remove(TOKEN_STORAGE_KEY);
+    await chrome.storage.local.remove([TOKEN_STORAGE_KEY, LEGACY_TOKEN_STORAGE_KEY]);
   } catch (error) {
     if (!isExtensionContextInvalidatedError(error)) {
       throw error;
@@ -268,7 +272,7 @@ export async function probeLocalApi() {
 
 export async function extensionFetch<T>(url: string, init?: RequestInit) {
   const response = await sendMessage<ExtensionResponse>({
-    type: "nautilus:request",
+    type: "lema:request",
     input: {
       url,
       init,
@@ -391,11 +395,10 @@ export async function saveAnalyzedPage(
   language: string,
   sourceUrl: string,
 ) {
-  return extensionFetch<{ id: number }>(`${EXTENSION_CENTRAL_API}/pages`, {
+  return extensionFetchWithLocalFallback<{ id: string }>("/library/pages", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(await authHeaders()),
     },
     body: JSON.stringify({
       result,
@@ -405,7 +408,7 @@ export async function saveAnalyzedPage(
       source: "chrome",
       metadata: sourceUrl ? [sourceUrl] : [],
     }),
-  });
+  }));
 }
 
 export async function setFavorite(globalKey: string, next: boolean) {
@@ -423,7 +426,7 @@ export async function setFavorite(globalKey: string, next: boolean) {
 
 export async function openInstallPage() {
   await sendMessage({
-    type: "nautilus:open-url",
+    type: "lema:open-url",
     input: {
       url: EXTENSION_INSTALL_URL,
     },
@@ -439,14 +442,14 @@ function openDeepLinkInPage(url: string) {
   anchor.remove();
 }
 
-export async function openSavedPage(pageId: number) {
+export async function openSavedPage(pageId: string) {
   const url = `${EXTENSION_DEEPLINK_BASE}${pageId}`;
 
   try {
     openDeepLinkInPage(url);
   } catch {
     await sendMessage({
-      type: "nautilus:open-url",
+      type: "lema:open-url",
       input: {
         url,
       },

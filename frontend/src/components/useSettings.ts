@@ -8,7 +8,8 @@ import type {
   SetStateAction,
 } from "react";
 
-const STORAGE_KEY = "nautilus_settings";
+const STORAGE_KEY = "lema_settings";
+const LEGACY_STORAGE_KEY = "nautilus_settings";
 
 export type AppSettings = {
   lemma_info: boolean;
@@ -37,7 +38,7 @@ function loadSettings(): AppSettings {
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
 
     if (!raw) {
       cachedSettings = DEFAULT_SETTINGS;
@@ -51,6 +52,10 @@ function loadSettings(): AppSettings {
       ...DEFAULT_SETTINGS,
       ...parsed,
     };
+
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedSettings));
+    }
 
     return cachedSettings ?? DEFAULT_SETTINGS;
   } catch {

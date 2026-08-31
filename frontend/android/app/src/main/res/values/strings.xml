@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Nautilus</string>
-    <string name="title_activity_main">Nautilus</string>
-    <string name="package_name">com.solmi.nautilus.mobile</string>
-    <string name="custom_url_scheme">com.solmi.nautilus.mobile</string>
+    <string name="app_name">Lema</string>
+    <string name="title_activity_main">Lema</string>
+    <string name="package_name">com.solmi.lema.mobile</string>
+    <string name="custom_url_scheme">com.solmi.lema.mobile</string>
 </resources>

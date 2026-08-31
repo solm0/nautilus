@@ -4,10 +4,7 @@ import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useState } from "react";
-import { authHeaders, CENTRAL_API } from "../../api";
-import { centralFetch } from "../../network";
-import { isNetworkError } from "../../network";
-import { queueOfflineNotebookCreate } from "../../offlineData";
+import { createLocalNotebook } from "../../localLibrary";
 import { isCapacitorApp } from "../../platform";
 import { useI18n } from "../../i18n";
 
@@ -107,25 +104,7 @@ export function Toolbar({
   const createNotebook = async (name: string) => {
     if (!name.trim()) return;
 
-    const headers = authHeaders();
-
-    if (!headers) {
-      return;
-    }
-
-    try {
-      await centralFetch(CENTRAL_API + "/notebooks", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ name })
-      });
-    } catch (error) {
-      if (!isNetworkError(error)) {
-        throw error;
-      }
-
-      await queueOfflineNotebookCreate(name);
-    }
+    await createLocalNotebook(name);
 
     await reload();
   };

@@ -1,5 +1,5 @@
 const CENTRAL_RETRY_COOLDOWN_MS = 5000;
-export const CENTRAL_RESTORED_EVENT = "nautilus:central-restored";
+export const CENTRAL_RESTORED_EVENT = "lema:central-restored";
 
 let centralStatus: "unknown" | "available" | "blocked" = "unknown";
 let centralBlockedUntil = 0;

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.solmi.nautilus.mobile",
-  appName: "Nautilus",
+  appId: "com.solmi.lema.mobile",
+  appName: "Lema",
   webDir: "dist",
 };
 

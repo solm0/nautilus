@@ -1,7 +1,7 @@
 {
   "language": "en",
   "title": "A sample page, served from central",
-  "description": "Nautilus helps learners move from isolated vocabulary to connected meaning. This page keeps the demo lightweight, but the interactions are real: tap a highlighted word for lemma expansion, or test the writing surface with an English n-gram pack already installed on central.",
+  "description": "Lema helps learners move from isolated vocabulary to connected meaning. This page keeps the demo lightweight, but the interactions are real: tap a highlighted word for lemma expansion, or test the writing surface with an English n-gram pack already installed on central.",
   "sample_input": "language opens a sentence",
   "result": {
     "text": "Language opens a sentence. Context turns a word into meaning.\nTap a word to explore related ideas and sample lines.",

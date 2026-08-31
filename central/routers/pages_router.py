@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 import json
 from typing import Optional
+import uuid
 
 from db import get_db
 from models import Page, Notebook, User, Annotation
@@ -11,6 +12,12 @@ from .auth_router import get_current_user
 router = APIRouter(prefix="/api", tags=["pages"])
 
 MAX_PAGE_METADATA_ITEMS = 5
+LEMA_MIGRATION_NAMESPACE = uuid.UUID("f7851057-b96e-40d2-aaf2-da414df5164a")
+LEMA_MIGRATION_DEADLINE = datetime(2026, 11, 29, 23, 59, 59)
+
+
+def migration_uuid(kind: str, item_id: int) -> str:
+    return str(uuid.uuid5(LEMA_MIGRATION_NAMESPACE, f"central:{kind}:{item_id}"))
 
 
 def parse_page_metadata(page: Page) -> list[str]:
@@ -90,6 +97,67 @@ def get_owned_page_or_404(page_id: int, db: Session, current_user: User) -> Page
         raise HTTPException(status_code=403, detail="forbidden")
 
     return page
+
+
+@router.get("/library/export")
+def export_library_for_local_migration(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Temporary read-only export retained through 2026-11-29 for app migration."""
+    if datetime.utcnow() > LEMA_MIGRATION_DEADLINE:
+        raise HTTPException(status_code=410, detail="central library migration window has ended")
+    notebooks = db.query(Notebook).filter(Notebook.user_id == current_user.id).all()
+    pages = db.query(Page).filter(Page.user_id == current_user.id).all()
+    annotations = db.query(Annotation).filter(Annotation.user_id == current_user.id).all()
+
+    notebook_ids = {item.id: migration_uuid("notebook", item.id) for item in notebooks}
+    page_ids = {item.id: migration_uuid("page", item.id) for item in pages}
+
+    return {
+        "format": "lema-library",
+        "version": 1,
+        "library_id": f"central-user-{current_user.id}",
+        "exported_at": datetime.utcnow().isoformat(),
+        "notebooks": [
+            {
+                "id": notebook_ids[item.id],
+                "name": item.name,
+                "created_at": item.created_at.isoformat(),
+                "updated_at": item.created_at.isoformat(),
+            }
+            for item in notebooks
+        ],
+        "pages": [
+            {
+                "id": page_ids[item.id],
+                "legacy_id": item.id,
+                "notebook_id": notebook_ids.get(item.notebook_id),
+                "name": item.name,
+                "result": json.loads(item.result_json),
+                "language": item.language,
+                "source": item.source or "user",
+                "metadata": parse_page_metadata(item),
+                "created_at": item.created_at.isoformat(),
+                "updated_at": item.created_at.isoformat(),
+            }
+            for item in pages
+        ],
+        "annotations": [
+            {
+                "id": migration_uuid("annotation", item.id),
+                "page_id": page_ids[item.page_id],
+                "type": item.type,
+                "content": item.content,
+                "start_index": item.start_index,
+                "end_index": item.end_index,
+                "created_at": item.created_at.isoformat(),
+                "updated_at": item.created_at.isoformat(),
+            }
+            for item in annotations
+            if item.page_id in page_ids
+        ],
+    }
 
 # ===== Page 생성 =====
 @router.post("/pages")

@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   relaunchApp: () => ipcRenderer.invoke("app:relaunch"),
   readOfflineState: () => ipcRenderer.invoke("offline-state:read"),
   writeOfflineState: (value) => ipcRenderer.invoke("offline-state:write", value),
+  saveLibraryExport: (value) => ipcRenderer.invoke("library:export", value),
+  openLibraryImport: () => ipcRenderer.invoke("library:import"),
   onDeepLink: (callback) => {
     const listener = (_event, url) => callback(url);
     ipcRenderer.on("deep-link-url", listener);

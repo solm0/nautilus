@@ -240,7 +240,7 @@ function TokenHighlightOverlay({
   activeLyricBlockIndex,
   syncPlaybackActive,
 }: {
-  pageId?: number;
+  pageId?: string;
   containerRef: RefObject<HTMLDivElement | null>;
   blocks: TextBlock[];
   activeLyricBlockIndex: number;
@@ -508,7 +508,7 @@ export default function PageCore({
   wrapperStyle,
   horizontalAlign = "center",
 }: {
-  pageId?: number;
+  pageId?: string;
   pageName?: string;
   pageSource?: string;
   language?: string;

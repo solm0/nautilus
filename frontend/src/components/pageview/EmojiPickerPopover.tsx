@@ -1,7 +1,6 @@
 import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import type { Annotation } from "../pageTypes";
 import { createAnnotation, updateAnnotation } from "../../api";
-import { updatePendingAnnotation } from "../../offlineData";
 import { useTheme } from "../useTheme";
 
 export default function EmojiPickerPopover({
@@ -10,14 +9,13 @@ export default function EmojiPickerPopover({
   pageId,
   selection,
   annotation,
-  offline,
   setAnnotations,
   close,
 }: {
   x: number;
   y: number;
 
-  pageId?: number;
+  pageId?: string;
 
   selection?: {
     start: number;
@@ -25,7 +23,6 @@ export default function EmojiPickerPopover({
   };
 
   annotation?: Annotation;
-  offline: boolean;
 
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
 
@@ -61,9 +58,6 @@ export default function EmojiPickerPopover({
 
   async function updateEmoji(emoji: string) {
     if (!annotation?.id) return;
-    const isPending = annotation.id < 0;
-    if (offline && !isPending) return;
-
     const prevEmoji = annotation.content;
 
     setAnnotations(prev =>
@@ -75,11 +69,7 @@ export default function EmojiPickerPopover({
     );
 
     try {
-      if (isPending) {
-        await updatePendingAnnotation(annotation.id, emoji);
-      } else {
-        await updateAnnotation(annotation.id, emoji);
-      }
+      await updateAnnotation(annotation.id, emoji);
     } catch {
       setAnnotations(prev =>
         prev.map(a =>

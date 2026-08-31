@@ -53,9 +53,9 @@ export type LemmaData = {
 export type AnnotationType = "link" | "memo" | "emoji";
 
 export type AnnotationBase = {
-  id?: number;
+  id?: string;
   user_id?: number;
-  page_id: number;
+  page_id: string;
   start_index: number;
   end_index: number;
   created_at?: string;

@@ -35,7 +35,6 @@ export default function PageContent({
   pageId,
   scrollRef,
   setAnnotations,
-  offline = false,
   horizontalAlign = "center",
 }: {
   blocks: TextBlock[];
@@ -53,10 +52,9 @@ export default function PageContent({
   onAddMetadata?: (value: string) => Promise<void>;
   onUpdateMetadata?: (index: number, value: string) => Promise<void>;
   onDeleteMetadata?: (index: number) => Promise<void>;
-  pageId?: number;
+  pageId?: string;
   scrollRef?: (fn: (startIndex: number) => void) => void;
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
-  offline?: boolean;
   horizontalAlign?: "left" | "right" | "center";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -592,7 +590,6 @@ export default function PageContent({
           setHoverRange={setHoverRange}
           annotationId={(panelData?.data as Annotation)?.id}
           setEmojiPicker={setEmojiPicker}
-          offline={offline}
         />
       }
       overlay={
@@ -674,7 +671,6 @@ export default function PageContent({
               pageId={pageId}
               selection={emojiPicker.selection}
               annotation={emojiPicker.annotation}
-              offline={offline}
               setAnnotations={setAnnotations!}
               close={() => {
                 setEmojiPicker(null);

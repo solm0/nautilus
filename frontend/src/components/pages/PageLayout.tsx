@@ -13,27 +13,21 @@ import Button from "../util/Button";
 import OfflineState from "../util/OfflineState";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { useLayout } from "../RootLayout";
-import { centralFetch, isNetworkError } from "../../network";
+import { isNetworkError } from "../../network";
 
 import {
-  CENTRAL_API,
-  authHeaders,
   fetchNotebooks,
   fetchPages,
   getPacks,
 } from "../../api";
-import {
-  deletePendingNotebook,
-  deletePendingPage,
-  OFFLINE_SYNC_EVENT,
-} from "../../offlineData";
+import { deleteLocalItem, moveLocalPages } from "../../localLibrary";
 import { isCapacitorApp } from "../../platform";
 import { readPackCatalogSnapshot } from "../../packCatalogSnapshot";
 
 const PINNED_STORAGE_KEY = "pages.sidebar.pinned";
 const LONG_PRESS_MS = 420;
 const DRAG_CANCEL_DISTANCE = 10;
-const ROOT_DROP_ID = -1;
+const ROOT_DROP_ID = "__root__";
 const DRAG_SCROLL_EDGE_PX = 56;
 const DRAG_SCROLL_MAX_STEP = 18;
 const PAGE_BACK_SWIPE_START_PX = 28;
@@ -41,27 +35,24 @@ const PAGE_BACK_SWIPE_DISTANCE_PX = 80;
 const MOBILE_PAGE_TRANSITION_MS = 280;
 
 export type Page = {
-  id: number;
+  id: string;
   name: string;
   created_at: string;
-  notebook_id?: number | null;
+  notebook_id?: string | null;
   language: string;
   source?: string;
   metadata?: string[];
-  pending_sync?: boolean;
 };
 
 export type Notebook = {
-  id: number;
+  id: string;
   name: string;
   created_at: string;
-  parent_id?: number | null;
-  pending_sync?: boolean;
 };
 
 export type SelectedItem = {
   type: "page" | "notebook";
-  id: number;
+  id: string;
 };
 
 type DeleteTarget =
@@ -116,10 +107,11 @@ function parsePinnedIds(raw: string | null) {
 
     return Array.from(
       new Set(
-        parsed.filter(
-          (value): value is number =>
-            typeof value === "number" && Number.isFinite(value)
-        )
+        parsed.flatMap((value): string[] => {
+          if (typeof value === "string" && value.length > 0) return [value];
+          if (typeof value === "number" && Number.isFinite(value)) return [String(value)];
+          return [];
+        })
       )
     );
   } catch {
@@ -138,7 +130,7 @@ async function loadPinnedIds(mobileApp: boolean) {
   return parsePinnedIds(window.localStorage.getItem(PINNED_STORAGE_KEY));
 }
 
-async function savePinnedIds(pageIds: number[], mobileApp: boolean) {
+async function savePinnedIds(pageIds: string[], mobileApp: boolean) {
   const value = JSON.stringify(pageIds);
 
   if (mobileApp) {
@@ -149,30 +141,12 @@ async function savePinnedIds(pageIds: number[], mobileApp: boolean) {
   window.localStorage.setItem(PINNED_STORAGE_KEY, value);
 }
 
-function buildNotebookPath(
-  notebookId: number | null | undefined,
-  notebookById: Map<number, Notebook>
-) {
-  const ids: number[] = [];
-  let currentId = notebookId ?? null;
-
-  while (currentId) {
-    const notebook = notebookById.get(currentId);
-    if (!notebook) break;
-
-    ids.unshift(notebook.id);
-    currentId = notebook.parent_id ?? null;
-  }
-
-  return ids;
-}
-
 export default function PageLayout() {
   const { t } = useI18n();
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const currentPageId = id ? Number(id) : null;
+  const currentPageId = id ?? null;
   const mobileApp = isCapacitorApp();
 
   const { pageSidebarOpen, setPageSidebarOpen } = useLayout();
@@ -181,19 +155,19 @@ export default function PageLayout() {
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
-  const [expandedNotebookIds, setExpandedNotebookIds] = useState<Set<number>>(
+  const [expandedNotebookIds, setExpandedNotebookIds] = useState<Set<string>>(
     () => new Set()
   );
-  const [pinnedPageIds, setPinnedPageIds] = useState<number[]>([]);
+  const [pinnedPageIds, setPinnedPageIds] = useState<string[]>([]);
   const [pinnedStorageReady, setPinnedStorageReady] = useState(false);
-  const [movePageIds, setMovePageIds] = useState<number[]>([]);
+  const [movePageIds, setMovePageIds] = useState<string[]>([]);
   const [movePageLabel, setMovePageLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
-  const [dragTargetNotebookId, setDragTargetNotebookId] = useState<number | null>(
+  const [dragTargetNotebookId, setDragTargetNotebookId] = useState<string | null>(
     null
   );
-  const [dropFlashNotebookId, setDropFlashNotebookId] = useState<number | null>(
+  const [dropFlashNotebookId, setDropFlashNotebookId] = useState<string | null>(
     null
   );
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
@@ -208,12 +182,12 @@ export default function PageLayout() {
   const [mobilePageExiting, setMobilePageExiting] = useState(false);
 
   const initializedExpansionRef = useRef(false);
-  const knownNotebookIdsRef = useRef<Set<number>>(new Set());
+  const knownNotebookIdsRef = useRef<Set<string>>(new Set());
   const dragGestureRef = useRef<DragGesture | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
-  const dragTargetNotebookIdRef = useRef<number | null>(null);
-  const suppressClickPageIdRef = useRef<number | null>(null);
-  const notebookTargetRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const dragTargetNotebookIdRef = useRef<string | null>(null);
+  const suppressClickPageIdRef = useRef<string | null>(null);
+  const notebookTargetRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const rootDropRef = useRef<HTMLDivElement | null>(null);
   const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
   const flashTimeoutRef = useRef<number | null>(null);
@@ -238,7 +212,7 @@ export default function PageLayout() {
 
       setPages(pagesData);
       setNotebooks(notebooksData);
-      setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
+      setOffline(false);
       hasLoadedOnceRef.current = true;
     } catch (error) {
       setOffline(isNetworkError(error));
@@ -250,6 +224,15 @@ export default function PageLayout() {
   useEffect(() => {
     reload();
   }, []);
+
+  useEffect(() => {
+    const handleLibraryChanged = () => {
+      void reload();
+      void loadPinnedIds(mobileApp).then(setPinnedPageIds);
+    };
+    window.addEventListener("lema:library-changed", handleLibraryChanged);
+    return () => window.removeEventListener("lema:library-changed", handleLibraryChanged);
+  }, [mobileApp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -280,35 +263,6 @@ export default function PageLayout() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  useEffect(() => {
-    if (!mobileApp) return;
-
-    const handleOffline = () => setOffline(true);
-    const handleOnline = () => void reload();
-
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, [mobileApp]);
-
-  useEffect(() => {
-    const handleOfflineSync = (event: Event) => {
-      const { complete } = (event as CustomEvent<{ complete: boolean }>).detail;
-      if (!complete) {
-        setOffline(true);
-        return;
-      }
-
-      void reload();
-    };
-
-    window.addEventListener(OFFLINE_SYNC_EVENT, handleOfflineSync);
-    return () => window.removeEventListener(OFFLINE_SYNC_EVENT, handleOfflineSync);
   }, []);
 
   useEffect(() => {
@@ -359,13 +313,8 @@ export default function PageLayout() {
     setOpenPopupId(null);
   }, [pageSidebarOpen, currentPageId]);
 
-  const notebookById = useMemo(
-    () => new Map(notebooks.map((notebook) => [notebook.id, notebook])),
-    [notebooks]
-  );
-
   const pagesByNotebookId = useMemo(() => {
-    const map = new Map<number | null, Page[]>();
+    const map = new Map<string | null, Page[]>();
 
     for (const page of pages) {
       const key = page.notebook_id ?? null;
@@ -380,26 +329,6 @@ export default function PageLayout() {
 
     return map;
   }, [pages]);
-
-  const notebooksByParentId = useMemo(() => {
-    const map = new Map<number | null, Notebook[]>();
-
-    for (const notebook of notebooks) {
-      const parentId =
-        notebook.parent_id && notebookById.has(notebook.parent_id)
-          ? notebook.parent_id
-          : null;
-      const list = map.get(parentId) ?? [];
-      list.push(notebook);
-      map.set(parentId, list);
-    }
-
-    for (const [key, list] of map.entries()) {
-      map.set(key, sortByCreatedDesc(list));
-    }
-
-    return map;
-  }, [notebooks, notebookById]);
 
   const currentPage = useMemo(
     () => pages.find((page) => page.id === currentPageId) ?? null,
@@ -427,18 +356,11 @@ export default function PageLayout() {
         }
       }
 
-      if (currentPage?.notebook_id) {
-        for (const notebookId of buildNotebookPath(
-          currentPage.notebook_id,
-          notebookById
-        )) {
-          next.add(notebookId);
-        }
-      }
+      if (currentPage?.notebook_id) next.add(currentPage.notebook_id);
 
       return next;
     });
-  }, [currentPage, notebookById, notebooks]);
+  }, [currentPage, notebooks]);
 
   useEffect(() => {
     if (!hasLoadedOnceRef.current || !pinnedStorageReady) return;
@@ -561,7 +483,7 @@ export default function PageLayout() {
     [pagesByNotebookId, pinnedPageIds]
   );
 
-  const toggleNotebook = (notebookId: number) => {
+  const toggleNotebook = (notebookId: string) => {
     setExpandedNotebookIds((prev) => {
       const next = new Set(prev);
       if (next.has(notebookId)) {
@@ -573,7 +495,7 @@ export default function PageLayout() {
     });
   };
 
-  const consumeSuppressedClick = (pageId: number) => {
+  const consumeSuppressedClick = (pageId: string) => {
     if (suppressClickPageIdRef.current !== pageId) return false;
 
     suppressClickPageIdRef.current = null;
@@ -693,7 +615,7 @@ export default function PageLayout() {
     setDragTargetNotebookId(null);
   };
 
-  const flashNotebookDrop = (notebookId: number) => {
+  const flashNotebookDrop = (notebookId: string) => {
     setDropFlashNotebookId(notebookId);
     if (flashTimeoutRef.current) {
       window.clearTimeout(flashTimeoutRef.current);
@@ -704,23 +626,10 @@ export default function PageLayout() {
   };
 
   const movePagesToNotebook = async (
-    pageIds: number[],
-    notebookId: number | null
+    pageIds: string[],
+    notebookId: string | null
   ) => {
-    if (offline) return;
-
-    const headers = authHeaders();
-    if (!headers) throw new Error("unauthorized");
-
-    await centralFetch(CENTRAL_API + "/pages/move", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        page_ids: pageIds,
-        notebook_id: notebookId,
-      }),
-    });
-
+    await moveLocalPages(pageIds, notebookId);
     await reload();
   };
 
@@ -832,7 +741,6 @@ export default function PageLayout() {
     }, 0);
 
     if (
-      offline ||
       targetNotebookId === null ||
       (targetNotebookId === ROOT_DROP_ID && sourceNotebookId === null) ||
       (targetNotebookId !== ROOT_DROP_ID && targetNotebookId === sourceNotebookId)
@@ -909,8 +817,6 @@ export default function PageLayout() {
   };
 
   const openMoveForPage = (page: Page) => {
-    if (offline) return;
-
     setOpenPopupId(null);
     setMovePageIds([page.id]);
     setMovePageLabel(page.name);
@@ -919,34 +825,7 @@ export default function PageLayout() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
 
-     if (deleteTarget.type === "page" && deleteTarget.item.pending_sync) {
-      await deletePendingPage(deleteTarget.item.id);
-      setOpenPopupId(null);
-      setDeleteTarget(null);
-      await reload();
-      return;
-    }
-
-    if (deleteTarget.type === "notebook" && deleteTarget.item.pending_sync) {
-      await deletePendingNotebook(deleteTarget.item.id);
-      setOpenPopupId(null);
-      setDeleteTarget(null);
-      await reload();
-      return;
-    }
-
-    const headers = authHeaders();
-    if (!headers) throw new Error("unauthorized");
-
-    const endpoint =
-      deleteTarget.type === "page"
-        ? `/pages/${deleteTarget.item.id}`
-        : `/notebooks/${deleteTarget.item.id}`;
-
-    await centralFetch(CENTRAL_API + endpoint, {
-      method: "DELETE",
-      headers,
-    });
+    await deleteLocalItem(deleteTarget.type, deleteTarget.item.id);
 
     setOpenPopupId(null);
     setDeleteTarget(null);
@@ -962,7 +841,7 @@ export default function PageLayout() {
   };
 
   const registerNotebookTarget = (
-    notebookId: number,
+    notebookId: string,
     element: HTMLDivElement | null
   ) => {
     if (!element) {
@@ -1001,10 +880,10 @@ export default function PageLayout() {
     if (!isMobileLike || currentPageId === null) return;
 
     const handleMobilePageBack = () => startMobilePageExit();
-    window.addEventListener("nautilus:mobile-page-back", handleMobilePageBack);
+    window.addEventListener("lema:mobile-page-back", handleMobilePageBack);
 
     return () => {
-      window.removeEventListener("nautilus:mobile-page-back", handleMobilePageBack);
+      window.removeEventListener("lema:mobile-page-back", handleMobilePageBack);
     };
   }, [currentPageId, isMobileLike, startMobilePageExit]);
 
@@ -1166,7 +1045,7 @@ export default function PageLayout() {
         )
       ) : (
         <>
-          {renderNotebookTree(null)}
+          {renderNotebooks()}
 
           {rootPages.map((page) => (
             <PageCard
@@ -1302,11 +1181,11 @@ export default function PageLayout() {
     );
   }
 
-  function renderNotebookTree(parentId: number | null, level = 0): React.ReactNode[] {
+  function renderNotebooks(): React.ReactNode[] {
     const nodes: React.ReactNode[] = [];
-    const childNotebooks = notebooksByParentId.get(parentId) ?? [];
+    const sortedNotebooks = sortByCreatedDesc(notebooks);
 
-    for (const notebook of childNotebooks) {
+    for (const notebook of sortedNotebooks) {
       const isExpanded = expandedNotebookIds.has(notebook.id);
       const childPages = (pagesByNotebookId.get(notebook.id) ?? []).filter(
         (page) => !pinnedPageIds.includes(page.id)
@@ -1325,7 +1204,7 @@ export default function PageLayout() {
         >
           <PageCard
             item={{ type: "notebook", notebook }}
-            level={level}
+            level={0}
             currentPageId={currentPageId}
             expanded={isExpanded}
             reload={reload}
@@ -1335,20 +1214,18 @@ export default function PageLayout() {
             onDelete={() => setDeleteTarget({ type: "notebook", item: notebook })}
             isDragTarget={false}
             dropFlashed={false}
-            offline={offline}
+            offline={false}
             openPopupId={openPopupId}
             setOpenPopupId={setOpenPopupId}
           />
 
           {isExpanded ? (
             <>
-              {renderNotebookTree(notebook.id, level + 1)}
-
               {childPages.map((page) => (
                 <PageCard
                   key={`page-${page.id}`}
                   item={{ type: "page", page }}
-                  level={level + 1}
+                  level={1}
                   currentPageId={currentPageId}
                   reload={reload}
                   isMobileLike={isMobileLike}
@@ -1361,7 +1238,7 @@ export default function PageLayout() {
                   onOpenPage={handleOpenPage}
                   consumeSuppressedClick={() => consumeSuppressedClick(page.id)}
                   dragging={dragState?.page.id === page.id}
-                  offline={offline}
+                  offline={false}
                   openPopupId={openPopupId}
                   setOpenPopupId={setOpenPopupId}
                 />
@@ -1471,7 +1348,6 @@ export default function PageLayout() {
         pageLabel={movePageLabel}
         notebooks={notebooks}
         reload={reload}
-        offline={offline}
       />
 
       <ResponsiveModal
