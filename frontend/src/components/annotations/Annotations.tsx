@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ListFilter, Tags } from "lucide-react";
 import { useInfiniteAnnotations } from "./useInfiniteAnnotations";
 import AnnotationCard from "./AnnotationCard";
 import type { TimelineItem } from "../../types";
@@ -6,11 +7,15 @@ import BlockingLoadingModal from "../util/BlockingLoadingModal";
 import OfflineState from "../util/OfflineState";
 import { useI18n } from "../../i18n";
 import { CENTRAL_RESTORED_EVENT } from "../../network";
+import { FilterSelect } from "../pages/PageFilters";
+
+type AnnotationTypeFilter = Exclude<TimelineItem["type"], undefined>;
 
 export default function Annotations() {
   const { t } = useI18n();
   const { items, setItems, load, hasMore, loading, offline } = useInfiniteAnnotations()
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [selectedType, setSelectedType] = useState<AnnotationTypeFilter | null>(null);
 
   useEffect(() => {
     if (!sentinelRef.current || offline) return;
@@ -51,9 +56,29 @@ export default function Annotations() {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const filteredItems = selectedType
+    ? items.filter((item) => item.type === selectedType)
+    : items;
+
   return (
-    <div className="flex flex-col gap-7 w-full h-full overflow-y-scroll pl-3 md:pl-6 bg-neutral-50">
-      <h2 className="top-0 pt-12 z-30 flex gap-4 sticky bg-neutral-50">{t("Annotations")}</h2>
+    <div className="flex flex-col gap-7 w-full h-full overflow-y-scroll px-3 md:px-6 bg-neutral-50">
+      <div className="sticky top-0 z-30 flex items-center gap-5 bg-neutral-50 pt-12">
+        <h2>{t("Annotations")}</h2>
+        <div className="flex min-w-0 items-center gap-0.5 overflow-hidden pl-0.5 text-xs">
+          <ListFilter size={12} className="mx-1 text-neutral-500 opacity-65" />
+          <FilterSelect
+            icon={<Tags size={14} />}
+            options={[
+              { value: "memo", label: t("Memo") },
+              { value: "link", label: t("Link") },
+              { value: "emoji", label: t("Emoji") },
+            ]}
+            selectedValue={selectedType}
+            title={t("Filter by annotation type")}
+            onChange={(value) => setSelectedType(value as AnnotationTypeFilter | null)}
+          />
+        </div>
+      </div>
 
       {offline && items.length > 0 ? (
         <p className="text-xs text-neutral-400">
@@ -65,8 +90,8 @@ export default function Annotations() {
         <OfflineState onRetry={() => void load()} />
       ) : null}
 
-      <div className="flex flex-col gap-1 pt-7">
-        {items.map(item => (
+      <div className="flex flex-col gap-3 pt-7 md:flex-row md:flex-wrap md:content-start">
+        {filteredItems.map(item => (
           <AnnotationCard
             key={item.id}
             item={item}
@@ -77,10 +102,10 @@ export default function Annotations() {
         ))}
 
         {/* sentinel */}
-        <div ref={sentinelRef} className="h-10" />
+        <div ref={sentinelRef} className="h-10 w-full" />
 
         <BlockingLoadingModal open={loading} message="Loading annotations..." />
-        {/* {!hasMore && <p className="text-center opacity-50 pb-18 text-sm">{t("End of the list")}</p>} */}
+        {!hasMore && <p className="text-center opacity-50 pb-18 text-sm">{t("End of the list")}</p>}
       </div>
     </div>
   );

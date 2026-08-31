@@ -1,4 +1,4 @@
-import { FileInput, Filter, Languages, X } from "lucide-react";
+import { FileInput, Languages, ListFilter, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
@@ -10,7 +10,7 @@ type FilterOption = {
   value: string;
 };
 
-function FilterSelect({
+export function FilterSelect({
   icon,
   options,
   selectedValue,
@@ -79,6 +79,31 @@ function FilterSelect({
   );
 }
 
+export function LanguageFilter({
+  languages,
+  selectedLanguage,
+  onLanguageChange,
+}: {
+  languages: string[];
+  selectedLanguage: string | null;
+  onLanguageChange: (value: string | null) => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <div className="flex min-w-0 items-center gap-0.5 overflow-hidden pl-0.5 text-xs">
+      <ListFilter size={12} className="mx-1 text-neutral-500 opacity-65" />
+      <FilterSelect
+        icon={<Languages size={14} />}
+        options={languages.map((language) => ({ label: language, value: language }))}
+        selectedValue={selectedLanguage}
+        title={t("Filter by language")}
+        onChange={onLanguageChange}
+      />
+    </div>
+  );
+}
+
 export function PageFilters({
   languages,
   selectedLanguage,
@@ -109,7 +134,7 @@ export function PageFilters({
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden text-xs pl-0.5">
-      <Filter size={12} className="text-neutral-500 opacity-65 mx-1" />
+      <ListFilter size={12} className="text-neutral-500 opacity-65 mx-1" />
       <FilterSelect
         icon={<Languages size={14} />}
         options={languageOptions}

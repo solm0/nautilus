@@ -11,6 +11,7 @@ import LanguagePackRequiredModal from "../util/LanguagePackRequiredModal";
 import OfflineState from "../util/OfflineState";
 import { hasLemmaPackInstalled } from "../util/LanguageSelect";
 import { isCapacitorApp } from "../../platform";
+import { LanguageFilter } from "../pages/PageFilters";
 
 function groupLemmas(favorites: Set<string>) {
   const groups: Record<string, string[]> = {}
@@ -44,6 +45,7 @@ export default function Lemmas(){
   } | null>(null);
   const [offline, setOffline] = useState(false);
   const [panelOpenRequest, setPanelOpenRequest] = useState(0);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const mobileApp = isCapacitorApp();
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
@@ -98,7 +100,19 @@ export default function Lemmas(){
     };
   }, [mobileApp])
 
-  const grouped = useMemo(() => groupLemmas(favorites), [favorites]);
+  const languages = useMemo(
+    () => Array.from(new Set(Array.from(favorites, (key) => key.split("/").at(-1) ?? "")))
+      .filter(Boolean)
+      .sort(),
+    [favorites],
+  );
+  const filteredFavorites = useMemo(
+    () => selectedLanguage
+      ? new Set(Array.from(favorites).filter((key) => key.split("/").at(-1) === selectedLanguage))
+      : favorites,
+    [favorites, selectedLanguage],
+  );
+  const grouped = useMemo(() => groupLemmas(filteredFavorites), [filteredFavorites]);
   
   // 클릭
   const onFavoriteClick = async (key: string, next:boolean) => {
@@ -156,7 +170,14 @@ export default function Lemmas(){
 
       <div className="flex-1 relative flex flex-col overflow-hidden gap-7">
 
-        <h2 className="top-0 pt-12 z-30">{t("My Lemmas")}</h2>
+        <div className="top-0 z-30 flex items-center gap-5 pt-12">
+          <h2>{t("My Lemmas")}</h2>
+          <LanguageFilter
+            languages={languages}
+            selectedLanguage={selectedLanguage}
+            onLanguageChange={setSelectedLanguage}
+          />
+        </div>
 
         {offline && grouped.length > 0 ? (
           <p className="text-xs text-neutral-400">

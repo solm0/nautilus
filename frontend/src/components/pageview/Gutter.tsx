@@ -1,5 +1,5 @@
-import { useEffect, type RefObject } from "react";
-import type { Annotation } from "../pageTypes";
+import { useEffect, useRef, type RefObject } from "react";
+import type { Annotation, EmojiAnnotation } from "../pageTypes";
 import { getTokenRect } from "../pageUtils";
 import { Link, MessageSquareMore } from "lucide-react";
 import type { SidePanelState } from "./PageView";
@@ -11,14 +11,25 @@ export function Gutter({
   setPanelData,
   annotationId,
   setEmojiPicker,
+  onOpenAnnotation,
+  onRequestEmojiDelete,
 }: {
   annotations?: Annotation[];
   containerRef: RefObject<HTMLDivElement | null>;
   setHoverRange: (r: { start: number; end: number } | null) => void;
   setPanelData?: (p: SidePanelState | null) => void;
   annotationId?: string;
-  setEmojiPicker?: React.Dispatch<React.SetStateAction<any>>;
+  setEmojiPicker?: React.Dispatch<React.SetStateAction<{
+    x: number;
+    y: number;
+    selection?: { start: number; end: number };
+    annotation?: EmojiAnnotation;
+  } | null>>;
+  onOpenAnnotation?: (annotation: Annotation, rect: DOMRect) => void;
+  onRequestEmojiDelete?: (annotation: Annotation) => void;
 }) {
+  const longPressTimerRef = useRef<number | null>(null);
+  const suppressClickRef = useRef(false);
   const groups: { top: number; items: Annotation[] }[] = [];
   const container = containerRef.current;
 
@@ -88,6 +99,7 @@ export function Gutter({
               <div
                 key={j}
                 data-gutter-annotation="true"
+                data-annotation-id={annotation.id}
                 className={`
                   h-6 w-6 rounded text-neutral-700 transition-colors flex items-center justify-center
                   ${disableEmojiEdit ? "pointer-events-none cursor-default opacity-50" : "cursor-pointer"}
@@ -100,40 +112,58 @@ export function Gutter({
                   end: annotation.end_index,
                 })
               }
-              onPointerDown={() =>
+              onContextMenu={(event) => {
+                if (annotation.type !== "emoji") return;
+                event.preventDefault();
+                onRequestEmojiDelete?.(annotation);
+              }}
+              onPointerDown={(event) => {
                 setHoverRange({
                   start: annotation.start_index,
                   end: annotation.end_index,
-                })
-              }
+                });
+
+                if (annotation.type === "emoji" && event.pointerType === "touch") {
+                  suppressClickRef.current = false;
+                  longPressTimerRef.current = window.setTimeout(() => {
+                    suppressClickRef.current = true;
+                    onRequestEmojiDelete?.(annotation);
+                  }, 600);
+                }
+              }}
+              onPointerUp={() => {
+                if (longPressTimerRef.current !== null) {
+                  window.clearTimeout(longPressTimerRef.current);
+                  longPressTimerRef.current = null;
+                }
+              }}
               onPointerLeave={(event) => {
                 if (event.pointerType !== "touch") {
                   setHoverRange(null);
                 }
               }}
-              onPointerCancel={() => setHoverRange(null)}
+              onPointerCancel={() => {
+                if (longPressTimerRef.current !== null) {
+                  window.clearTimeout(longPressTimerRef.current);
+                  longPressTimerRef.current = null;
+                }
+                setHoverRange(null);
+              }}
               onClick={(e) => {
                 if (annotation.type === "emoji") {
-
-                  const rect = (
-                    e.currentTarget as HTMLElement
-                  ).getBoundingClientRect();
-
-                  setEmojiPicker?.({
-                    x: rect.left,
-                    y: rect.bottom + 8,
-                    annotation,
-                  });
-
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false;
+                  }
                   return;
                 }
 
-                if (!setPanelData) return;
+                if (!setPanelData || !onOpenAnnotation) return;
 
                 setPanelData({
                   type: "annotation:view",
                   data: annotation
                 });
+                onOpenAnnotation(annotation, e.currentTarget.getBoundingClientRect());
               }}
             >
               {annotation.type === "emoji" ? (

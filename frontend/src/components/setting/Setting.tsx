@@ -70,8 +70,8 @@ function AppVersionSection() {
   }
 
   return (
-    <section className="w-full flex flex-col gap-7 items-start">
-      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard!">{t("App version")}</h3>
+    <section className="w-full flex flex-col gap-6 items-start">
+      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! w-full pb-1">{t("App version")}</h3>
       <div className="flex items-center gap-2 text-sm">
         <span>{APP_VERSION}</span>
         {!hasNewVersion && latestVersionInfo && (
@@ -138,8 +138,8 @@ function LocalLibrarySection() {
   }
 
   return (
-    <section className="w-full flex flex-col gap-7 items-start">
-      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">
+    <section className="w-full flex flex-col gap-6 items-start">
+      <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10 w-full pb-1">
         {t("Local library")}
       </h3>
       <p className="max-w-xl text-sm text-neutral-600">
@@ -150,7 +150,6 @@ function LocalLibrarySection() {
           text={busy === "export" ? t("Exporting...") : t("Export library")}
           onClick={() => void handleExport()}
           disabled={busy !== null}
-          black
         />
         <Button
           text={busy === "import" ? t("Importing...") : t("Import and merge")}
@@ -266,7 +265,7 @@ export function UserProfile() {
       <>
       <div className="flex flex-col gap-7 mb-14 items-start">
         <div className="flex flex-col gap-2 items-start">
-          <div className="w-full flex items-center gap-3">
+          <div className="w-full flex items-center gap-3 text-lg font-medium">
 
             {/* name */}
             {editing ? (
@@ -451,8 +450,8 @@ export default function Setting() {
 
         <AppVersionSection />
 
-        <section className="w-full flex flex-col gap-7 items-start">
-          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Preferences")}</h3>
+        <section className="w-full flex flex-col gap-6 items-start">
+          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10 w-full pb-1">{t("Preferences")}</h3>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-start text-sm gap-3">
               <div className="flex items-center gap-2">
@@ -550,8 +549,8 @@ export default function Setting() {
 
         <LocalLibrarySection />
 
-        <section className="w-full flex flex-col gap-7">
-          <h3 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Language packs")}</h3>
+        <section className="w-full flex flex-col gap-6">
+          <h3 ref={languagePacksRef} className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10 w-full pb-1">{t("Language packs")}</h3>
           <p className="text-sm">
             {mobileApp
               ? t("Activate only the languages you want to use on this device.")
@@ -560,8 +559,8 @@ export default function Setting() {
           <PackTable />
         </section>
 
-        <section className="w-full flex flex-col gap-7 items-start">
-          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10">{t("Profile")}</h3>
+        <section className="w-full flex flex-col gap-6 items-start">
+          <h3 className="sticky top-0 pt-8 md:pt-12 bg-neutral-50 font-pretendard! z-10 w-full pb-1">{t("Profile")}</h3>
           <UserProfile />
         </section>
       </div>

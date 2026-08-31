@@ -151,7 +151,7 @@ export default function PackTable() {
 
   function renderDesktopStatus(state: InstalledPack) {
     return state.lemma_installed ? (
-      <div className="text-xs px-1.5 rounded-full bg-green-200 text-green-700/60">
+      <div className="text-xs px-1.5 rounded-full bg-green-100 text-green-800/60">
         {t("Installed")}
       </div>
     ) : null;

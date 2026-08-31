@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Pin, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Preferences } from "@capacitor/preferences";
 
 import MoveModal from "./MoveModal";
@@ -1076,7 +1076,7 @@ export default function PageLayout() {
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="w-full justify-between flex z-30 py-1 items-center h-8 pr-2 pl-1 md:pl-0">
+      {!isMobileLike || location.pathname === "/" ? <div className="w-full justify-between flex z-30 py-1 items-center h-8 pr-2 pl-1 md:pl-0">
         {searchOpen ? (
           searchControl
         ) : (
@@ -1100,7 +1100,7 @@ export default function PageLayout() {
             />
           </>
         )}
-      </div>
+      </div> : null}
 
       {mobileApp && offline && hasLoadedOnceRef.current ? (
         <p className="px-2 pb-2 text-xs text-neutral-400">

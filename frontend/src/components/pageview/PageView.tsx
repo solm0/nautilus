@@ -14,8 +14,6 @@ import {
 import type { Annotation, LemmaData, TextAnalysisResult } from "../pageTypes";
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk from "../lemma_expansions/Desk";
-import AnnotationView from "./AnnotationView";
-import AnnotationNew from "./AnnotationNew";
 import { useLayout } from "../RootLayout";
 import { type Pack } from "../setting/PackTable";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
@@ -407,7 +405,7 @@ export default function PageView() {
           </div>
 
           <ResponsiveSideLayout
-            open={panel !== null}
+            open={panel?.type === "lemma"}
             onClose={() => setPanel(null)}
             restoreKey={panelRestoreKey}
             onDesktopPlacementChange={setPanelPlacement}
@@ -423,21 +421,6 @@ export default function PageView() {
               />
             )}
 
-            {language && panel?.type === "annotation:view" && (
-              <AnnotationView
-                panel={panel}
-                setPanel={setPanel}
-                setAnnotations={setAnnotations}
-              />
-            )}
-
-            {language && panel?.type === "annotation:new" && (
-              <AnnotationNew
-                panel={panel}
-                setAnnotations={setAnnotations}
-                setPanelData={setPanel}
-              />
-            )}
           </ResponsiveSideLayout>
 
           {loadingLemma && !loadingPage && !noPack && (

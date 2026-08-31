@@ -12,6 +12,10 @@ import { useSettings } from "../useSettings";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 import type { MorphToken, Token } from "../pageTypes";
 import { useI18n } from "../../i18n";
+import { deleteAnnotation } from "../../api";
+import AnnotationOverlay, { type AnnotationAnchor } from "./AnnotationOverlay";
+import { ResponsiveModal } from "../util/ResponsiveModal";
+import Button from "../util/Button";
 
 const LONG_PRESS_MS = 600;
 const DRAG_THRESHOLD = 8;
@@ -83,6 +87,8 @@ export default function PageContent({
   const [menu, setMenu] = useState<{
     x: number;
     y: number;
+    viewportX: number;
+    viewportY: number;
   } | null>(null);
   
   const [hoverRange, setHoverRange] = useState<{
@@ -108,6 +114,24 @@ export default function PageContent({
   
     annotation?: EmojiAnnotation;
   } | null>(null);
+  const [annotationAnchor, setAnnotationAnchor] = useState<AnnotationAnchor | null>(null);
+  const [emojiDeleteTarget, setEmojiDeleteTarget] = useState<Annotation | null>(null);
+
+  useLayoutEffect(() => {
+    if (panelData?.type !== "annotation:view" || annotationAnchor || !panelData.data.id) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const icon = document.querySelector<HTMLElement>(
+        `[data-annotation-id="${CSS.escape(panelData.data.id!)}"]`,
+      );
+      const rect = icon?.getBoundingClientRect();
+      if (rect) {
+        setAnnotationAnchor({ kind: "gutter", x: rect.left, y: rect.top, right: rect.right, bottom: rect.bottom });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [annotationAnchor, panelData]);
   // annotations 통해 왔을 경우 해당 토큰으로 스크롤
   function scrollToAnnotation(startIndex: number) {
     const el = containerRef.current?.querySelector(
@@ -292,6 +316,8 @@ export default function PageContent({
     setMenu({
       x: rect.left - containerRect.left,
       y: rect.bottom - containerRect.top + 6,
+      viewportX: rect.left,
+      viewportY: rect.bottom + 6,
     });
 
     if (didDragRef.current) {
@@ -561,6 +587,16 @@ export default function PageContent({
           setHoverRange={setHoverRange}
           annotationId={(panelData?.data as Annotation)?.id}
           setEmojiPicker={setEmojiPicker}
+          onOpenAnnotation={(_annotation, rect) => {
+            setAnnotationAnchor({
+              kind: "gutter",
+              x: rect.left,
+              y: rect.top,
+              right: rect.right,
+              bottom: rect.bottom,
+            });
+          }}
+          onRequestEmojiDelete={setEmojiDeleteTarget}
         />
       }
       overlay={
@@ -585,6 +621,7 @@ export default function PageContent({
                       end_index: finalSelection.end,
                     }
                   });
+                  setAnnotationAnchor({ kind: "selection", x: menu.viewportX, y: menu.viewportY - 6 });
                   setMenu(null);
                 }}
                 title={t("new memo")}
@@ -604,6 +641,7 @@ export default function PageContent({
                       end_index: finalSelection.end,
                     }
                   });
+                  setAnnotationAnchor({ kind: "selection", x: menu.viewportX, y: menu.viewportY - 6 });
                   setMenu(null);
                 }}
                 title={t("new link")}
@@ -615,8 +653,8 @@ export default function PageContent({
                   if (!pageId || !finalSelection) return;
 
                   setEmojiPicker({
-                    x: menu.x,
-                    y: menu.y + 90,
+                    x: menu.viewportX,
+                    y: menu.viewportY + 8,
                     selection: {
                       start: finalSelection.start,
                       end: finalSelection.end,
@@ -645,6 +683,50 @@ export default function PageContent({
               }}
             />
           )}
+
+          {(panelData?.type === "annotation:new" || panelData?.type === "annotation:view") && panelData.data.type !== "emoji" ? (
+            <AnnotationOverlay
+              key={`${panelData.type}:${panelData.data.id ?? `${panelData.data.start_index}:${panelData.data.end_index}`}`}
+              annotation={panelData.data}
+              mode={panelData.type === "annotation:new" ? "new" : "view"}
+              anchor={annotationAnchor}
+              onClose={() => {
+                setPanelData?.(null);
+                setAnnotationAnchor(null);
+                setFinalSelection(null);
+                setSelection(null);
+              }}
+              onCreated={(created) => {
+                setAnnotations((prev) => [...prev, created]);
+                setPanelData?.({ type: "annotation:view", data: created });
+              }}
+              onUpdated={(updated) => {
+                setAnnotations((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+                setPanelData?.({ type: "annotation:view", data: updated });
+              }}
+              onDeleted={(annotationId) => {
+                setAnnotations((prev) => prev.filter((item) => item.id !== annotationId));
+              }}
+            />
+          ) : null}
+
+          <ResponsiveModal open={emojiDeleteTarget !== null} onClose={() => setEmojiDeleteTarget(null)}>
+            <div className="flex flex-col gap-7 md:pb-3">
+              <h2>{t("Delete this annotation?")}</h2>
+              <Button
+                text={t("Delete")}
+                onClick={() => {
+                  if (!emojiDeleteTarget?.id) return;
+                  void deleteAnnotation(emojiDeleteTarget.id).then(() => {
+                    setAnnotations((prev) => prev.filter((item) => item.id !== emojiDeleteTarget.id));
+                    setEmojiDeleteTarget(null);
+                  });
+                }}
+                fit
+                red
+              />
+            </div>
+          </ResponsiveModal>
         </>
       }
     />

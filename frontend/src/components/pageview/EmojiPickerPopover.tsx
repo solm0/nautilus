@@ -31,16 +31,15 @@ export default function EmojiPickerPopover({
   const { theme } = useTheme();
   const PICKER_WIDTH = 320;
   const PICKER_HEIGHT = 420;
+  const mobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
 
-  const left = Math.min(
-    Math.max(12, x),
-    window.innerWidth - PICKER_WIDTH - 100
-  );
+  const left = mobile
+    ? Math.max(12, (window.innerWidth - 300) / 2)
+    : Math.min(Math.max(12, x), window.innerWidth - PICKER_WIDTH - 12);
 
-  const top = Math.min(
-    Math.max(12, y),
-    window.innerHeight - PICKER_HEIGHT - 12
-  );
+  const top = mobile
+    ? Math.max(12, (window.innerHeight - 400) / 2)
+    : Math.min(Math.max(12, y), window.innerHeight - PICKER_HEIGHT - 12);
 
   async function createEmoji(emoji: string) {
     if (!selection || !pageId) return;
