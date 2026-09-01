@@ -1,12 +1,12 @@
 export type MorphToken = {
   surface: string;
-  lemma: string | null;
+  lemma?: string | null;
   pos: string | null;
 };
 
 export type Token = {
   surface: string;
-  lemma: string | null;
+  lemma?: string | null;
   pos: string | null;
   morphs?: MorphToken[];
 };

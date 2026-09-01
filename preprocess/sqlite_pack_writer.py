@@ -8,6 +8,28 @@ DB_FILENAME = "language_pack.db"
 LEMMA_DB_FILENAME = "lemma_pack.db"
 
 
+def _strip_null_lemmas(value):
+    if isinstance(value, dict):
+        return {
+            key: _strip_null_lemmas(item)
+            for key, item in value.items()
+            if not (key == "lemma" and item is None)
+        }
+
+    if isinstance(value, list):
+        return [_strip_null_lemmas(item) for item in value]
+
+    return value
+
+
+def serialize_lemma_payload(value) -> str:
+    return json.dumps(
+        _strip_null_lemmas(value),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
 def connect_db(db_path: Path) -> sqlite3.Connection:
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)

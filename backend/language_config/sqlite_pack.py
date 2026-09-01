@@ -205,7 +205,20 @@ class LanguagePackDB:
 
     def get_lines(self, line_ids: list[str]):
         rows = self._fetch_json_payloads("lines", "line_id", line_ids)
-        return [rows[line_id] for line_id in line_ids if line_id in rows]
+        result = []
+
+        for line_id in line_ids:
+            payload = rows.get(line_id)
+
+            if not isinstance(payload, dict):
+                continue
+
+            if "line_id" not in payload:
+                payload = {"line_id": line_id, **payload}
+
+            result.append(payload)
+
+        return result
 
     def find_line_ids_by_token_forms(self, forms: list[str], limit: int = 1200):
         normalized_forms = [form.strip() for form in forms if isinstance(form, str) and form.strip()]

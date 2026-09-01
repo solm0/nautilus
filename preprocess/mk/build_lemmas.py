@@ -1,4 +1,3 @@
-import json
 import re
 import sys
 import unicodedata
@@ -18,6 +17,7 @@ from sqlite_pack_writer import (
     connect_db,
     package_release_artifact,
     replace_lemma_tables,
+    serialize_lemma_payload,
     write_manifest,
 )
 from build_config import get_release_dir, get_version
@@ -273,10 +273,7 @@ for lemma in valid_lemmas:
 lines_rows = [
     (
         line["line_id"],
-        json.dumps(
-            line,
-            ensure_ascii=False,
-        ),
+        serialize_lemma_payload({"tokens": line["tokens"]}),
     )
     for line in lines_out
 ]
@@ -284,10 +281,7 @@ lines_rows = [
 stats_rows = [
     (
         lemma,
-        json.dumps(
-            payload,
-            ensure_ascii=False,
-        ),
+        serialize_lemma_payload(payload),
     )
     for lemma, payload
     in stats.items()
