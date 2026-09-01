@@ -9,7 +9,7 @@ import {
 import { TokenInLemmaExpansion } from "./TokenInLemmaExpansion";
 import type { KwicData, LemmaData } from "../pageTypes";
 import { IconButton } from "../util/Button";
-import { AlignCenterVertical } from "lucide-react";
+import { AlignCenterVertical, Star } from "lucide-react";
 import { lemmaLookup } from "../../api";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
@@ -86,6 +86,8 @@ interface KwicRowProps {
   canSelectKey?: (tokenKey: string) => boolean;
   hovered: { pos: string | null; x: number, y: number };
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; x: number, y: number }>>
+  lemmaInfo: Record<string, LemmaData>;
+  currentFavorite?: boolean;
 }
 
 interface KwicRowHandle {
@@ -96,7 +98,7 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered },
+  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered, lemmaInfo, currentFavorite },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,7 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
           language={language}
           onSelect={onSelect}
           canSelectKey={canSelectKey}
+          lemmaInfo={lemmaInfo}
         />
       </div>
     </div>
@@ -189,7 +192,18 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
 
         <div className="relative px-2 flex shrink-0 items-center h-10 cursor-default">
           <div className="absolute inset-0 opacity-50 pointer-events-none" />
-          {highlightIntersect(target.surface, baseLemma)}
+          <span className="inline-flex items-center">
+            {highlightIntersect(target.surface, baseLemma)}
+            {(currentFavorite ?? lemmaInfo[lemma]?.is_favorite) === true && (
+              <Star
+                size={9}
+                aria-hidden="true"
+                className="ml-0.5 shrink-0 text-neutral-400"
+                fill="currentColor"
+                stroke="transparent"
+              />
+            )}
+          </span>
         </div>
 
         <div
@@ -209,12 +223,14 @@ export default function LemmaKwic({
   lemma,
   language,
   lemmaInfo,
+  currentFavorite,
 }: {
   data: KwicData[];
   onSelect: (tokenKey: string) => void;
   lemma: string;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
+  currentFavorite?: boolean;
 }) {
   const { t } = useI18n();
   const [hovered, setHovered] = useState<{
@@ -373,6 +389,8 @@ export default function LemmaKwic({
             canSelectKey={canSelectKey}
             hovered={hovered}
             setHovered={setHovered}
+            lemmaInfo={availableKeys}
+            currentFavorite={currentFavorite}
           />
         ))}
       </div>

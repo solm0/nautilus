@@ -66,6 +66,7 @@ export default function LemmaExpansion({
             lemma={data.key}
             language={language}
             lemmaInfo={lemmaInfo}
+            currentFavorite={isFavorite}
           />
         </section>
       </div>

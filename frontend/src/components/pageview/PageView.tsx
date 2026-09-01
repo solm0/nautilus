@@ -278,6 +278,19 @@ export default function PageView() {
   const onFavoriteClick = async (key: string, next: boolean) => {
     await setFavorite(key, next);
     setFavoriteKeys(new Set(await getFavorites()));
+    const [lemma, pos] = key.split("/");
+    const localKey = lemma && pos ? `${lemma}_${pos}` : null;
+    if (localKey) {
+      setLemmaInfo((prev) => {
+        const current = prev[localKey];
+        if (!current) return prev;
+        const nextInfo = { ...prev, [localKey]: { ...current, is_favorite: next } };
+        if (id && language) {
+          lemmaInfoCache.set(`${id}:${language}`, nextInfo);
+        }
+        return nextInfo;
+      });
+    }
   };
 
   const trackReference = result?.track_ref ?? null;
