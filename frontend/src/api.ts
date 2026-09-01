@@ -1,4 +1,9 @@
-import type { Annotation, PageSource, TextAnalysisResult } from "./components/pageTypes"
+import type {
+  Annotation,
+  PageSource,
+  TextAnalysisResult,
+  UserLemmaState,
+} from "./components/pageTypes"
 import type { User } from "./types";
 import {
   clearStoredSession,
@@ -14,8 +19,11 @@ import {
 } from "./packCatalogSnapshot";
 import {
   cacheInterestedLemmaKeys,
+  cacheLemmaProfile,
   getOfflineInterestedKeys,
+  getOfflineLemmaProfile,
   queueOfflineInterestToggle,
+  queueOfflineLemmaStateUpdate,
   syncOfflineOutbox,
 } from "./offlineData";
 import { getAppPlatform, isCapacitorApp, isElectronApp } from "./platform";
@@ -497,6 +505,7 @@ export async function setInterest(
   if (isElectronApp() || isCapacitorApp()) {
     await queueOfflineInterestToggle(key, next);
     const synced = await syncOfflineOutbox();
+    if (synced) await invalidateLocalLemmaProfileCache();
     return { ok: true, offline: !synced };
   }
 
@@ -517,7 +526,51 @@ export async function setInterest(
     throw new Error("interest request failed");
   }
 
+  await invalidateLocalLemmaProfileCache();
   return res.json();
+}
+
+async function invalidateLocalLemmaProfileCache() {
+  if (isCapacitorApp()) return;
+  const headers = authHeaders();
+  if (!headers) return;
+  await fetch(`${LOCAL_API}/lemma/profile/cache`, {
+    method: "DELETE",
+    headers,
+  }).catch(() => undefined);
+}
+
+export async function getLemmaProfile(): Promise<Record<string, UserLemmaState>> {
+  const headers = authHeaders();
+  if (!headers) throw new Error("not authenticated");
+
+  try {
+    const response = await centralFetch(`${CENTRAL_API}/lemma/profile`, {
+      method: "GET",
+      headers,
+    });
+    if (!response.ok) throw new Error("lemma profile request failed");
+    const data = await response.json() as { items?: UserLemmaState[] };
+    const items = Array.isArray(data.items) ? data.items : [];
+    await cacheLemmaProfile(items);
+    return Object.fromEntries(items.map((item) => [item.key, item]));
+  } catch {
+    return getOfflineLemmaProfile();
+  }
+}
+
+export async function updateLemmaState(
+  key: string,
+  update: { exposure_count?: number; is_known?: boolean },
+): Promise<UserLemmaState> {
+  const headers = authHeaders();
+  if (!headers) throw new Error("not authenticated");
+
+  await queueOfflineLemmaStateUpdate(key, update);
+  const synced = await syncOfflineOutbox();
+  if (synced) await invalidateLocalLemmaProfileCache();
+  const profile = await getOfflineLemmaProfile();
+  return profile[key];
 }
 
 export async function getInterests(): Promise<string[]> {

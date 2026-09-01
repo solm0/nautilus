@@ -1,57 +1,145 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import Breadcrumb, { type D3Node } from "./Breadcrumb.tsx";
 import type { TreeNode } from "../../types.ts";
-import type { LemmaData } from "../pageTypes.ts";
+import type { LemmaData, UserLemmaState } from "../pageTypes.ts";
 import LemmaExpansionWrapper from "./LemmaExpansionWrapper.tsx";
+import { getLemmaProfile, updateLemmaState } from "../../api.ts";
 
-export default function Desk({
+const EXPOSURE_DELAY_MS = 750;
+const MAX_EXPOSURE_COUNT = 10;
+
+export type DeskHandle = {
+  markActiveKnown: () => Promise<void>;
+};
+
+type DeskProps = {
+  initialLemma: LemmaData;
+  onToggleInterest: (key: string, next: boolean) => Promise<void>;
+  language: string;
+  lemmaInfo?: Record<string, LemmaData>;
+  interestKeys?: Set<string>;
+};
+
+function toGlobalKey(localKey: string, language: string) {
+  const parts = localKey.split("_");
+  const pos = parts.pop() ?? "";
+  return `${parts.join("_")}/${pos}/${language}`;
+}
+
+const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   initialLemma,
   onToggleInterest,
   language,
   lemmaInfo,
   interestKeys,
-}: {
-  initialLemma: LemmaData;
-  onToggleInterest: (key: string, next:boolean) => Promise<void>;
-  language: string;
-  lemmaInfo?: Record<string, LemmaData>;
-  interestKeys?: Set<string>;
-}) {
+}, ref) {
   const breadcrumbRef = useRef<{ addNode: (parentLemma: string, newNode: TreeNode) => void }>(null);
   const [activeNode, setActiveNode] = useState<D3Node | null>(null);
-  const [lemmaDatas, setLemmaDatas] = useState<LemmaData[]>([]);
+  const [lemmaDatas, setLemmaDatas] = useState<LemmaData[]>([initialLemma]);
   const [activeKey, setActiveKey] = useState<string | null>(initialLemma.key);
   const [lemmaStatus, setLemmaStatus] = useState<Record<string, "loading" | "ready">>({});
+  const [profile, setProfile] = useState<Record<string, UserLemmaState>>({});
+  const [hasExplored, setHasExplored] = useState(false);
+  const profileRef = useRef(profile);
+  const exposedThisSessionRef = useRef(new Set<string>());
   const prevActiveLemmaRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setLemmaDatas([initialLemma]);
-  }, [])
+    profileRef.current = profile;
+  }, [profile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getLemmaProfile().then((items) => {
+      if (!cancelled) setProfile(items);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const activeData = lemmaDatas.find((item) => item.key === activeKey);
+  const activeGlobalKey = activeKey
+    ? activeData?.global_key ?? toGlobalKey(activeKey, language)
+    : null;
+
+  useEffect(() => {
+    if (!activeGlobalKey || exposedThisSessionRef.current.has(activeGlobalKey)) return;
+    const timer = window.setTimeout(() => {
+      if (exposedThisSessionRef.current.has(activeGlobalKey)) return;
+      exposedThisSessionRef.current.add(activeGlobalKey);
+      const current = profileRef.current[activeGlobalKey];
+      const exposure_count = Math.min(
+        MAX_EXPOSURE_COUNT,
+        (current?.exposure_count ?? 0) + 1,
+      );
+      const next: UserLemmaState = {
+        key: activeGlobalKey,
+        exposure_count,
+        is_known: current?.is_known ?? false,
+        is_interested: current?.is_interested
+          ?? interestKeys?.has(activeGlobalKey)
+          ?? false,
+        updated_at: new Date().toISOString(),
+      };
+      profileRef.current = { ...profileRef.current, [activeGlobalKey]: next };
+      setProfile(profileRef.current);
+      void updateLemmaState(activeGlobalKey, { exposure_count }).then((saved) => {
+        if (!saved) return;
+        profileRef.current = { ...profileRef.current, [activeGlobalKey]: saved };
+        setProfile(profileRef.current);
+      });
+    }, EXPOSURE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [activeGlobalKey, interestKeys]);
+
+  const markActiveKnown = useCallback(async () => {
+    if (!activeGlobalKey || profileRef.current[activeGlobalKey]?.is_known) return;
+    const current = profileRef.current[activeGlobalKey];
+    const next: UserLemmaState = {
+      key: activeGlobalKey,
+      exposure_count: current?.exposure_count ?? 0,
+      is_known: true,
+      is_interested: current?.is_interested
+        ?? interestKeys?.has(activeGlobalKey)
+        ?? false,
+      updated_at: new Date().toISOString(),
+    };
+    profileRef.current = { ...profileRef.current, [activeGlobalKey]: next };
+    setProfile(profileRef.current);
+    const saved = await updateLemmaState(activeGlobalKey, { is_known: true });
+    if (saved) {
+      profileRef.current = { ...profileRef.current, [activeGlobalKey]: saved };
+      setProfile(profileRef.current);
+    }
+  }, [activeGlobalKey, interestKeys]);
+
+  useImperativeHandle(ref, () => ({ markActiveKnown }), [markActiveKnown]);
 
   const addLemmaData = useCallback((lemmaData: LemmaData, autoActivate = true) => {
-    setLemmaDatas(prev => {
-      if (prev.find(l => l.key === lemmaData.key)) return prev;
-      return [...prev, lemmaData];
-    });
+    setLemmaDatas((prev) => prev.find((item) => item.key === lemmaData.key)
+      ? prev
+      : [...prev, lemmaData]);
     if (autoActivate) setActiveKey(lemmaData.key);
   }, []);
 
-  // breadcrumb 클릭
   useEffect(() => {
     const nextLemmaKey = activeNode?.data.lemma ?? null;
     if (prevActiveLemmaRef.current === nextLemmaKey) return;
     prevActiveLemmaRef.current = nextLemmaKey;
-
     if (!nextLemmaKey) return;
-    const hasLemmaData = lemmaDatas.some(l => l.key === nextLemmaKey);
-    const isLoading = lemmaStatus[nextLemmaKey] === "loading";
-    if (hasLemmaData && !isLoading) setActiveKey(nextLemmaKey);
-  }, [activeNode, lemmaDatas, lemmaStatus])
+    const hasLemmaData = lemmaDatas.some((item) => item.key === nextLemmaKey);
+    if (hasLemmaData && lemmaStatus[nextLemmaKey] !== "loading") setActiveKey(nextLemmaKey);
+  }, [activeNode, lemmaDatas, lemmaStatus]);
 
   useEffect(() => {
-    if (!activeKey) return;
-    if (lemmaStatus[activeKey] !== "ready") return;
-    setLemmaStatus(prev => {
+    if (!activeKey || lemmaStatus[activeKey] !== "ready") return;
+    setLemmaStatus((prev) => {
       const next = { ...prev };
       delete next[activeKey];
       return next;
@@ -61,48 +149,49 @@ export default function Desk({
   const handleTokenSelect = (tokenKey: string) => {
     const parentLemma = activeNode?.data.lemma ?? activeKey;
     if (!parentLemma) return;
+    setHasExplored(true);
     breadcrumbRef.current?.addNode(parentLemma, { lemma: tokenKey });
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      <Breadcrumb
-        ref={breadcrumbRef}
-        initialLemmaKey={initialLemma.key}
-        activeNode={activeNode}
-        setActiveNode={setActiveNode}
-        nodeStatusByLemma={lemmaStatus}
-      />
-      <LemmaExpansionWrapper
-        activeNode={activeNode}
-        lemmaDatas={lemmaDatas}
-        activeKey={activeKey}
-        addLemmaData={addLemmaData}
-        onLemmaFetchStart={(lemmaKey:string) => {
-          setLemmaStatus(prev => ({
-            ...prev,
-            [lemmaKey]: "loading",
-          }));
-        }}
-        onLemmaFetchSuccess={(lemmaKey:string) => {
-          setLemmaStatus(prev => ({
-            ...prev,
-            [lemmaKey]: "ready",
-          }));
-        }}
-        onLemmaFetchError={(lemmaKey:string) => {
-          setLemmaStatus(prev => {
+    <div className="flex h-full w-full flex-col gap-1 overflow-visible md:gap-0 md:overflow-hidden">
+      <div className={`grid shrink-0 overflow-hidden rounded-3xl bg-neutral-50 transition-[grid-template-rows,opacity] duration-300 md:grid-rows-[1fr] md:rounded-none md:opacity-100 ${
+        hasExplored ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+      }`}>
+        <div className="min-h-0 overflow-hidden">
+          <Breadcrumb
+            ref={breadcrumbRef}
+            initialLemmaKey={initialLemma.key}
+            activeNode={activeNode}
+            setActiveNode={setActiveNode}
+            nodeStatusByLemma={lemmaStatus}
+          />
+        </div>
+      </div>
+      <div className="h-[min(66vh,30rem)] min-h-0 overflow-hidden rounded-3xl bg-neutral-50 shadow-xl md:h-auto md:flex-1 md:rounded-none md:shadow-none">
+        <LemmaExpansionWrapper
+          activeNode={activeNode}
+          lemmaDatas={lemmaDatas}
+          activeKey={activeKey}
+          addLemmaData={addLemmaData}
+          onLemmaFetchStart={(lemmaKey) => setLemmaStatus((prev) => ({ ...prev, [lemmaKey]: "loading" }))}
+          onLemmaFetchSuccess={(lemmaKey) => setLemmaStatus((prev) => ({ ...prev, [lemmaKey]: "ready" }))}
+          onLemmaFetchError={(lemmaKey) => setLemmaStatus((prev) => {
             const next = { ...prev };
             delete next[lemmaKey];
             return next;
-          });
-        }}
-        onSelect={handleTokenSelect}
-        onToggleInterest={onToggleInterest}
-        language={language}
-        lemmaInfo={lemmaInfo}
-        interestKeys={interestKeys}
-      />
+          })}
+          onSelect={handleTokenSelect}
+          onToggleInterest={onToggleInterest}
+          language={language}
+          lemmaInfo={lemmaInfo}
+          interestKeys={interestKeys}
+          isKnown={activeGlobalKey ? profile[activeGlobalKey]?.is_known ?? false : false}
+          onMarkKnown={markActiveKnown}
+        />
+      </div>
     </div>
-  )
-}
+  );
+});
+
+export default Desk;

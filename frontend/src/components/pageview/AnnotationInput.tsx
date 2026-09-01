@@ -41,7 +41,7 @@ export default function AnnotationInput({
 
   return (
     <div className="flex w-full flex-col">
-      <div className="flex w-full items-end gap-2 rounded-xl bg-neutral-50">
+      <div className="flex w-full items-end gap-2 rounded-xl bg-transparent">
         {type === "memo" ? (
           <textarea
             ref={textareaRef}

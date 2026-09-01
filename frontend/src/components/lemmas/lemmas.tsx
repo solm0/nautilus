@@ -3,7 +3,7 @@ import { getInterests, lemmaLookupOne, setInterest } from "../../api"
 import { isNetworkError } from "../../network";
 import { Star } from "lucide-react"
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
-import Desk from "../lemma_expansions/Desk";
+import Desk, { type DeskHandle } from "../lemma_expansions/Desk";
 import type { LemmaData } from "../pageTypes";
 import { useLayout } from "../RootLayout";
 import { useI18n } from "../../i18n";
@@ -44,12 +44,12 @@ export default function Lemmas(){
     language: string;
   } | null>(null);
   const [offline, setOffline] = useState(false);
-  const [panelOpenRequest, setPanelOpenRequest] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const mobileApp = isCapacitorApp();
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
   useRef<LemmaData | null>(null)
+  const deskRef = useRef<DeskHandle>(null);
 
   useEffect(() => {
     if (lemmaData) {
@@ -145,7 +145,6 @@ export default function Lemmas(){
 
     setLemmaData(data);
     setPendingLemma(null);
-    setPanelOpenRequest((prev) => prev + 1);
   }
 
   return (
@@ -244,10 +243,10 @@ export default function Lemmas(){
         <ResponsiveSideLayout
           open={!!lemmaData}
           onClose={()=>setLemmaData(null)}
-          restoreKey={`${lemmaData.key}:${panelOpenRequest}`}
-          undockOnMount
+          onSwipeRight={() => deskRef.current?.markActiveKnown()}
         >
           <Desk
+            ref={deskRef}
             key={lemmaData.key}
             initialLemma={lemmaData}
             onToggleInterest={onInterestClick}

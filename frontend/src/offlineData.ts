@@ -2,6 +2,7 @@ import { Preferences } from "@capacitor/preferences";
 import { getStoredToken, getStoredUser } from "./authSession";
 import { getAppPlatform, isCapacitorApp, isElectronApp } from "./platform";
 import { centralFetch } from "./network";
+import type { UserLemmaState } from "./components/pageTypes";
 
 type PendingInterestToggle = {
   id: string;
@@ -10,9 +11,19 @@ type PendingInterestToggle = {
   created_at: string;
 };
 
+type PendingLemmaStateUpdate = {
+  id: string;
+  key: string;
+  exposure_count?: number;
+  is_known?: boolean;
+  created_at: string;
+};
+
 type UserVocabularyState = {
   interestedSnapshot: string[];
   interestOutbox: PendingInterestToggle[];
+  profileSnapshot: Record<string, UserLemmaState>;
+  stateOutbox: PendingLemmaStateUpdate[];
 };
 
 type VocabularySyncState = {
@@ -64,7 +75,12 @@ function currentUserId() {
 }
 
 function emptyUserState(): UserVocabularyState {
-  return { interestedSnapshot: [], interestOutbox: [] };
+  return {
+    interestedSnapshot: [],
+    interestOutbox: [],
+    profileSnapshot: {},
+    stateOutbox: [],
+  };
 }
 
 function normalizeUserState(value: unknown): UserVocabularyState {
@@ -74,6 +90,8 @@ function normalizeUserState(value: unknown): UserVocabularyState {
     interestOutbox?: PendingInterestToggle[];
     snapshot?: string[];
     outbox?: PendingInterestToggle[];
+    profileSnapshot?: Record<string, UserLemmaState>;
+    stateOutbox?: PendingLemmaStateUpdate[];
   };
   return {
     interestedSnapshot: Array.isArray(candidate.interestedSnapshot)
@@ -84,6 +102,13 @@ function normalizeUserState(value: unknown): UserVocabularyState {
       : Array.isArray(candidate.outbox)
         ? candidate.outbox.map((item) => ({ ...item, id: String(item.id) }))
         : [],
+    profileSnapshot:
+      candidate.profileSnapshot && typeof candidate.profileSnapshot === "object"
+        ? clone(candidate.profileSnapshot)
+        : {},
+    stateOutbox: Array.isArray(candidate.stateOutbox)
+      ? candidate.stateOutbox.map((item) => ({ ...item, id: String(item.id) }))
+      : [],
   };
 }
 
@@ -164,8 +189,36 @@ export async function cacheInterestedLemmaKeys(keys: string[]) {
   const userId = currentUserId();
   if (!userId) return;
   const state = await loadState();
-  userState(state, userId).interestedSnapshot = [...keys];
+  const vocabulary = userState(state, userId);
+  vocabulary.interestedSnapshot = [...keys];
+  for (const [key, item] of Object.entries(vocabulary.profileSnapshot)) {
+    vocabulary.profileSnapshot[key] = {
+      ...item,
+      is_interested: keys.includes(key),
+    };
+  }
   await saveState(state);
+}
+
+export async function cacheLemmaProfile(items: UserLemmaState[]) {
+  const userId = currentUserId();
+  if (!userId) return;
+  const state = await loadState();
+  const vocabulary = userState(state, userId);
+  vocabulary.profileSnapshot = Object.fromEntries(
+    items.map((item) => [item.key, { ...item }]),
+  );
+  vocabulary.interestedSnapshot = items
+    .filter((item) => item.is_interested)
+    .map((item) => item.key);
+  await saveState(state);
+}
+
+export async function getOfflineLemmaProfile() {
+  const userId = currentUserId();
+  if (!userId) return {};
+  const state = await loadState();
+  return clone(userState(state, userId).profileSnapshot);
 }
 
 export async function getOfflineInterestedKeys() {
@@ -188,6 +241,46 @@ export async function queueOfflineInterestToggle(key: string, next: boolean) {
     next,
     created_at: new Date().toISOString(),
   }];
+  const existing = vocabulary.profileSnapshot[key];
+  vocabulary.profileSnapshot[key] = {
+    key,
+    exposure_count: existing?.exposure_count ?? 0,
+    is_known: existing?.is_known ?? false,
+    is_interested: next,
+    updated_at: new Date().toISOString(),
+  };
+  await saveState(state);
+}
+
+export async function queueOfflineLemmaStateUpdate(
+  key: string,
+  update: { exposure_count?: number; is_known?: boolean },
+) {
+  const userId = currentUserId();
+  if (!userId) throw new Error("not authenticated");
+  const state = await loadState();
+  const vocabulary = userState(state, userId);
+  const existing = vocabulary.profileSnapshot[key];
+  const now = new Date().toISOString();
+  vocabulary.profileSnapshot[key] = {
+    key,
+    exposure_count: Math.min(
+      10,
+      Math.max(update.exposure_count ?? existing?.exposure_count ?? 0, 0),
+    ),
+    is_known: update.is_known ?? existing?.is_known ?? false,
+    is_interested: existing?.is_interested ?? false,
+    updated_at: now,
+  };
+  vocabulary.stateOutbox = [
+    ...vocabulary.stateOutbox.filter((item) => item.key !== key),
+    {
+      id: crypto.randomUUID(),
+      key,
+      ...update,
+      created_at: now,
+    },
+  ];
   await saveState(state);
 }
 
@@ -217,6 +310,37 @@ async function syncVocabularyOutboxOnce() {
     vocabulary.interestedSnapshot = mergeInterestedKeys(
       vocabulary.interestedSnapshot,
       [toggle],
+    );
+    const existing = vocabulary.profileSnapshot[toggle.key];
+    vocabulary.profileSnapshot[toggle.key] = {
+      key: toggle.key,
+      exposure_count: existing?.exposure_count ?? 0,
+      is_known: existing?.is_known ?? false,
+      is_interested: toggle.next,
+      updated_at: toggle.created_at,
+    };
+    changed = true;
+  }
+
+  for (const update of [...vocabulary.stateOutbox]) {
+    const response = await centralFetch(`${CENTRAL_API}/lemma/state`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        key: update.key,
+        exposure_count: update.exposure_count,
+        is_known: update.is_known,
+      }),
+    }).catch(() => null);
+    if (!response?.ok) return false;
+
+    const item = await response.json() as UserLemmaState;
+    vocabulary.profileSnapshot[update.key] = item;
+    vocabulary.stateOutbox = vocabulary.stateOutbox.filter(
+      (item) => item.id !== update.id,
     );
     changed = true;
   }

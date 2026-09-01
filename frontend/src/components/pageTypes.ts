@@ -60,6 +60,14 @@ export type LemmaData = {
   global_key: string;
 };
 
+export type UserLemmaState = {
+  key: string;
+  exposure_count: number;
+  is_known: boolean;
+  is_interested: boolean;
+  updated_at?: string | null;
+};
+
 export type AnnotationType = "link" | "memo" | "emoji";
 
 export type AnnotationBase = {

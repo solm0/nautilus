@@ -38,6 +38,14 @@ class BatchRequest(BaseModel):
     language: str
 
 
+@router.delete("/lemma/profile/cache")
+def invalidate_user_lemma_profile_cache(request: Request):
+    token = request.headers.get("Authorization")
+    if token:
+        _profile_cache.pop(hashlib.sha256(token.encode()).hexdigest(), None)
+    return {"ok": True}
+
+
 def fetch_user_lemma_states(token: Optional[str]) -> dict[str, dict]:
     if not token or not CENTRAL_API:
         return {}

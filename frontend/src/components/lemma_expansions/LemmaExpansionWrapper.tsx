@@ -21,6 +21,8 @@ export default function LemmaExpansionWrapper({
   language,
   lemmaInfo,
   interestKeys,
+  isKnown,
+  onMarkKnown,
 }: {
   activeNode: D3Node | null;
   lemmaDatas: LemmaData[] ;
@@ -34,6 +36,8 @@ export default function LemmaExpansionWrapper({
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
   interestKeys?: Set<string>;
+  isKnown: boolean;
+  onMarkKnown: () => Promise<void>;
 }) {
   const { t } = useI18n();
   const inflightRef = useRef(new Set<string>());
@@ -119,6 +123,8 @@ export default function LemmaExpansionWrapper({
         language={language}
         lemmaInfo={lemmaInfo}
         interestKeys={interestKeys}
+        isKnown={isKnown}
+        onMarkKnown={onMarkKnown}
       />
     );
   }

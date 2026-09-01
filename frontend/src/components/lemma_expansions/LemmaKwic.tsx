@@ -2,6 +2,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -14,7 +15,7 @@ import { lemmaLookup } from "../../api";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
 
-const SHOW_KWIC_DEBUG = true;
+const SHOW_KWIC_DEBUG = false;
 
 function highlightIntersect(
   surface: string,
@@ -90,6 +91,7 @@ interface KwicRowProps {
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; x: number, y: number }>>
   lemmaInfo: Record<string, LemmaData>;
   interestKeys?: Set<string>;
+  onMisalignedChange: (misaligned: boolean) => void;
 }
 
 interface KwicRowHandle {
@@ -100,11 +102,16 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered, lemmaInfo, interestKeys },
+  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered, lemmaInfo, interestKeys, onMisalignedChange },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const leadingGutterRef = useRef<HTMLDivElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
+  const expectedScrollRef = useRef(0);
+  const centeringUntilRef = useRef(0);
+  const alignmentTimerRef = useRef<number | null>(null);
 
   const tokens = d.tokens;
   const baseLemma = lemma.split("_")[0];
@@ -114,24 +121,64 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
   const target = tokens[targetIdx];
   const right = tokens.slice(targetIdx + 1);
 
-  const setCenter = () => {
+  const [gutterWidth, setGutterWidth] = useState(0);
+
+  const setCenter = (behavior: ScrollBehavior = "smooth") => {
     const container = scrollRef.current;
+    const leadingGutter = leadingGutterRef.current;
     const leftEl = leftRef.current;
-    if (!container || !leftEl) return;
+    const targetEl = targetRef.current;
+    if (!container || !leadingGutter || !leftEl || !targetEl) return;
+    const desired = leadingGutter.offsetWidth
+      + leftEl.scrollWidth
+      + targetEl.offsetWidth / 2
+      - container.clientWidth / 2;
+    const target = Math.max(0, Math.min(desired, container.scrollWidth - container.clientWidth));
+    expectedScrollRef.current = target;
+    centeringUntilRef.current = performance.now() + 450;
+    onMisalignedChange(false);
     container.scrollTo({
-      left: leftEl.scrollWidth - container.clientWidth / 2.5,
-      behavior: "smooth",
+      left: target,
+      behavior,
     });
   };
 
-  useImperativeHandle(ref, () => ({ setCenter }));
+  const handleScroll = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const reportAlignment = () => {
+      onMisalignedChange(Math.abs(container.scrollLeft - expectedScrollRef.current) > 3);
+    };
+    const remaining = centeringUntilRef.current - performance.now();
+    if (remaining > 0) {
+      if (alignmentTimerRef.current !== null) window.clearTimeout(alignmentTimerRef.current);
+      alignmentTimerRef.current = window.setTimeout(reportAlignment, remaining + 20);
+      return;
+    }
+    reportAlignment();
+  };
+
+  useImperativeHandle(ref, () => ({ setCenter: () => setCenter("smooth") }));
 
   useEffect(() => {
-    // rAF으로 레이아웃 확정 후 실행 — 마운트 직후 scrollTo race condition 방지
-    const id = requestAnimationFrame(() => {
-      setCenter();
+    const container = scrollRef.current;
+    if (!container) return;
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      setGutterWidth(entry.contentRect.width / 2);
     });
-    return () => cancelAnimationFrame(id);
+    resizeObserver.observe(container);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (gutterWidth > 0) setCenter("auto");
+  }, [d.line_id, gutterWidth, lemma]);
+
+  useEffect(() => () => {
+    if (alignmentTimerRef.current !== null) window.clearTimeout(alignmentTimerRef.current);
+    onMisalignedChange(false);
   }, []);
 
   const renderToken = (t: Token, j: number) => (
@@ -181,28 +228,34 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
   return (
     <div
       ref={scrollRef}
+      onScroll={handleScroll}
       className="relative w-full shrink-0 overflow-x-auto overflow-y-visible no-scrollbar h-auto"
       style={{ overscrollBehaviorX: 'contain' }}
     >
-      {SHOW_KWIC_DEBUG && d.selection_debug && (
+      {SHOW_KWIC_DEBUG && (
         <div
           className="pointer-events-none sticky left-1 top-0 z-30 w-max rounded-sm bg-neutral-50/85 px-1 font-mono text-[8px] leading-3 text-neutral-400"
           title="line · length · score · coverage · known · exposed · interested · frequency prior"
         >
-          #{d.line_id} · l{d.selection_debug.length} · s{d.selection_debug.score.toFixed(3)} · c{d.selection_debug.coverage.toFixed(3)} · k{d.selection_debug.known} · e{d.selection_debug.exposed} · i{d.selection_debug.interested} · f{d.selection_debug.frequency_prior.toFixed(3)}
+          #{d.line_id}{d.selection_debug
+            ? ` · l${d.selection_debug.length} · s${d.selection_debug.score.toFixed(3)} · c${d.selection_debug.coverage.toFixed(3)} · k${d.selection_debug.known} · e${d.selection_debug.exposed} · i${d.selection_debug.interested} · f${d.selection_debug.frequency_prior.toFixed(3)}`
+            : " · debug unavailable"}
         </div>
       )}
-      <div className="flex items-center whitespace-nowrap">
-        {/* 왼쪽: width 고정 + overflow hidden으로 레이아웃 안정화 */}
+      <div className="flex min-w-full w-max items-center whitespace-nowrap">
+        <div
+          ref={leadingGutterRef}
+          className="shrink-0"
+          style={{ width: gutterWidth }}
+        />
         <div
           ref={leftRef}
-          className="flex justify-end shrink-0 "
-          style={{ width: "50vw" }}
+          className="flex h-10 shrink-0 justify-end"
         >
-          <div className="flex h-10">{left.map((t, j) => renderToken(t, j))}</div>
+          {left.map((t, j) => renderToken(t, j))}
         </div>
 
-        <div className="relative px-2 flex shrink-0 items-center h-10 cursor-default">
+        <div ref={targetRef} className="relative px-2 flex shrink-0 items-center h-10 cursor-default">
           <div className="absolute inset-0 opacity-50 pointer-events-none" />
           <span className="inline-flex h-full items-center">
             {highlightIntersect(target.surface, baseLemma)}
@@ -210,11 +263,11 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
         </div>
 
         <div
-          className="flex justify-start shrink-0 "
-          style={{ width: "50vw" }}
+          className="flex h-10 shrink-0 justify-start"
         >
-          <div className="flex h-10">{right.map((t, j) => renderToken(t, j))}</div>
+          {right.map((t, j) => renderToken(t, j))}
         </div>
+        <div className="shrink-0" style={{ width: gutterWidth }} />
       </div>
     </div>
   );
@@ -254,6 +307,7 @@ export default function LemmaKwic({
     () => lemmaInfo ?? {},
   );
   const [loadingLemma, setLoadingLemma] = useState(false);
+  const [misalignedRows, setMisalignedRows] = useState<Set<number>>(new Set());
 
   const canSelectKey = (tokenKey: string) => {
     if (availableKeys[tokenKey] != null) {
@@ -272,6 +326,10 @@ export default function LemmaKwic({
     inflightKeysRef.current.clear();
     setLoadingLemma(false);
   }, [data, language, lemma]);
+
+  useEffect(() => {
+    setMisalignedRows(new Set());
+  }, [data, lemma]);
 
   const lookupItems = useMemo(() => {
     const seen = new Set<string>();
@@ -368,9 +426,14 @@ export default function LemmaKwic({
   return (
     <div
       ref={containerRef}
+      data-side-layout-no-swipe="true"
       className="relative flex h-full min-h-0 w-full overflow-hidden"
     >
-      <div className="absolute top-2 right-3 z-30 ml-auto bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
+      <div className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 bg-neutral-100/70 backdrop-blur-2xl transition-[opacity,transform] duration-200 ${
+        misalignedRows.size > 0
+          ? "pointer-events-auto translate-y-0 opacity-100"
+          : "pointer-events-none -translate-y-2 opacity-0"
+      }`}>
         <IconButton
           icon={<AlignCenterVertical className="w-4 h-4 md:w-3.5 md:h-3.5" />}
           onClick={() => rowRefs.current.forEach((r) => r?.setCenter())}
@@ -378,10 +441,13 @@ export default function LemmaKwic({
         />
       </div>
 
-      <div className="w-full h-full flex-col overflow-y-auto no-scrollbar pt-14 pb-22 shrink-0">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-neutral-50 via-neutral-50/80 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-12 bg-gradient-to-t from-neutral-50 via-neutral-50/80 to-transparent" />
+
+      <div className="h-full w-full shrink-0 flex-col overflow-y-auto py-12 no-scrollbar">
         {data.map((d, i) => (
           <KwicRow
-            key={i}
+            key={`${lemma}:${d.line_id}:${i}`}
             ref={(el) => {
               rowRefs.current[i] = el;
             }}
@@ -394,6 +460,14 @@ export default function LemmaKwic({
             setHovered={setHovered}
             lemmaInfo={availableKeys}
             interestKeys={interestKeys}
+            onMisalignedChange={(misaligned) => {
+              setMisalignedRows((prev) => {
+                const next = new Set(prev);
+                if (misaligned) next.add(i);
+                else next.delete(i);
+                return next;
+              });
+            }}
           />
         ))}
       </div>

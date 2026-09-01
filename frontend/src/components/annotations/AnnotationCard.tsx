@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -11,6 +11,7 @@ import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
 import { ResponsiveModal } from "../util/ResponsiveModal";
 import { formatRelative } from "../util/time";
+import EmojiPickerPopover from "../pageview/EmojiPickerPopover";
 
 export default function AnnotationCard({ item, onUpdate, onDelete, readonlySnapshotActions = false }: {
   item: TimelineItem;
@@ -25,14 +26,32 @@ export default function AnnotationCard({ item, onUpdate, onDelete, readonlySnaps
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emojiPicker, setEmojiPicker] = useState<{ x: number; y: number } | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const savingRef = useRef(false);
+
+  const openEmojiPicker = (event: React.MouseEvent<HTMLElement>) => {
+    if (readonlySnapshotActions) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuOpen(false);
+    setEmojiPicker({ x: rect.right + 8, y: rect.top });
+  };
 
   const save = async () => {
+    if (savingRef.current) return;
     const nextValue = value.trim();
     if (!nextValue || !item.type || item.type === "emoji") return;
     if (item.type === "link" && !isValidUrl(nextValue)) {
       setError(t("Invalid URL"));
       return;
     }
+    if (nextValue === item.content) {
+      setValue(nextValue);
+      setEditing(false);
+      setError(null);
+      return;
+    }
+    savingRef.current = true;
     setSaving(true);
     try {
       const updated = await updateAnnotation(item.id, nextValue);
@@ -43,9 +62,22 @@ export default function AnnotationCard({ item, onUpdate, onDelete, readonlySnaps
     } catch {
       setError(t("Save failed"));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!editing) return;
+
+    const saveWhenClickingOutside = (event: PointerEvent) => {
+      if (editorRef.current?.contains(event.target as Node)) return;
+      void save();
+    };
+
+    document.addEventListener("pointerdown", saveWhenClickingOutside, true);
+    return () => document.removeEventListener("pointerdown", saveWhenClickingOutside, true);
+  }, [editing, item.content, item.type, value]);
 
   const remove = async () => {
     await deleteAnnotation(item.id);
@@ -59,18 +91,24 @@ export default function AnnotationCard({ item, onUpdate, onDelete, readonlySnaps
         <time className="text-[10px] text-neutral-400">{formatRelative(item.created_at, locale)}</time>
         <div className="flex min-h-10 flex-col gap-4">
           {editing && item.type && item.type !== "emoji" ? (
-            <AnnotationInput
-              type={item.type}
-              value={value}
-              onChange={(next) => { setValue(next); setError(null); }}
-              onSubmit={() => void save()}
-              disabled={saving || !value.trim()}
-              error={error}
-            />
+            <div ref={editorRef}>
+              <AnnotationInput
+                type={item.type}
+                value={value}
+                onChange={(next) => { setValue(next); setError(null); }}
+                onSubmit={() => void save()}
+                disabled={saving || !value.trim()}
+                error={error}
+              />
+            </div>
           ) : item.type === "link" ? (
             <a href={value} target="_blank" rel="noreferrer" className="truncate text-sm underline underline-offset-3 hover:text-neutral-400">{value}</a>
+          ) : item.type === "emoji" ? (
+            <button type="button" onClick={openEmojiPicker} className="w-fit text-left text-4xl leading-none">
+              {value}
+            </button>
           ) : (
-            <p className={`whitespace-pre-wrap break-words ${item.type === "emoji" ? "text-4xl leading-none" : "text-sm leading-6"}`}>{value}</p>
+            <p className="whitespace-pre-wrap break-words text-sm leading-6">{value}</p>
           )}
 
         </div>
@@ -116,6 +154,19 @@ export default function AnnotationCard({ item, onUpdate, onDelete, readonlySnaps
           <Button text={t("Delete")} onClick={() => void remove()} fit red />
         </div>
       </ResponsiveModal>
+
+      {emojiPicker && (
+        <EmojiPickerPopover
+          x={emojiPicker.x}
+          y={emojiPicker.y}
+          annotation={{ id: item.id, content: value }}
+          onUpdated={(updated) => {
+            setValue(updated.content);
+            onUpdate?.({ ...item, content: updated.content });
+          }}
+          close={() => setEmojiPicker(null)}
+        />
+      )}
     </article>
   );
 }

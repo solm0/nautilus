@@ -10,6 +10,7 @@ export default function EmojiPickerPopover({
   selection,
   annotation,
   setAnnotations,
+  onUpdated,
   close,
 }: {
   x: number;
@@ -22,9 +23,10 @@ export default function EmojiPickerPopover({
     end: number;
   };
 
-  annotation?: Annotation;
+  annotation?: Pick<Annotation, "id" | "content">;
 
-  setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>;
+  setAnnotations?: React.Dispatch<React.SetStateAction<Annotation[]>>;
+  onUpdated?: (annotation: { id: string; content: string }) => void;
 
   close: () => void;
 }) {
@@ -52,31 +54,24 @@ export default function EmojiPickerPopover({
       end_index: selection.end,
     });
 
-    setAnnotations(prev => [...prev, created]);
+    setAnnotations?.((prev) => [...prev, created]);
   }
 
   async function updateEmoji(emoji: string) {
     if (!annotation?.id) return;
     const prevEmoji = annotation.content;
 
-    setAnnotations(prev =>
-      prev.map(a =>
-        a.id === annotation.id
-          ? { ...a, content: emoji }
-          : a
-      )
-    );
+    setAnnotations?.((prev) => prev.map((a) =>
+      a.id === annotation.id ? { ...a, content: emoji } : a
+    ));
 
     try {
       await updateAnnotation(annotation.id, emoji);
+      onUpdated?.({ id: annotation.id, content: emoji });
     } catch {
-      setAnnotations(prev =>
-        prev.map(a =>
-          a.id === annotation.id
-            ? { ...a, content: prevEmoji }
-            : a
-        )
-      );
+      setAnnotations?.((prev) => prev.map((a) =>
+        a.id === annotation.id ? { ...a, content: prevEmoji } : a
+      ));
     }
   }
 

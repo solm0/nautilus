@@ -60,7 +60,7 @@ def update_lemma_state(
 ):
     state = _get_or_create_state(db, current_user.id, req.key)
     if req.exposure_count is not None:
-        state.exposure_count = req.exposure_count
+        state.exposure_count = max(state.exposure_count or 0, req.exposure_count)
     if req.is_known is not None:
         state.is_known = req.is_known
     if req.is_interested is not None:

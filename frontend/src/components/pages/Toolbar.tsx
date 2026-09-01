@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Button, { IconButtonEvent } from "../util/Button";
 import { MiniPopup } from "../util/MiniPopup";
 import { ResponsiveModal } from "../util/ResponsiveModal";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createLocalNotebook } from "../../localLibrary";
 import { isCapacitorApp } from "../../platform";
 import { useI18n } from "../../i18n";
@@ -16,11 +16,22 @@ function CreateNotebookContent({
   onClose: () => void;
 }) {
   const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
   const { t } = useI18n();
   async function handleCreate() {
-    if (!name.trim()) return;
-    await onCreate(name);
-    onClose(); // 생성 후 닫기
+    const trimmedName = name.trim();
+    if (!trimmedName || creatingRef.current) return;
+
+    creatingRef.current = true;
+    setCreating(true);
+    try {
+      await onCreate(trimmedName);
+      onClose(); // 생성 후 닫기
+    } finally {
+      creatingRef.current = false;
+      setCreating(false);
+    }
   }
 
   return (
@@ -29,13 +40,14 @@ function CreateNotebookContent({
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
+        disabled={creating}
         placeholder={t("Notebook name")}
         className="border-2 border-neutral-300 rounded-sm px-3 py-2 focus:outline-none opacity-50 focus:opacity-100"
         autoFocus
       />
       <Button
-        disabled={!name.trim()}
-        onClick={handleCreate}
+        disabled={!name.trim() || creating}
+        onClick={() => void handleCreate()}
         text={t("Create")}
         fit
         black

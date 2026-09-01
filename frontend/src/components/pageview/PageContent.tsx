@@ -117,7 +117,12 @@ export default function PageContent({
     annotation?: EmojiAnnotation;
   } | null>(null);
   const [annotationAnchor, setAnnotationAnchor] = useState<AnnotationAnchor | null>(null);
+  const [gutterAnnotation, setGutterAnnotation] = useState<Annotation | null>(null);
   const [emojiDeleteTarget, setEmojiDeleteTarget] = useState<Annotation | null>(null);
+
+  useEffect(() => {
+    if (panelData?.type !== "lemma") setGutterAnnotation(null);
+  }, [panelData?.type]);
 
   useLayoutEffect(() => {
     if (panelData?.type !== "annotation:view" || annotationAnchor || !panelData.data.id) return;
@@ -584,12 +589,11 @@ export default function PageContent({
       rightAside={
         <Gutter
           annotations={annotations}
-          setPanelData={setPanelData}
           containerRef={containerRef}
           setHoverRange={setHoverRange}
-          annotationId={(panelData?.data as Annotation)?.id}
+          annotationId={gutterAnnotation?.id ?? (panelData?.data as Annotation)?.id}
           setEmojiPicker={setEmojiPicker}
-          onOpenAnnotation={(_annotation, rect) => {
+          onOpenAnnotation={(annotation, rect) => {
             setAnnotationAnchor({
               kind: "gutter",
               x: rect.left,
@@ -597,6 +601,11 @@ export default function PageContent({
               right: rect.right,
               bottom: rect.bottom,
             });
+            if (panelData?.type === "lemma") {
+              setGutterAnnotation(annotation);
+            } else {
+              setPanelData?.({ type: "annotation:view", data: annotation });
+            }
           }}
           onRequestEmojiDelete={setEmojiDeleteTarget}
         />
@@ -685,6 +694,32 @@ export default function PageContent({
               }}
             />
           )}
+
+          {gutterAnnotation && panelData?.type === "lemma" ? (
+            <AnnotationOverlay
+              key={`gutter:${gutterAnnotation.id ?? gutterAnnotation.start_index}`}
+              annotation={gutterAnnotation}
+              mode="view"
+              anchor={annotationAnchor}
+              onClose={() => {
+                setGutterAnnotation(null);
+                setAnnotationAnchor(null);
+              }}
+              onCreated={(created) => {
+                setAnnotations((prev) => [...prev, created]);
+                setGutterAnnotation(created);
+              }}
+              onUpdated={(updated) => {
+                setAnnotations((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+                setGutterAnnotation(updated);
+              }}
+              onDeleted={(annotationId) => {
+                setAnnotations((prev) => prev.filter((item) => item.id !== annotationId));
+                setGutterAnnotation(null);
+                setAnnotationAnchor(null);
+              }}
+            />
+          ) : null}
 
           {(panelData?.type === "annotation:new" || panelData?.type === "annotation:view") && panelData.data.type !== "emoji" ? (
             <AnnotationOverlay

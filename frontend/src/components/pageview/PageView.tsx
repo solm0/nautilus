@@ -13,7 +13,7 @@ import {
 } from "../../api";
 import type { Annotation, LemmaData, TextAnalysisResult } from "../pageTypes";
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
-import Desk from "../lemma_expansions/Desk";
+import Desk, { type DeskHandle } from "../lemma_expansions/Desk";
 import { useLayout } from "../RootLayout";
 import { type Pack } from "../setting/PackTable";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
@@ -58,12 +58,10 @@ export default function PageView() {
   const [interestKeys, setInterestKeys] = useState<Set<string>>(new Set());
 
   const [panel, setPanel] = useState<SidePanelState>(null);
-  const [panelPlacement, setPanelPlacement] = useState<
-    "left" | "right" | null
-  >(null);
   const [language, setLanguage] = useState<string | null>(null);
 
   const scrollRef = useRef<null | ((startIndex: number) => void)>(null);
+  const deskRef = useRef<DeskHandle>(null);
   const location = useLocation();
   const annotationId = location.state?.annotationId;
 
@@ -327,15 +325,6 @@ export default function PageView() {
     setPageMetadata(data.metadata);
   };
 
-  const panelRestoreKey =
-    panel?.type === "lemma"
-      ? `lemma:${panel.data.key}`
-      : panel?.type === "annotation:view"
-        ? `annotation:view:${panel.data.id ?? "unknown"}`
-      : panel?.type === "annotation:new"
-        ? `annotation:new:${panel.data.type}:${panel.data.start_index}:${panel.data.end_index}`
-        : null;
-
   return (
     <div className="relative w-full h-full flex justify-center bg-neutral-50">
       <BlockingLoadingModal
@@ -378,14 +367,7 @@ export default function PageView() {
           />
 
           <div
-            className="relative flex h-full w-full min-h-0 overflow-hidden transition-[padding] duration-300 ease-out"
-            // style={{
-            //   paddingLeft:
-            //     panelPlacement === "left" ? PAGE_VIEW_PANEL_EDGE_PADDING : 0,
-            //   paddingRight:
-            //     panelPlacement === "right" ? PAGE_VIEW_PANEL_EDGE_PADDING : 0,
-            //   boxSizing: "border-box",
-            // }}
+            className="relative flex h-full min-w-0 flex-1 overflow-hidden"
           >
             <PageContent
               key={id}
@@ -408,24 +390,18 @@ export default function PageView() {
               setPanelData={setPanel}
               scrollRef={(fn) => (scrollRef.current = fn)}
               setAnnotations={setAnnotations}
-              horizontalAlign={
-                panelPlacement === "left"
-                  ? "right"
-                  : panelPlacement === "right"
-                    ? "left"
-                    : "center"
-              }
+              horizontalAlign="center"
             />
           </div>
 
           <ResponsiveSideLayout
             open={panel?.type === "lemma"}
             onClose={() => setPanel(null)}
-            restoreKey={panelRestoreKey}
-            onDesktopPlacementChange={setPanelPlacement}
+            onSwipeRight={() => deskRef.current?.markActiveKnown()}
           >
             {panel?.type === "lemma" && language && (
               <Desk
+                ref={deskRef}
                 key={panel.data.key}
                 initialLemma={panel.data}
                 onToggleInterest={onInterestClick}

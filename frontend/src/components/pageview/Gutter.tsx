@@ -2,13 +2,11 @@ import { useEffect, useRef, type RefObject } from "react";
 import type { Annotation, EmojiAnnotation } from "../pageTypes";
 import { getTokenRect } from "../pageUtils";
 import { Link, MessageSquareMore } from "lucide-react";
-import type { SidePanelState } from "./PageView";
 
 export function Gutter({
   annotations,
   containerRef,
   setHoverRange,
-  setPanelData,
   annotationId,
   setEmojiPicker,
   onOpenAnnotation,
@@ -17,7 +15,6 @@ export function Gutter({
   annotations?: Annotation[];
   containerRef: RefObject<HTMLDivElement | null>;
   setHoverRange: (r: { start: number; end: number } | null) => void;
-  setPanelData?: (p: SidePanelState | null) => void;
   annotationId?: string;
   setEmojiPicker?: React.Dispatch<React.SetStateAction<{
     x: number;
@@ -153,17 +150,18 @@ export function Gutter({
                 if (annotation.type === "emoji") {
                   if (suppressClickRef.current) {
                     suppressClickRef.current = false;
+                    return;
                   }
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setEmojiPicker?.({
+                    x: rect.left,
+                    y: rect.bottom + 8,
+                    annotation,
+                  });
                   return;
                 }
 
-                if (!setPanelData || !onOpenAnnotation) return;
-
-                setPanelData({
-                  type: "annotation:view",
-                  data: annotation
-                });
-                onOpenAnnotation(annotation, e.currentTarget.getBoundingClientRect());
+                onOpenAnnotation?.(annotation, e.currentTarget.getBoundingClientRect());
               }}
             >
               {annotation.type === "emoji" ? (

@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Star } from "lucide-react";
 import LemmaKwic from "./LemmaKwic";
 import type { LemmaData } from "../pageTypes";
-import { Star } from "lucide-react";
 
 export default function LemmaExpansion({
-  data, onSelect, onToggleInterest, language, lemmaInfo, interestKeys
+  data,
+  onSelect,
+  onToggleInterest,
+  language,
+  lemmaInfo,
+  interestKeys,
+  isKnown,
+  onMarkKnown,
 }: {
   data: LemmaData;
   onSelect: (tokenKey: string) => void;
@@ -12,69 +19,90 @@ export default function LemmaExpansion({
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
   interestKeys?: Set<string>;
+  isKnown: boolean;
+  onMarkKnown: () => Promise<void>;
 }) {
   const [visible, setVisible] = useState(false);
+  const [showKnownConfirmation, setShowKnownConfirmation] = useState(false);
+  const confirmationTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const globalKey = data.global_key ?? `${data.key.split("_").slice(0, -1).join("_")}/${data.key.split("_").slice(-1)[0]}/${language}`;
-  const isInterested = interestKeys?.has(globalKey) ?? data.is_interested;
-  const lemma = data.key.split("_").slice(0, -1).join("_");
-  const pos = data.key.split("_").slice(1,2).join("_");
+  useEffect(() => () => {
+    if (confirmationTimerRef.current !== null) {
+      window.clearTimeout(confirmationTimerRef.current);
+    }
+  }, []);
 
-  const onInterestClick = async () => {
-    await onToggleInterest(globalKey, !isInterested);
+  const parts = data.key.split("_");
+  const pos = parts.pop() ?? "";
+  const lemma = parts.join("_");
+  const globalKey = data.global_key ?? `${lemma}/${pos}/${language}`;
+  const isInterested = interestKeys?.has(globalKey) ?? data.is_interested;
+
+  const handleKnownClick = () => {
+    setShowKnownConfirmation(true);
+    void onMarkKnown();
+    confirmationTimerRef.current = window.setTimeout(() => {
+      setShowKnownConfirmation(false);
+    }, 650);
   };
 
   return (
-    <div
-      className={`w-full h-full flex flex-col relative overflow-hidden transition-opacity duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
-    >
-      <div className="absolute top-1 left-1 z-80 px-2 py-0.5 bg-neutral-100/50 backdrop-blur-2xl rounded-sm">
-        {language === "ja" && data.furigana && (
-          <div className="text-[10px] leading-tight text-neutral-500">
-            {data.furigana}
-          </div>
-        )}
-        <div className="flex gap-1.5 items-start">
-          <div className="flex flex-col">
-            <span className="text-sm">{lemma}</span>
-            <span className="text-[10px] opacity-50 leading-[1.4em]">{pos}</span>
-          </div>
+    <div className={`flex h-full w-full flex-col overflow-hidden transition-opacity duration-300 ${
+      visible ? "opacity-100" : "opacity-0"
+    }`}>
+      <section className="min-h-0 w-full flex-1">
+        <LemmaKwic
+          data={data.kwic}
+          onSelect={onSelect}
+          lemma={data.key}
+          language={language}
+          lemmaInfo={lemmaInfo}
+          interestKeys={interestKeys}
+        />
+      </section>
+
+      <footer className="relative flex h-18 shrink-0 items-center justify-center px-4 pb-2 pt-1">
+        <button
+          type="button"
+          aria-label={isInterested ? "관심 단어에서 제거" : "관심 단어로 추가"}
+          className={`absolute bottom-5 left-5 rounded-full p-1 transition-colors ${
+            isInterested ? "text-yellow-400" : "text-neutral-400 hover:text-neutral-500"
+          }`}
+          onClick={() => void onToggleInterest(globalKey, !isInterested)}
+        >
           <Star
-            key={data.key}
-            size={14}
-            className={`mt-[0.2em] cursor-pointer ${
-              isInterested
-                ? "text-yellow-400 hover:text-yellow-500"
-                : "text-neutral-400 hover:text-neutral-500"
-            }`}
+            size={19}
             fill={isInterested ? "currentColor" : "transparent"}
             stroke="currentColor"
-            onClick={() => {
-              void onInterestClick();
-            }}
           />
-        </div>
-      </div>
+        </button>
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <section className="min-h-0 h-full w-full flex items-start">
-          <LemmaKwic
-            data={data.kwic}
-            onSelect={onSelect}
-            lemma={data.key}
-            language={language}
-            lemmaInfo={lemmaInfo}
-            interestKeys={interestKeys}
-          />
-        </section>
-      </div>
+        <div className="flex min-w-0 flex-col items-center text-center">
+          {language === "ja" && data.furigana && (
+            <span className="max-w-32 truncate text-[9px] leading-tight text-neutral-400">
+              {data.furigana}
+            </span>
+          )}
+          <span className="max-w-36 truncate text-sm leading-tight text-neutral-700">{lemma}</span>
+          <span className="text-[9px] leading-4 text-neutral-400">{pos}</span>
+        </div>
+
+        {(!isKnown || showKnownConfirmation) && (
+          <button
+            type="button"
+            className="absolute bottom-5 right-3 hidden min-w-16 items-center justify-center text-[9px] text-neutral-400 transition-opacity hover:text-neutral-600 md:flex"
+            onClick={handleKnownClick}
+            disabled={showKnownConfirmation}
+          >
+            {showKnownConfirmation ? <Check className="h-4 w-4 text-green-500" /> : "아는 단어예요"}
+          </button>
+        )}
+      </footer>
     </div>
   );
 }
