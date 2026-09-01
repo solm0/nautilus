@@ -16,7 +16,6 @@ import {
 } from "../../nowPlaying";
 import { useNowPlaying } from "./useNowPlaying";
 import { useAutoCenterActiveItem } from "./useAutoCenterActiveItem";
-import { Speaker } from "lucide-react";
 import { isCapacitorApp } from "../../platform";
 import { getLookupMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
@@ -399,12 +398,6 @@ export default function LyricPage() {
                   <span>{track.track.artists.join(", ")}</span>
                   <span className="text-neutral-400"> | {track.track.album}</span>
                 </p>
-                {track.device?.name &&
-                  <div className="flex gap-1 text-xs text-neutral-500 items-center mt-1">
-                    <Speaker size={15} />
-                    <span>{track.device.name}</span>
-                  </div>
-                }
               </div>
               <PlayingWaveform playing={track.is_playing} />
             </div>

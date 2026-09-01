@@ -91,7 +91,7 @@ export function LanguageFilter({
   const { t } = useI18n();
 
   return (
-    <div className="flex min-w-0 items-center gap-0.5 overflow-hidden pl-0.5 text-xs">
+    <div className="flex min-w-0 items-center gap-0.5 overflow-hidden text-xs">
       <ListFilter size={12} className="mx-1 text-neutral-500 opacity-65" />
       <FilterSelect
         icon={<Languages size={14} />}

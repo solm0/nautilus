@@ -985,7 +985,7 @@ export default function PageLayout() {
   ) : offline && !hasLoadedOnceRef.current ? (
     <OfflineState onRetry={() => void reload()} />
   ) : (
-    <div className="flex flex-col px-2 pb-14 pt-0">
+    <div className="flex flex-col px-2 md:px-1 pb-14 pt-0">
       {showFilteredResults ? (
         filteredItems.length > 0 ? (
           filteredItems.map(({ key, item }) => (
@@ -1109,7 +1109,7 @@ export default function PageLayout() {
       ) : null}
 
       {!showFilteredResults && pinnedPages.length > 0 ? (
-        <div className="pl-2 pt-2 mr-2 mb-1 pb-1 border-b border-neutral-400/70">
+        <div className="px-2 md:px-1 pt-2 pb-1 border-b border-neutral-400/70">
           <div className="flex flex-col">
             {pinnedPages.map((page) => (
               <PageCard

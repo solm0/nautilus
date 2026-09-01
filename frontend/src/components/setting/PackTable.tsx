@@ -360,7 +360,7 @@ export default function PackTable() {
                     return (
                       <div
                         key={key}
-                        className={`flex flex-col px-4 py-3 border-b border-neutral-200 last:border-b-0 transition-opacity ${
+                        className={`flex flex-col px-4 py-3 transition-opacity ${
                           isHiddenVersion ? "opacity-30" : ""
                         }`}
                       >
