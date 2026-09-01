@@ -335,7 +335,7 @@ export function UserProfile() {
             ) : (
                 <>
                   <p className="pr-8 text-sm text-neutral-500">
-                    {t("Your account and cloud favorites will be deleted. The local library on this device will remain.")}
+                    {t("Your account and cloud interests will be deleted. The local library on this device will remain.")}
                   </p>
                   {deleteError && (
                     <p className="text-sm text-red-600">{deleteError}</p>

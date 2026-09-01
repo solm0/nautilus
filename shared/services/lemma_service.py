@@ -1,5 +1,8 @@
+import hashlib
+import math
 import random
 import os
+from datetime import date
 from pathlib import Path
 from typing import Dict
 
@@ -117,7 +120,106 @@ def find_match_indices(tokens, lemma, pos):
 KWIC_EXAMPLE_LIMIT = 12
 
 
-def sample_kwic(line_ids, lemma, pos, lang: str, max_k=KWIC_EXAMPLE_LIMIT):
+def _scorable_units(token):
+    morphs = [
+        morph
+        for morph in token.get("morphs") or []
+        if morph.get("lemma") and morph.get("pos")
+    ]
+    if morphs:
+        return morphs
+    if token.get("lemma") and token.get("pos"):
+        return [token]
+    return []
+
+
+def _line_metrics(line, target_key, lang, user_lemma_states, frequency_ranks):
+    familiarity = []
+    frequency_priors = []
+    interested_keys = set()
+    known_count = 0
+    exposed_count = 0
+
+    for token in line["tokens"]:
+        for unit in _scorable_units(token):
+            local_key = f'{unit["lemma"]}_{unit["pos"]}'
+            if local_key == target_key:
+                continue
+
+            global_key = f'{unit["lemma"]}/{unit["pos"]}/{lang}'
+            state = user_lemma_states.get(global_key, {})
+            frequency_prior = 0.20 + 0.70 * frequency_ranks.get(local_key, 0.0)
+
+            if state.get("is_known") is True:
+                probability = 1.0
+                known_count += 1
+            else:
+                exposure_count = min(max(int(state.get("exposure_count") or 0), 0), 10)
+                exposure_floor = 0.35 + 0.025 * exposure_count
+                probability = max(frequency_prior, exposure_floor)
+                exposed_count += exposure_count > 0
+
+            familiarity.append(probability)
+            frequency_priors.append(frequency_prior)
+            if state.get("is_interested") is True:
+                interested_keys.add(global_key)
+
+    coverage = sum(familiarity) / len(familiarity) if familiarity else 1.0
+    interest_bonus = 0.07 * min(len(interested_keys), 2)
+    threshold_bonus = 0.03 if coverage >= 0.95 else 0.0
+
+    # Stable tie-breaking keeps results from flickering within the daily pool.
+    tie_hash = hashlib.blake2b(str(line["line_id"]).encode(), digest_size=4).digest()
+    tie_breaker = int.from_bytes(tie_hash, "big") / (2**32) * 1e-6
+    score = coverage + interest_bonus + threshold_bonus + tie_breaker
+    return {
+        "score": round(score, 4),
+        "coverage": round(coverage, 4),
+        "frequency_prior": round(
+            sum(frequency_priors) / len(frequency_priors),
+            4,
+        ) if frequency_priors else 1.0,
+        "known": known_count,
+        "exposed": exposed_count,
+        "interested": len(interested_keys),
+        "scored_tokens": len(familiarity),
+        "length": len(line["tokens"]),
+    }
+
+
+def _frequency_ranks(pack_db, lines):
+    keys = {
+        f'{unit["lemma"]}_{unit["pos"]}'
+        for line in lines
+        for token in line["tokens"]
+        for unit in _scorable_units(token)
+    }
+    frequencies = pack_db.get_lemma_frequencies(list(keys))
+    if not frequencies:
+        return {}
+
+    ordered = sorted(set(math.log1p(value) for value in frequencies.values()))
+    if len(ordered) == 1:
+        return {key: 0.5 for key in frequencies}
+
+    rank_by_frequency = {
+        value: index / (len(ordered) - 1)
+        for index, value in enumerate(ordered)
+    }
+    return {
+        key: rank_by_frequency[math.log1p(value)]
+        for key, value in frequencies.items()
+    }
+
+
+def sample_kwic(
+    line_ids,
+    lemma,
+    pos,
+    lang: str,
+    max_k=KWIC_EXAMPLE_LIMIT,
+    user_lemma_states=None,
+):
     data = _load_language(lang)
     pack_db = data["pack_db"]
 
@@ -130,13 +232,20 @@ def sample_kwic(line_ids, lemma, pos, lang: str, max_k=KWIC_EXAMPLE_LIMIT):
     candidate_ids = line_ids
 
     if len(line_ids) > candidate_limit:
-        candidate_ids = random.sample(line_ids, candidate_limit)
+        daily_seed = f"{lang}/{lemma}/{pos}/{date.today().isoformat()}"
+        candidate_ids = random.Random(daily_seed).sample(line_ids, candidate_limit)
 
     short, mid, long = [], [], []
+    target_key = f"{lemma}_{pos}"
 
     for line in pack_db.get_lines(candidate_ids):
         tokens = line["tokens"]
         length = len(tokens)
+
+        indices = find_match_indices(tokens, lemma, pos)
+        if not indices:
+            continue
+        line["match_indices"] = indices
 
         if length <= 8:
             short.append(line)
@@ -145,38 +254,44 @@ def sample_kwic(line_ids, lemma, pos, lang: str, max_k=KWIC_EXAMPLE_LIMIT):
         else:
             long.append(line)
 
-    def pick(bucket, k):
-        if len(bucket) <= k:
-            return bucket
-        return random.sample(bucket, k)
+    states = user_lemma_states or {}
+    frequency_ranks = _frequency_ranks(pack_db, short + mid + long)
+    for line in short + mid + long:
+        line["selection_debug"] = _line_metrics(
+            line,
+            target_key,
+            lang,
+            states,
+            frequency_ranks,
+        )
+
+    def ranked(bucket):
+        return sorted(
+            bucket,
+            key=lambda line: line["selection_debug"]["score"],
+            reverse=True,
+        )
 
     result = []
     per_bucket = max_k // 3
 
-    result.extend(pick(short, per_bucket))
-    result.extend(pick(mid, per_bucket))
-    result.extend(pick(long, per_bucket))
+    result.extend(ranked(short)[:per_bucket])
+    result.extend(ranked(mid)[:per_bucket])
+    result.extend(ranked(long)[:per_bucket])
 
     if len(result) < max_k:
-        remaining = [l for l in (short + mid + long) if l not in result]
-        if remaining:
-            result.extend(
-                random.sample(remaining, min(len(remaining), max_k - len(result)))
-            )
+        remaining = ranked([l for l in (short + mid + long) if l not in result])
+        result.extend(remaining[:max_k - len(result)])
 
     kwic = []
 
     for line in result[:max_k]:
         tokens = line["tokens"]
-        indices = find_match_indices(tokens, lemma, pos)
-
-        if not indices:
-            continue
-
         kwic.append({
             "line_id": line["line_id"],
             "tokens": tokens,
-            "match_indices": indices
+            "match_indices": line["match_indices"],
+            "selection_debug": line["selection_debug"],
         })
 
     return kwic

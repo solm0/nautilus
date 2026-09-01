@@ -48,7 +48,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Could not export library.": "라이브러리를 내보내지 못했습니다.",
     "Could not import library.": "라이브러리를 가져오지 못했습니다.",
     "Import complete: {pages} pages, {notebooks} notebooks, {annotations} annotations, {conflicts} conflicts.": "병합 완료: 페이지 {pages}개, 노트북 {notebooks}개, 주석 {annotations}개, 충돌 복사본 {conflicts}개.",
-    "Your account and cloud favorites will be deleted. The local library on this device will remain.": "계정과 클라우드 즐겨찾기가 삭제됩니다. 이 기기의 로컬 라이브러리는 유지됩니다.",
+    "Your account and cloud interests will be deleted. The local library on this device will remain.": "계정과 클라우드 관심 단어가 삭제됩니다. 이 기기의 로컬 라이브러리는 유지됩니다.",
     "To show now playing alerts on this device, allow notifications for Lema in Android settings.": "이 기기에서 지금 재생 알림을 보려면 Android 설정에서 Lema 알림을 허용하세요.",
     "Turn on notifications": "알림 켜기",
     "Lema can show now playing alerts while the app is in the background. Allow notifications in Android settings to use this feature.": "Lema는 앱이 백그라운드에 있을 때도 지금 재생 알림을 보여줄 수 있습니다. 이 기능을 사용하려면 Android 설정에서 알림을 허용하세요.",

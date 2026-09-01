@@ -39,6 +39,16 @@ export type KwicData = {
   line_id: number;
   match_indices: number[];
   tokens: Token[];
+  selection_debug?: {
+    score: number;
+    coverage: number;
+    frequency_prior: number;
+    known: number;
+    exposed: number;
+    interested: number;
+    scored_tokens: number;
+    length: number;
+  };
 };
 
 export type LemmaData = {
@@ -46,7 +56,7 @@ export type LemmaData = {
   furigana?: string | null;
   kwic: KwicData[];
   found?: boolean;
-  is_favorite: boolean;
+  is_interested: boolean;
   global_key: string;
 };
 

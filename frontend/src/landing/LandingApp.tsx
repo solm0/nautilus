@@ -402,7 +402,7 @@ function LandingApp() {
                       <Desk
                         key={selectedLemma.key}
                         initialLemma={selectedLemma}
-                        onToggleFavorite={async () => {}}
+                        onToggleInterest={async () => {}}
                         language={demo.language}
                         lemmaInfo={demo.lemma_info}
                       />

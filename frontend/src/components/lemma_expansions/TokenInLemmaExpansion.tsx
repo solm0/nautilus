@@ -1,6 +1,5 @@
 import type { Token } from "../pageTypes";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
-import { Star } from "lucide-react";
 
 export function TokenInLemmaExpansion({
   token,
@@ -11,6 +10,8 @@ export function TokenInLemmaExpansion({
   inheritTextColor = false,
   canSelectKey,
   lemmaInfo,
+  interestKeys,
+  excludedInterestKey,
 }:{
   token: Token;
   onSelect?: (tokenKey: string) => void;
@@ -19,22 +20,42 @@ export function TokenInLemmaExpansion({
   className?: string;
   inheritTextColor?: boolean;
   canSelectKey?: (tokenKey: string) => boolean;
-  lemmaInfo?: Record<string, { is_favorite?: boolean }>;
+  lemmaInfo?: Record<string, { is_interested?: boolean }>;
+  interestKeys?: Set<string>;
+  excludedInterestKey?: string;
 }) {
   const lookupKey = getLookupKey(token, language);
   const tokenSelectable = lookupKey != null && (canSelectKey ? canSelectKey(lookupKey) : true);
   const isMutedToken = !tokenSelectable;
 
-  const renderFavorite = (key: string | null) => {
-    if (!key || lemmaInfo?.[key]?.is_favorite !== true) return null;
+  const isInterested = (key: string | null) => {
+    if (!key || key === excludedInterestKey) return false;
+    const parts = key.split("_");
+    const pos = parts.pop();
+    const lemma = parts.join("_");
+    const globalKey = lemma && pos ? `${lemma}/${pos}/${language}` : null;
+    return Boolean(
+      (globalKey && interestKeys?.has(globalKey)) ||
+      lemmaInfo?.[key]?.is_interested === true
+    );
+  };
+
+  const renderSurface = (surface: string, key: string | null) => {
+    const interested = isInterested(key);
     return (
-      <Star
-        size={9}
-        aria-hidden="true"
-        className="ml-0.5 shrink-0 text-neutral-400"
-        fill="currentColor"
-        stroke="transparent"
-      />
+      <span
+        className={`relative isolate inline-block ${
+          interested ? "bg-yellow-200/50" : ""
+        }`}
+      >
+        {interested && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-0.5 bg-yellow-400/30"
+          />
+        )}
+        <span className="relative z-10">{surface}</span>
+      </span>
     );
   };
 
@@ -58,10 +79,7 @@ export function TokenInLemmaExpansion({
                 ${morphSelectable ? (inheritTextColor ? 'text-inherit' : 'text-neutral-700') : 'text-neutral-400 pointer-events-none'}
               `}
             >
-              <span className="inline-flex items-center">
-                {morph.surface}
-                {renderFavorite(morphKey)}
-              </span>
+              {renderSurface(morph.surface, morphKey)}
             </span>
           );
         })}
@@ -82,10 +100,7 @@ export function TokenInLemmaExpansion({
         ${className}
       `}
     >
-      <span className="inline-flex items-center">
-        {token.surface}
-        {renderFavorite(lookupKey)}
-      </span>
+      {renderSurface(token.surface, lookupKey)}
     </span>
   )
 }

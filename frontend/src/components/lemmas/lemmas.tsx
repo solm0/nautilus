@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { getFavorites, lemmaLookupOne, setFavorite } from "../../api"
+import { getInterests, lemmaLookupOne, setInterest } from "../../api"
 import { isNetworkError } from "../../network";
 import { Star } from "lucide-react"
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
@@ -13,10 +13,10 @@ import { hasLemmaPackInstalled } from "../util/LanguageSelect";
 import { isCapacitorApp } from "../../platform";
 import { LanguageFilter } from "../pages/PageFilters";
 
-function groupLemmas(favorites: Set<string>) {
+function groupLemmas(interests: Set<string>) {
   const groups: Record<string, string[]> = {}
 
-  for (const key of favorites) {
+  for (const key of interests) {
     const lemma = key.split("_")[0]
     const letter = lemma[0].toUpperCase()
 
@@ -34,7 +34,7 @@ function groupLemmas(favorites: Set<string>) {
 
 export default function Lemmas(){
   const { t } = useI18n();
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [interests, setInterests] = useState<Set<string>>(new Set());
   const [lemmaData, setLemmaData] = useState<LemmaData | null>(null);
   const [currentLang, setCurrentLang] = useState<string | null>(null);
   const [missingPackLang, setMissingPackLang] = useState<string | null>(null);
@@ -75,23 +75,23 @@ export default function Lemmas(){
     }
   }, [])
 
-  // favorite lemmas 가져오기
+  // interest lemmas 가져오기
   useEffect(() => {
-    const loadFavorites = () => getFavorites()
+    const loadInterests = () => getInterests()
       .then((res) => {
         setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
-        setFavorites(new Set(res))
+        setInterests(new Set(res))
       })
       .catch((error) => {
         setOffline(isNetworkError(error));
       });
 
-    void loadFavorites();
+    void loadInterests();
 
     if (!mobileApp) return;
 
     const handleOffline = () => setOffline(true);
-    const handleOnline = () => void loadFavorites();
+    const handleOnline = () => void loadInterests();
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
     return () => {
@@ -101,25 +101,25 @@ export default function Lemmas(){
   }, [mobileApp])
 
   const languages = useMemo(
-    () => Array.from(new Set(Array.from(favorites, (key) => key.split("/").at(-1) ?? "")))
+    () => Array.from(new Set(Array.from(interests, (key) => key.split("/").at(-1) ?? "")))
       .filter(Boolean)
       .sort(),
-    [favorites],
+    [interests],
   );
-  const filteredFavorites = useMemo(
+  const filteredInterests = useMemo(
     () => selectedLanguage
-      ? new Set(Array.from(favorites).filter((key) => key.split("/").at(-1) === selectedLanguage))
-      : favorites,
-    [favorites, selectedLanguage],
+      ? new Set(Array.from(interests).filter((key) => key.split("/").at(-1) === selectedLanguage))
+      : interests,
+    [interests, selectedLanguage],
   );
-  const grouped = useMemo(() => groupLemmas(filteredFavorites), [filteredFavorites]);
+  const grouped = useMemo(() => groupLemmas(filteredInterests), [filteredInterests]);
   
   // 클릭
-  const onFavoriteClick = async (key: string, next:boolean) => {
-    await setFavorite(key, next);
+  const onInterestClick = async (key: string, next:boolean) => {
+    await setInterest(key, next);
 
-    const res = await getFavorites();
-    setFavorites(new Set(res));
+    const res = await getInterests();
+    setInterests(new Set(res));
   };
 
   const onLemmaClick = async (lemma:string, pos:string, language:string) => {
@@ -188,10 +188,10 @@ export default function Lemmas(){
         {offline && grouped.length === 0 ? (
           <OfflineState
             onRetry={() => {
-              void getFavorites()
+              void getInterests()
                 .then((res) => {
                   setOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
-                  setFavorites(new Set(res));
+                  setInterests(new Set(res));
                 })
                 .catch((error) => {
                   setOffline(isNetworkError(error));
@@ -207,7 +207,7 @@ export default function Lemmas(){
               <div className="flex flex-col">
                 {items.map(key => {
                   const [lemma, pos, lang] = key.split("/")
-                  const isFavorite = favorites.has(key)
+                  const isInterested = interests.has(key)
 
                   return (
                     <div
@@ -226,9 +226,9 @@ export default function Lemmas(){
                       <Star
                         size={17}
                         className="cursor-pointer opacity-0 group-hover:opacity-100 transition text-neutral-400 hover:text-neutral-500"
-                        fill={isFavorite ? "currentColor" : "transparent"}
+                        fill={isInterested ? "currentColor" : "transparent"}
                         onClick={() => {
-                          void onFavoriteClick(key, !isFavorite);
+                          void onInterestClick(key, !isInterested);
                         }}
                       />
                     </div>
@@ -250,9 +250,9 @@ export default function Lemmas(){
           <Desk
             key={lemmaData.key}
             initialLemma={lemmaData}
-            onToggleFavorite={onFavoriteClick}
+            onToggleInterest={onInterestClick}
             language={currentLang!}
-            favoriteKeys={favorites}
+            interestKeys={interests}
           />
         </ResponsiveSideLayout>
       }

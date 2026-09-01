@@ -12,9 +12,9 @@ import type {
   ReactNode,
   RefObject,
 } from "react";
-import type { Token, TextBlock, LemmaData } from "./pageTypes";
+import type { Token, TextBlock } from "./pageTypes";
 import { useSettings } from "./useSettings";
-import { FileInput, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { FileInput, Pencil, Plus, Trash2 } from "lucide-react";
 import { MiniPopup } from "./util/MiniPopup";
 import { useI18n } from "../i18n";
 
@@ -504,7 +504,7 @@ export default function PageCore({
   renderTokenContent,
   rightAside,
   overlay,
-  lemmaInfo,
+  interestKeys,
   wrapperStyle,
   horizontalAlign = "center",
 }: {
@@ -525,7 +525,7 @@ export default function PageCore({
   onPointerMove?: PointerEventHandler<HTMLDivElement>;
   onPointerUp?: PointerEventHandler<HTMLDivElement>;
   onPointerCancel?: PointerEventHandler<HTMLDivElement>;
-  lemmaInfo?: Record<string, LemmaData>;
+  interestKeys?: Set<string>;
   getTokenProps?: (args: {
     token: Token;
     index: number;
@@ -925,6 +925,22 @@ export default function PageCore({
                   } = tokenProps;
 
                   const highlightPalette = null;
+                  const isInterested = Boolean(
+                    language &&
+                    interestKeys &&
+                    [
+                      ...(token.lemma && token.pos
+                        ? [{ lemma: token.lemma, pos: token.pos }]
+                        : []),
+                      ...(token.morphs ?? []),
+                    ].some((unit) =>
+                      Boolean(
+                        unit.lemma &&
+                        unit.pos &&
+                        interestKeys.has(`${unit.lemma}/${unit.pos}/${language}`)
+                      )
+                    )
+                  );
 
                   return (
                     <span
@@ -969,13 +985,25 @@ export default function PageCore({
                         >
                           {token.surface}
                         </span>
-                        <span className="col-start-1 row-start-1">
-                          {renderTokenContent
-                            ? renderTokenContent({
-                              token,
-                              index: tokenIndex,
-                            })
-                            : token.surface}
+                        <span
+                          className={`relative isolate col-start-1 row-start-1 ${
+                            isInterested ? "bg-yellow-200/50" : ""
+                          }`}
+                        >
+                          {isInterested && (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-1 bg-yellow-400/30"
+                            />
+                          )}
+                          <span className="relative z-10">
+                            {renderTokenContent
+                              ? renderTokenContent({
+                                token,
+                                index: tokenIndex,
+                              })
+                              : token.surface}
+                          </span>
                         </span>
                       </span>
                       <div
@@ -991,11 +1019,6 @@ export default function PageCore({
                         <span>{token.lemma}</span>
                         <span>{token.pos}</span>
                       </div>
-                      {lemmaInfo && lemmaInfo[`${token.lemma}_${token.pos}`]?.is_favorite === true &&
-                        <div className="absolute right-0 -top-1">
-                          <Star size={11} fill="var(--color-neutral-400)" stroke="transparent" />
-                        </div>
-                      }
                     </span>
                   );
                 })}

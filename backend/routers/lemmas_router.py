@@ -1,19 +1,24 @@
+import hashlib
+import os
+import time
+from typing import Dict, List, Optional
+
+import httpx
+from dotenv import load_dotenv
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List
-import httpx
-import os
-from dotenv import load_dotenv
+
 from services import lemma_service
+
 
 load_dotenv()
 CENTRAL_API = os.getenv("CENTRAL_API")
+PROFILE_CACHE_TTL_SECONDS = 30.0
 
 router = APIRouter(prefix="/api")
+_profile_cache: dict[str, tuple[float, dict[str, dict]]] = {}
 
-# -----------------------------
-# KEY UTIL
-# -----------------------------
+
 def to_local_key(lemma: str, pos: str) -> str:
     return f"{lemma}_{pos}"
 
@@ -22,14 +27,6 @@ def to_global_key(lemma: str, pos: str, lang: str) -> str:
     return f"{lemma}/{pos}/{lang}"
 
 
-def parse_global_key(key: str):
-    lemma, pos, lang = key.split("/")
-    return lemma, pos, lang
-
-
-# -----------------------------
-# REQUEST MODELS
-# -----------------------------
 class LookupRequest(BaseModel):
     lemma: str
     pos: str
@@ -41,74 +38,46 @@ class BatchRequest(BaseModel):
     language: str
 
 
-# -----------------------------
-# CENTRAL CALL
-# -----------------------------
-def fetch_favorites(token: Optional[str], lemma_keys: List[str]) -> set[str]:
-    if not token or not lemma_keys:
-        return set()
+def fetch_user_lemma_states(token: Optional[str]) -> dict[str, dict]:
+    if not token or not CENTRAL_API:
+        return {}
 
-    res = httpx.post(
-        f"{CENTRAL_API}/lemma/favorite/check",
-        json={
-            "keys": lemma_keys
-        },
-        headers={
-            "Authorization": token
-        },
-        timeout=5.0
-    )
+    cache_key = hashlib.sha256(token.encode()).hexdigest()
+    now = time.monotonic()
+    cached = _profile_cache.get(cache_key)
+    if cached and now - cached[0] < PROFILE_CACHE_TTL_SECONDS:
+        return cached[1]
 
-    return set(res.json()["favorites"])
-
-
-def extract_user(request: Request) -> Optional[dict]:
-    """
-    Central auth를 로컬이 '대신 구현하지 않고'
-    /me 결과를 lightweight하게 reuse하는 방식
-    """
-    auth = request.headers.get("Authorization")
-    if not auth:
-        return None
-
-    try:    
-        url = f"{CENTRAL_API}/me"
-        f"{CENTRAL_API}/me",
-        res = httpx.get(
-            url = f"{CENTRAL_API}/me",
-            headers={"Authorization": auth},
-            timeout=3.0
+    try:
+        response = httpx.get(
+            f"{CENTRAL_API}/lemma/profile",
+            headers={"Authorization": token},
+            timeout=5.0,
         )
+        response.raise_for_status()
+        items = response.json().get("items", [])
+        states = {
+            item["key"]: {
+                "exposure_count": min(max(int(item.get("exposure_count") or 0), 0), 10),
+                "is_known": item.get("is_known") is True,
+                "is_interested": item.get("is_interested") is True,
+            }
+            for item in items
+            if isinstance(item, dict) and isinstance(item.get("key"), str)
+        }
+        _profile_cache[cache_key] = (now, states)
+        return states
+    except (httpx.HTTPError, TypeError, ValueError):
+        return cached[1] if cached else {}
 
-        if res.status_code != 200:
-            return None
-        return res.json()
-    except Exception as e:
-        print("EXTRACT USER ERROR", e)
-        return None
 
-
-# -----------------------------
-# SINGLE LOOKUP
-# -----------------------------
 @router.post("/lookup")
 def lookup(req: LookupRequest, request: Request):
-    user = extract_user(request)
-
     local_key = to_local_key(req.lemma, req.pos)
     global_key = to_global_key(req.lemma, req.pos, req.language)
+    states = fetch_user_lemma_states(request.headers.get("Authorization"))
+    is_interested = bool(states.get(global_key, {}).get("is_interested"))
 
-    # favorite
-    if user:
-        fav = fetch_favorites(
-            request.headers.get("Authorization"),
-            [global_key]
-        )
-        is_favorite = global_key in fav
-    else:
-        is_favorite = None
-
-    # local compute
     if not lemma_service.has_key(local_key, req.language):
         return {
             "key": local_key,
@@ -116,16 +85,16 @@ def lookup(req: LookupRequest, request: Request):
             "found": False,
             "kwic": [],
             "furigana": None,
-            "is_favorite": is_favorite
+            "is_interested": is_interested,
+            "is_favorite": is_interested,
         }
 
-    line_ids = lemma_service.get_line_ids(local_key, req.language)
-
     kwic = lemma_service.sample_kwic(
-        line_ids,
+        lemma_service.get_line_ids(local_key, req.language),
         req.lemma,
         req.pos,
         req.language,
+        user_lemma_states=states,
     )
 
     return {
@@ -134,39 +103,20 @@ def lookup(req: LookupRequest, request: Request):
         "found": True,
         "kwic": kwic,
         "furigana": lemma_service.get_furigana(local_key, req.language),
-        "is_favorite": is_favorite
+        "is_interested": is_interested,
+        "is_favorite": is_interested,
     }
 
 
-# -----------------------------
-# BATCH LOOKUP
-# -----------------------------
 @router.post("/lookup_batch")
 def lookup_batch(req: BatchRequest, request: Request):
-    user = extract_user(request)
-
     lang = req.language
     result: Dict[str, dict] = {}
+    states = fetch_user_lemma_states(request.headers.get("Authorization"))
 
-    global_keys = [
-        to_global_key(i["lemma"], i["pos"], lang)
-        for i in req.items
-    ]
-
-    # favorites batch
-    if user:
-        liked_set = fetch_favorites(
-            request.headers.get("Authorization"),
-            global_keys
-        )
-    else:
-        liked_set = set()
-
-    # local compute
     for item in req.items:
         lemma = item["lemma"]
         pos = item["pos"]
-
         local_key = to_local_key(lemma, pos)
         global_key = to_global_key(lemma, pos, lang)
 
@@ -183,8 +133,10 @@ def lookup_batch(req: BatchRequest, request: Request):
                 lemma,
                 pos,
                 lang,
+                user_lemma_states=states,
             ),
-            "is_favorite": global_key in liked_set
+            "is_interested": bool(states.get(global_key, {}).get("is_interested")),
+            "is_favorite": bool(states.get(global_key, {}).get("is_interested")),
         }
 
     return result

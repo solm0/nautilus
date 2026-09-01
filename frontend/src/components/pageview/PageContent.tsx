@@ -23,6 +23,7 @@ const DRAG_THRESHOLD = 8;
 export default function PageContent({
   blocks,
   lemmaInfo,
+  interestKeys,
   onVisibleBlockRangeChange,
   panelData,
   language,
@@ -43,6 +44,7 @@ export default function PageContent({
 }: {
   blocks: TextBlock[];
   lemmaInfo: Record<string, LemmaData>;
+  interestKeys?: Set<string>;
   onVisibleBlockRangeChange?: (range: { start: number; end: number }) => void;
   panelData: SidePanelState;
   language: string;
@@ -523,7 +525,7 @@ export default function PageContent({
       onPointerCancel={handlePointerCancel}
       wrapperStyle={{ touchAction: isSelecting ? "none" : "pan-y" }}
       horizontalAlign={horizontalAlign}
-      lemmaInfo={lemmaInfo}
+      interestKeys={interestKeys}
       getTokenProps={({ token, index }) => {
         const key = getLookupKey(token, language);
         const info = key ? lemmaInfo[key] : undefined;

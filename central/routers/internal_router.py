@@ -11,34 +11,35 @@ router = APIRouter(prefix="/api")
 
 
 # -----------------------------
-# FAVORITE BATCH CHECK
+# INTEREST BATCH CHECK
 # -----------------------------
 
-class BatchFavoriteCheckRequest(BaseModel):
+class BatchInterestCheckRequest(BaseModel):
     user_id: int
     lemma_keys: List[str]
 
 
-class BatchFavoriteCheckResponse(BaseModel):
+class BatchInterestCheckResponse(BaseModel):
+    interests: List[str]
     favorites: List[str]
 
 
-@router.post("/user-lemmas/batch-check", response_model=BatchFavoriteCheckResponse)
-def batch_check_favorites(
-    req: BatchFavoriteCheckRequest,
+@router.post("/user-lemmas/batch-check", response_model=BatchInterestCheckResponse)
+def batch_check_interests(
+    req: BatchInterestCheckRequest,
     db: Session = Depends(get_db)
 ):
     if not req.lemma_keys:
-        return {"favorites": []}
+        return {"interests": [], "favorites": []}
 
     rows = db.query(UserLemma.lemma_key).filter(
         UserLemma.user_id == req.user_id,
+        UserLemma.is_interested.is_(True),
         UserLemma.lemma_key.in_(req.lemma_keys)
     ).all()
 
-    return {
-        "favorites": [r[0] for r in rows]
-    }
+    interests = [row[0] for row in rows]
+    return {"interests": interests, "favorites": interests}
 
 @router.get("/lang/packs")
 def get_packs():

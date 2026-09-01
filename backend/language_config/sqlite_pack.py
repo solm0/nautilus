@@ -203,6 +203,19 @@ class LanguagePackDB:
         furigana = furigana.strip()
         return furigana or None
 
+    def get_lemma_frequencies(self, keys: list[str]) -> dict[str, int]:
+        stats_by_key = self._fetch_json_payloads("lemma_stats", "lemma_key", keys)
+        frequencies = {}
+
+        for key, stats in stats_by_key.items():
+            if not isinstance(stats, dict):
+                continue
+            frequency = stats.get("freq")
+            if isinstance(frequency, int) and frequency > 0:
+                frequencies[key] = frequency
+
+        return frequencies
+
     def get_lines(self, line_ids: list[str]):
         rows = self._fetch_json_payloads("lines", "line_id", line_ids)
         result = []

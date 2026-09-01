@@ -60,20 +60,25 @@ def to_global_key(lemma: str, pos: str, lang: str) -> str:
     return f"{lemma}/{pos}/{lang}"
 
 
-def fetch_favorites(
+def fetch_user_lemma_states(
     db: Session,
     user: User | None,
-    lemma_keys: list[str],
-) -> set[str]:
-    if not user or not lemma_keys:
-        return set()
+):
+    if not user:
+        return {}
 
-    rows = db.query(UserLemma.lemma_key).filter(
+    rows = db.query(UserLemma).filter(
         UserLemma.user_id == user.id,
-        UserLemma.lemma_key.in_(lemma_keys),
     ).all()
 
-    return {row[0] for row in rows}
+    return {
+        row.lemma_key: {
+            "exposure_count": min(max(row.exposure_count or 0, 0), 10),
+            "is_known": bool(row.is_known),
+            "is_interested": bool(row.is_interested),
+        }
+        for row in rows
+    }
 
 
 @router.post("/analyze")
@@ -145,8 +150,8 @@ def lookup(
     global_key = to_global_key(req.lemma, req.pos, req.language)
     local_key = to_local_key(req.lemma, req.pos)
 
-    liked_set = fetch_favorites(db, user, [global_key])
-    is_favorite = global_key in liked_set
+    user_lemma_states = fetch_user_lemma_states(db, user)
+    is_interested = bool(user_lemma_states.get(global_key, {}).get("is_interested"))
 
     if not lemma_service.has_key(local_key, req.language):
         return {
@@ -155,7 +160,8 @@ def lookup(
             "found": False,
             "kwic": [],
             "furigana": None,
-            "is_favorite": is_favorite,
+            "is_interested": is_interested,
+            "is_favorite": is_interested,
         }
 
     line_ids = lemma_service.get_line_ids(local_key, req.language)
@@ -165,6 +171,7 @@ def lookup(
         req.lemma,
         req.pos,
         req.language,
+        user_lemma_states=user_lemma_states,
     )
 
     return {
@@ -173,7 +180,8 @@ def lookup(
         "found": True,
         "kwic": kwic,
         "furigana": lemma_service.get_furigana(local_key, req.language),
-        "is_favorite": is_favorite,
+        "is_interested": is_interested,
+        "is_favorite": is_interested,
     }
 
 
@@ -186,11 +194,7 @@ def lookup_batch(
     lang = req.language
     result = {}
 
-    global_keys = [
-        to_global_key(item["lemma"], item["pos"], lang)
-        for item in req.items
-    ]
-    liked_set = fetch_favorites(db, user, global_keys)
+    user_lemma_states = fetch_user_lemma_states(db, user)
 
     for item in req.items:
         lemma = item["lemma"]
@@ -212,8 +216,14 @@ def lookup_batch(
                 lemma,
                 pos,
                 lang,
+                user_lemma_states=user_lemma_states,
             ),
-            "is_favorite": global_key in liked_set,
+            "is_interested": bool(
+                user_lemma_states.get(global_key, {}).get("is_interested")
+            ),
+            "is_favorite": bool(
+                user_lemma_states.get(global_key, {}).get("is_interested")
+            ),
         }
 
     return result

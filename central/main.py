@@ -106,6 +106,40 @@ def ensure_page_schema():
 
 ensure_page_schema()
 
+def ensure_user_lemma_schema():
+    with engine.begin() as conn:
+        columns = {
+            row[1]
+            for row in conn.exec_driver_sql("PRAGMA table_info(user_lemmas)").fetchall()
+        }
+
+        # Before this migration, every row represented an interested (favorite) lemma.
+        if "is_interested" not in columns:
+            conn.execute(text("ALTER TABLE user_lemmas ADD COLUMN is_interested BOOLEAN"))
+            conn.execute(text("UPDATE user_lemmas SET is_interested = 1"))
+
+        if "exposure_count" not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE user_lemmas "
+                    "ADD COLUMN exposure_count INTEGER NOT NULL DEFAULT 0"
+                )
+            )
+
+        if "is_known" not in columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE user_lemmas "
+                    "ADD COLUMN is_known BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
+
+        if "updated_at" not in columns:
+            conn.execute(text("ALTER TABLE user_lemmas ADD COLUMN updated_at DATETIME"))
+            conn.execute(text("UPDATE user_lemmas SET updated_at = CURRENT_TIMESTAMP"))
+
+ensure_user_lemma_schema()
+
 if LANDING_DIR.exists():
     app.mount(
         "/",

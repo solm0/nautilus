@@ -29,7 +29,7 @@ const copy: Record<Locale, Copy> = {
     warningTitle: "This action is permanent",
     warningItems: [
       "Your account and profile will be deleted.",
-      "Cloud favorites will be deleted. Local pages, notebooks, and annotations on your devices will remain.",
+      "Cloud interests will be deleted. Local pages, notebooks, and annotations on your devices will remain.",
       "Deleted data cannot be restored.",
     ],
     email: "Email address",

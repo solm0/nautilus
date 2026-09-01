@@ -13,9 +13,9 @@ import {
   writePackCatalogSnapshot,
 } from "./packCatalogSnapshot";
 import {
-  cacheFavoriteLemmaKeys,
-  getOfflineFavoriteKeys,
-  queueOfflineFavoriteToggle,
+  cacheInterestedLemmaKeys,
+  getOfflineInterestedKeys,
+  queueOfflineInterestToggle,
   syncOfflineOutbox,
 } from "./offlineData";
 import { getAppPlatform, isCapacitorApp, isElectronApp } from "./platform";
@@ -484,7 +484,7 @@ export async function lemmaLookupOne(
   return res.json()
 }
 
-export async function setFavorite(
+export async function setInterest(
   key: string,
   next: boolean
 ) {
@@ -495,7 +495,7 @@ export async function setFavorite(
   }
 
   if (isElectronApp() || isCapacitorApp()) {
-    await queueOfflineFavoriteToggle(key, next);
+    await queueOfflineInterestToggle(key, next);
     const synced = await syncOfflineOutbox();
     return { ok: true, offline: !synced };
   }
@@ -503,45 +503,45 @@ export async function setFavorite(
   let res: Response;
 
   try {
-    res = await centralFetch(`${CENTRAL_API}/lemma/favorite`, {
+    res = await centralFetch(`${CENTRAL_API}/lemma/interest`, {
       method: next ? "POST" : "DELETE",
       headers,
       body: JSON.stringify({ key })
     });
   } catch {
-    await queueOfflineFavoriteToggle(key, next);
+    await queueOfflineInterestToggle(key, next);
     return { ok: true, offline: true };
   }
 
   if (!res.ok) {
-    throw new Error("favorite request failed");
+    throw new Error("interest request failed");
   }
 
   return res.json();
 }
 
-export async function getFavorites(): Promise<string[]> {
+export async function getInterests(): Promise<string[]> {
   const headers = authHeaders()
   if (!headers) throw new Error("no token")
 
   try {
-    const res = await centralFetch(`${CENTRAL_API}/lemma/favorites`, {
+    const res = await centralFetch(`${CENTRAL_API}/lemma/interests`, {
       method: "GET",
       headers
     })
 
-    if (!res.ok) throw new Error("fetch favorites failed")
+    if (!res.ok) throw new Error("fetch interests failed")
 
     const data = await res.json()
     const items = data.items as string[];
     if (isElectronApp() || isCapacitorApp()) {
-      await cacheFavoriteLemmaKeys(items);
-      return getOfflineFavoriteKeys();
+      await cacheInterestedLemmaKeys(items);
+      return getOfflineInterestedKeys();
     }
     return items;
   } catch (error) {
     if (isElectronApp() || isCapacitorApp()) {
-      return getOfflineFavoriteKeys();
+      return getOfflineInterestedKeys();
     }
     throw error;
   }

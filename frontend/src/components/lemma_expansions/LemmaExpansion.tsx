@@ -4,14 +4,14 @@ import type { LemmaData } from "../pageTypes";
 import { Star } from "lucide-react";
 
 export default function LemmaExpansion({
-  data, onSelect, onToggleFavorite, language, lemmaInfo, favoriteKeys
+  data, onSelect, onToggleInterest, language, lemmaInfo, interestKeys
 }: {
   data: LemmaData;
   onSelect: (tokenKey: string) => void;
-  onToggleFavorite: (key: string, next: boolean) => Promise<void>;
+  onToggleInterest: (key: string, next: boolean) => Promise<void>;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
-  favoriteKeys?: Set<string>;
+  interestKeys?: Set<string>;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -21,12 +21,12 @@ export default function LemmaExpansion({
   }, []);
 
   const globalKey = data.global_key ?? `${data.key.split("_").slice(0, -1).join("_")}/${data.key.split("_").slice(-1)[0]}/${language}`;
-  const isFavorite = favoriteKeys?.has(globalKey) ?? data.is_favorite;
+  const isInterested = interestKeys?.has(globalKey) ?? data.is_interested;
   const lemma = data.key.split("_").slice(0, -1).join("_");
   const pos = data.key.split("_").slice(1,2).join("_");
 
-  const onFavoriteClick = async () => {
-    await onToggleFavorite(globalKey, !isFavorite);
+  const onInterestClick = async () => {
+    await onToggleInterest(globalKey, !isInterested);
   };
 
   return (
@@ -49,10 +49,15 @@ export default function LemmaExpansion({
           <Star
             key={data.key}
             size={14}
-            className="cursor-pointer text-neutral-400 hover:text-neutral-500 mt-[0.2em]"
-            fill={isFavorite ? "currentColor" : "transparent"}
+            className={`mt-[0.2em] cursor-pointer ${
+              isInterested
+                ? "text-yellow-400 hover:text-yellow-500"
+                : "text-neutral-400 hover:text-neutral-500"
+            }`}
+            fill={isInterested ? "currentColor" : "transparent"}
+            stroke="currentColor"
             onClick={() => {
-              void onFavoriteClick();
+              void onInterestClick();
             }}
           />
         </div>
@@ -66,7 +71,7 @@ export default function LemmaExpansion({
             lemma={data.key}
             language={language}
             lemmaInfo={lemmaInfo}
-            currentFavorite={isFavorite}
+            interestKeys={interestKeys}
           />
         </section>
       </div>

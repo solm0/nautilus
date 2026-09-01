@@ -9,10 +9,12 @@ import {
 import { TokenInLemmaExpansion } from "./TokenInLemmaExpansion";
 import type { KwicData, LemmaData } from "../pageTypes";
 import { IconButton } from "../util/Button";
-import { AlignCenterVertical, Star } from "lucide-react";
+import { AlignCenterVertical } from "lucide-react";
 import { lemmaLookup } from "../../api";
 import { getLookupKey, getLookupKeyForMorph } from "../tokenLookup";
 import { useI18n } from "../../i18n";
+
+const SHOW_KWIC_DEBUG = true;
 
 function highlightIntersect(
   surface: string,
@@ -87,7 +89,7 @@ interface KwicRowProps {
   hovered: { pos: string | null; x: number, y: number };
   setHovered: React.Dispatch<React.SetStateAction<{ pos: string | null; x: number, y: number }>>
   lemmaInfo: Record<string, LemmaData>;
-  currentFavorite?: boolean;
+  interestKeys?: Set<string>;
 }
 
 interface KwicRowHandle {
@@ -98,7 +100,7 @@ interface KwicRowHandle {
 type Token = KwicData["tokens"][number];
 
 const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
-  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered, lemmaInfo, currentFavorite },
+  { d, lemma, language, onSelect, canSelectKey, hovered, setHovered, lemmaInfo, interestKeys },
   ref
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -166,6 +168,8 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
           onSelect={onSelect}
           canSelectKey={canSelectKey}
           lemmaInfo={lemmaInfo}
+          interestKeys={interestKeys}
+          excludedInterestKey={lemma}
         />
       </div>
     </div>
@@ -177,9 +181,17 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
   return (
     <div
       ref={scrollRef}
-      className="w-full shrink-0 overflow-x-auto overflow-y-visible no-scrollbar h-auto"
+      className="relative w-full shrink-0 overflow-x-auto overflow-y-visible no-scrollbar h-auto"
       style={{ overscrollBehaviorX: 'contain' }}
     >
+      {SHOW_KWIC_DEBUG && d.selection_debug && (
+        <div
+          className="pointer-events-none sticky left-1 top-0 z-30 w-max rounded-sm bg-neutral-50/85 px-1 font-mono text-[8px] leading-3 text-neutral-400"
+          title="line · length · score · coverage · known · exposed · interested · frequency prior"
+        >
+          #{d.line_id} · l{d.selection_debug.length} · s{d.selection_debug.score.toFixed(3)} · c{d.selection_debug.coverage.toFixed(3)} · k{d.selection_debug.known} · e{d.selection_debug.exposed} · i{d.selection_debug.interested} · f{d.selection_debug.frequency_prior.toFixed(3)}
+        </div>
+      )}
       <div className="flex items-center whitespace-nowrap">
         {/* 왼쪽: width 고정 + overflow hidden으로 레이아웃 안정화 */}
         <div
@@ -192,17 +204,8 @@ const KwicRow = forwardRef<KwicRowHandle, KwicRowProps>(function KwicRow(
 
         <div className="relative px-2 flex shrink-0 items-center h-10 cursor-default">
           <div className="absolute inset-0 opacity-50 pointer-events-none" />
-          <span className="inline-flex items-center">
+          <span className="inline-flex h-full items-center">
             {highlightIntersect(target.surface, baseLemma)}
-            {(currentFavorite ?? lemmaInfo[lemma]?.is_favorite) === true && (
-              <Star
-                size={9}
-                aria-hidden="true"
-                className="ml-0.5 shrink-0 text-neutral-400"
-                fill="currentColor"
-                stroke="transparent"
-              />
-            )}
           </span>
         </div>
 
@@ -223,14 +226,14 @@ export default function LemmaKwic({
   lemma,
   language,
   lemmaInfo,
-  currentFavorite,
+  interestKeys,
 }: {
   data: KwicData[];
   onSelect: (tokenKey: string) => void;
   lemma: string;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
-  currentFavorite?: boolean;
+  interestKeys?: Set<string>;
 }) {
   const { t } = useI18n();
   const [hovered, setHovered] = useState<{
@@ -390,7 +393,7 @@ export default function LemmaKwic({
             hovered={hovered}
             setHovered={setHovered}
             lemmaInfo={availableKeys}
-            currentFavorite={currentFavorite}
+            interestKeys={interestKeys}
           />
         ))}
       </div>

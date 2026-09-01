@@ -5,10 +5,10 @@ import {
   addPageMetadata,
   deletePageMetadata,
   fetchPageDetail,
-  getFavorites,
+  getInterests,
   getInstalled,
   lemmaLookup,
-  setFavorite,
+  setInterest,
   updatePageMetadata,
 } from "../../api";
 import type { Annotation, LemmaData, TextAnalysisResult } from "../pageTypes";
@@ -55,7 +55,7 @@ export default function PageView() {
   const [pageName, setPageName] = useState("");
   const [pageSource, setPageSource] = useState("user");
   const [pageMetadata, setPageMetadata] = useState<string[]>([]);
-  const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set());
+  const [interestKeys, setInterestKeys] = useState<Set<string>>(new Set());
 
   const [panel, setPanel] = useState<SidePanelState>(null);
   const [panelPlacement, setPanelPlacement] = useState<
@@ -150,9 +150,9 @@ export default function PageView() {
             : [],
         );
         setOffline(false);
-        const favorites = await getFavorites();
+        const interests = await getInterests();
         if (!active) return;
-        setFavoriteKeys(new Set(favorites));
+        setInterestKeys(new Set(interests));
       } catch (error) {
         if (!active) return;
         setOffline(isNetworkError(error));
@@ -275,16 +275,16 @@ export default function PageView() {
     });
   }, [id, annotationId, annotations]);
 
-  const onFavoriteClick = async (key: string, next: boolean) => {
-    await setFavorite(key, next);
-    setFavoriteKeys(new Set(await getFavorites()));
+  const onInterestClick = async (key: string, next: boolean) => {
+    await setInterest(key, next);
+    setInterestKeys(new Set(await getInterests()));
     const [lemma, pos] = key.split("/");
     const localKey = lemma && pos ? `${lemma}_${pos}` : null;
     if (localKey) {
       setLemmaInfo((prev) => {
         const current = prev[localKey];
         if (!current) return prev;
-        const nextInfo = { ...prev, [localKey]: { ...current, is_favorite: next } };
+        const nextInfo = { ...prev, [localKey]: { ...current, is_interested: next } };
         if (id && language) {
           lemmaInfoCache.set(`${id}:${language}`, nextInfo);
         }
@@ -393,6 +393,7 @@ export default function PageView() {
               activeLyricBlockIndex={activeLyricBlockIndex}
               syncPlaybackActive={lyricMotionActive}
               lemmaInfo={lemmaInfo}
+              interestKeys={interestKeys}
               onVisibleBlockRangeChange={setVisibleBlockRange}
               annotations={annotations}
               pageName={pageName}
@@ -427,10 +428,10 @@ export default function PageView() {
               <Desk
                 key={panel.data.key}
                 initialLemma={panel.data}
-                onToggleFavorite={onFavoriteClick}
+                onToggleInterest={onInterestClick}
                 language={panel.language ?? language}
                 lemmaInfo={lemmaInfo}
-                favoriteKeys={favoriteKeys}
+                interestKeys={interestKeys}
               />
             )}
 

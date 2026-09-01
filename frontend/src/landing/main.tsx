@@ -108,7 +108,7 @@ const chromePrivacyCopy: PrivacyCopy = {
       {
         heading: "4. Sharing and Disclosure",
         paragraphs: [
-          "The Extension communicates with Lema's local desktop service for analysis and page storage. Account credentials and favorite-lemma changes may be sent to Lema servers.",
+          "The Extension communicates with Lema's local desktop service for analysis and page storage. Account credentials and interested-lemma changes may be sent to Lema servers.",
           "We do not sell user information and do not use it for personalized advertising or third-party advertising purposes.",
         ],
       },
@@ -122,7 +122,7 @@ const chromePrivacyCopy: PrivacyCopy = {
         heading: "6. Retention and Deletion",
         paragraphs: [
           "Authentication tokens may be stored in browser extension storage, and users can remove them by signing out.",
-          "Saved pages remain in the desktop app's local library until the user deletes them or clears the app data. Cloud favorites can be removed in Lema or by deleting the account.",
+          "Saved pages remain in the desktop app's local library until the user deletes them or clears the app data. Cloud interests can be removed in Lema or by deleting the account.",
         ],
       },
       {
@@ -243,7 +243,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "4. Sharing and Third-Party Services",
         paragraphs: [
           "To find lyrics, the App sends the current song title and artist name to the LRCLIB service at lrclib.net. It does not send your Lema account identifier with this request.",
-          "Account data, favorite-lemma changes, and text submitted for mobile language analysis may be sent to Lema servers. Pages, notebooks, and annotations are stored in the device's local library and are not synchronized to Lema servers.",
+          "Account data, interested-lemma changes, and text submitted for mobile language analysis may be sent to Lema servers. Pages, notebooks, and annotations are stored in the device's local library and are not synchronized to Lema servers.",
           "We do not sell personal information or use it for personalized or third-party advertising.",
         ],
       },
@@ -251,7 +251,7 @@ const androidPrivacyCopy: PrivacyCopy = {
         heading: "5. Storage and Retention",
         paragraphs: [
           "Device preferences, authentication information, cached lyrics, downloaded language data, pages, notebooks, and annotations may be stored locally on your device.",
-          "Account information and cloud favorites stored on Lema servers are retained while needed to provide the service or until you delete them or delete your account, subject to legal and security requirements.",
+          "Account information and cloud interests stored on Lema servers are retained while needed to provide the service or until you delete them or delete your account, subject to legal and security requirements.",
         ],
       },
       {

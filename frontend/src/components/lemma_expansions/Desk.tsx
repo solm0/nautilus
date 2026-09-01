@@ -6,16 +6,16 @@ import LemmaExpansionWrapper from "./LemmaExpansionWrapper.tsx";
 
 export default function Desk({
   initialLemma,
-  onToggleFavorite,
+  onToggleInterest,
   language,
   lemmaInfo,
-  favoriteKeys,
+  interestKeys,
 }: {
   initialLemma: LemmaData;
-  onToggleFavorite: (key: string, next:boolean) => Promise<void>;
+  onToggleInterest: (key: string, next:boolean) => Promise<void>;
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
-  favoriteKeys?: Set<string>;
+  interestKeys?: Set<string>;
 }) {
   const breadcrumbRef = useRef<{ addNode: (parentLemma: string, newNode: TreeNode) => void }>(null);
   const [activeNode, setActiveNode] = useState<D3Node | null>(null);
@@ -98,10 +98,10 @@ export default function Desk({
           });
         }}
         onSelect={handleTokenSelect}
-        onToggleFavorite={onToggleFavorite}
+        onToggleInterest={onToggleInterest}
         language={language}
         lemmaInfo={lemmaInfo}
-        favoriteKeys={favoriteKeys}
+        interestKeys={interestKeys}
       />
     </div>
   )
