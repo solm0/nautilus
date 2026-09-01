@@ -124,9 +124,17 @@ def sample_kwic(line_ids, lemma, pos, lang: str, max_k=KWIC_EXAMPLE_LIMIT):
     if pack_db is None:
         return []
 
+    # Only a small candidate pool is needed to return ``max_k`` examples.
+    # Sampling IDs first avoids loading and decoding every matching corpus line.
+    candidate_limit = max(max_k * 10, max_k)
+    candidate_ids = line_ids
+
+    if len(line_ids) > candidate_limit:
+        candidate_ids = random.sample(line_ids, candidate_limit)
+
     short, mid, long = [], [], []
 
-    for line in pack_db.get_lines(line_ids):
+    for line in pack_db.get_lines(candidate_ids):
         tokens = line["tokens"]
         length = len(tokens)
 

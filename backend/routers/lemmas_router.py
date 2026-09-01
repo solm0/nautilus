@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, List
 import httpx
 import os
@@ -37,7 +37,7 @@ class LookupRequest(BaseModel):
 
 
 class BatchRequest(BaseModel):
-    items: List[dict]
+    items: List[dict] = Field(max_length=100)
     language: str
 
 

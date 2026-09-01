@@ -406,7 +406,7 @@ export default function PackTable() {
                                     disabled={offline || isHiddenVersion || state.lemma_installed}
                                     className={`rounded-sm px-3 py-2 text-xs transition-colors ${
                                       state.lemma_installed
-                                        ? "bg-green-200 text-green-700/50"
+                                        ? "bg-green-100 text-green-700/50"
                                       : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-300 disabled:opacity-40 disabled:pointer-events-none"
                                     }`}
                                   >

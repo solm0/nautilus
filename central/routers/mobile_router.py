@@ -3,7 +3,7 @@ import time
 import unicodedata
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
 
 from db import get_db
@@ -16,14 +16,24 @@ from services.nlp_service import analyze_text
 router = APIRouter(prefix="/api/mobile", tags=["mobile"])
 logger = logging.getLogger(__name__)
 
+MAX_ANALYZE_BLOCKS = 100
+MAX_ANALYZE_CHARS = 50_000
+MAX_LOOKUP_BATCH_ITEMS = 100
+
 
 class Block(BaseModel):
-    text: str
+    text: str = Field(max_length=MAX_ANALYZE_CHARS)
 
 
 class AnalyzeRequest(BaseModel):
-    blocks: list[Block]
+    blocks: list[Block] = Field(max_length=MAX_ANALYZE_BLOCKS)
     language: str
+
+    @model_validator(mode="after")
+    def validate_total_chars(self):
+        if sum(len(block.text) for block in self.blocks) > MAX_ANALYZE_CHARS:
+            raise ValueError(f"analysis input exceeds {MAX_ANALYZE_CHARS} characters")
+        return self
 
 
 class LookupRequest(BaseModel):
@@ -33,7 +43,7 @@ class LookupRequest(BaseModel):
 
 
 class BatchLookupRequest(BaseModel):
-    items: list[dict]
+    items: list[dict] = Field(max_length=MAX_LOOKUP_BATCH_ITEMS)
     language: str
 
 

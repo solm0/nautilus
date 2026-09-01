@@ -37,3 +37,23 @@ def load_language(lang: str):
 
     _registry[lang] = config
     return config
+
+
+def invalidate_language(lang: str):
+    config = _registry.pop(lang, None)
+
+    if config:
+        pack_db = config.get("pack_db")
+
+        if hasattr(pack_db, "close"):
+            pack_db.close()
+
+    try:
+        module = importlib.import_module(f"language_config.{lang}")
+    except ModuleNotFoundError:
+        return
+
+    unload = getattr(module, "unload", None)
+
+    if callable(unload):
+        unload()

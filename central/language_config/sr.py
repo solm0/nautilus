@@ -65,3 +65,8 @@ def get_config(base_dir: Path):
         "pack_db": LanguagePackDB(db_path) if db_path else None,
         "db_path": db_path,
     }
+
+
+def unload():
+    global _nlp
+    _nlp = None
