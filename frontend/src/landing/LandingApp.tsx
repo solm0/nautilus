@@ -293,7 +293,7 @@ function LandingApp() {
 
           {/* 다운로드 */}
           <section className="min-h-180 shrink-0 pt-21 pb-21 flex flex-col gap-14">
-            {/* <h2 className="font-source text-4xl! pt-8">다운로드</h2> */}
+            {/* <h2 className="font-pretendard text-4xl! pt-8">다운로드</h2> */}
 
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-7">
@@ -372,7 +372,7 @@ function LandingApp() {
 
           {/* Demos */}
           <section id="demos" className="flex flex-col gap-7">
-            {/* <h2 className="font-source text-4xl! pt-8">기능</h2> */}
+            {/* <h2 className="font-pretendard text-4xl! pt-8">기능</h2> */}
 
             <div className="grid gap-6">
               <div className="flex w-full overflow-hidden">
@@ -419,7 +419,7 @@ function LandingApp() {
 
           {/* use */}
           <section id="use" className="flex flex-col gap-7">
-            {/* <h2 className="font-source text-4xl! pt-8">입력</h2> */}
+            {/* <h2 className="font-pretendard text-4xl! pt-8">입력</h2> */}
 
             <div className="flex gap-4 flex-col">
               <div className="flex gap-4">

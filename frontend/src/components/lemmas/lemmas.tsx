@@ -4,6 +4,7 @@ import { isNetworkError } from "../../network";
 import { Star } from "lucide-react"
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk, { type DeskHandle } from "../lemma_expansions/Desk";
+import KnownWordsMilestoneToast, { type KnownWordsMilestone } from "../lemma_expansions/KnownWordsMilestoneToast";
 import type { LemmaData } from "../pageTypes";
 import { useLayout } from "../RootLayout";
 import { useI18n } from "../../i18n";
@@ -45,6 +46,7 @@ export default function Lemmas(){
   } | null>(null);
   const [offline, setOffline] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [knownWordsMilestone, setKnownWordsMilestone] = useState<KnownWordsMilestone | null>(null);
   const mobileApp = isCapacitorApp();
   const { setTitlebarAction, setPanelOpen } = useLayout()
   const lastLemmaRef =
@@ -252,9 +254,14 @@ export default function Lemmas(){
             onToggleInterest={onInterestClick}
             language={currentLang!}
             interestKeys={interests}
+            onKnownWordsMilestone={setKnownWordsMilestone}
           />
         </ResponsiveSideLayout>
       }
+      <KnownWordsMilestoneToast
+        milestone={knownWordsMilestone}
+        onClose={() => setKnownWordsMilestone(null)}
+      />
     </div>
   )
 }

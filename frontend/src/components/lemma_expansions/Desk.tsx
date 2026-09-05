@@ -11,6 +11,9 @@ import type { TreeNode } from "../../types.ts";
 import type { LemmaData, UserLemmaState } from "../pageTypes.ts";
 import LemmaExpansionWrapper from "./LemmaExpansionWrapper.tsx";
 import { getLemmaProfile, updateLemmaState } from "../../api.ts";
+import { isCapacitorApp } from "../../platform.ts";
+import KnownWordsMilestoneToast, { type KnownWordsMilestone } from "./KnownWordsMilestoneToast.tsx";
+import { isKnownWordsMilestone } from "./knownWordMilestones.ts";
 
 const EXPOSURE_DELAY_MS = 750;
 const MAX_EXPOSURE_COUNT = 10;
@@ -25,6 +28,7 @@ type DeskProps = {
   language: string;
   lemmaInfo?: Record<string, LemmaData>;
   interestKeys?: Set<string>;
+  onKnownWordsMilestone?: (milestone: KnownWordsMilestone) => void;
 };
 
 function toGlobalKey(localKey: string, language: string) {
@@ -39,6 +43,7 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   language,
   lemmaInfo,
   interestKeys,
+  onKnownWordsMilestone,
 }, ref) {
   const breadcrumbRef = useRef<{ addNode: (parentLemma: string, newNode: TreeNode) => void }>(null);
   const [activeNode, setActiveNode] = useState<D3Node | null>(null);
@@ -47,7 +52,9 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   const [lemmaStatus, setLemmaStatus] = useState<Record<string, "loading" | "ready">>({});
   const [profile, setProfile] = useState<Record<string, UserLemmaState>>({});
   const [hasExplored, setHasExplored] = useState(false);
+  const [knownWordsMilestone, setKnownWordsMilestone] = useState<KnownWordsMilestone | null>(null);
   const profileRef = useRef(profile);
+  const knownCountsRef = useRef<Record<string, number>>({});
   const exposedThisSessionRef = useRef(new Set<string>());
   const prevActiveLemmaRef = useRef<string | null>(null);
 
@@ -58,7 +65,17 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   useEffect(() => {
     let cancelled = false;
     void getLemmaProfile().then((items) => {
-      if (!cancelled) setProfile(items);
+      if (cancelled) return;
+      const counts: Record<string, number> = {};
+      Object.values(items).forEach((item) => {
+        if (!item.is_known) return;
+        const itemLanguage = item.key.split("/").at(-1);
+        if (!itemLanguage) return;
+        counts[itemLanguage] = (counts[itemLanguage] ?? 0) + 1;
+      });
+      knownCountsRef.current = counts;
+      profileRef.current = items;
+      setProfile(items);
     });
     return () => { cancelled = true; };
   }, []);
@@ -112,12 +129,26 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
     };
     profileRef.current = { ...profileRef.current, [activeGlobalKey]: next };
     setProfile(profileRef.current);
+    const activeLanguage = activeGlobalKey.split("/").at(-1) ?? language;
+    const knownCount = (knownCountsRef.current[activeLanguage] ?? 0) + 1;
+    knownCountsRef.current = {
+      ...knownCountsRef.current,
+      [activeLanguage]: knownCount,
+    };
+    if (isKnownWordsMilestone(knownCount)) {
+      const milestone = { count: knownCount, language: activeLanguage };
+      if (isCapacitorApp() || window.innerWidth < 768) {
+        onKnownWordsMilestone?.(milestone);
+      } else {
+        setKnownWordsMilestone(milestone);
+      }
+    }
     const saved = await updateLemmaState(activeGlobalKey, { is_known: true });
     if (saved) {
       profileRef.current = { ...profileRef.current, [activeGlobalKey]: saved };
       setProfile(profileRef.current);
     }
-  }, [activeGlobalKey, interestKeys]);
+  }, [activeGlobalKey, interestKeys, language, onKnownWordsMilestone]);
 
   useImperativeHandle(ref, () => ({ markActiveKnown }), [markActiveKnown]);
 
@@ -154,7 +185,11 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-1 overflow-visible md:gap-0 md:overflow-hidden">
+    <div className="relative flex h-full w-full flex-col gap-1 overflow-visible md:gap-0 md:overflow-hidden">
+      <KnownWordsMilestoneToast
+        milestone={knownWordsMilestone}
+        onClose={() => setKnownWordsMilestone(null)}
+      />
       <div className={`grid shrink-0 overflow-hidden rounded-3xl bg-neutral-50 transition-[grid-template-rows,opacity] duration-300 md:grid-rows-[1fr] md:rounded-none md:opacity-100 ${
         hasExplored ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
       }`}>

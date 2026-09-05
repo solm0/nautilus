@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { isCapacitorApp } from "../../platform";
 import { useLayout } from "../RootLayout";
+import { MobileSwipeHint, MobileSwipeHintCard } from "./MobileSwipeHint";
+import { getMobileSwipeHintMotionStyle } from "./mobileSwipeHintMotion";
 
 type Props = {
   open: boolean;
@@ -16,10 +18,27 @@ const LEFT_NAV_WIDTH = 36;
 const PAGE_SIDEBAR_WIDTH = 256;
 const DESKTOP_REMAINDER = 160;
 const STORAGE_KEY = "lemma-side-layout-width";
+const SWIPE_HINT_DISMISSED_KEY = "lema_lemma_swipe_hint_dismissed";
 const SWIPE_DURATION_MS = 220;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function isSwipeHintDismissed() {
+  try {
+    return window.localStorage.getItem(SWIPE_HINT_DISMISSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function rememberSwipeHintDismissal() {
+  try {
+    window.localStorage.setItem(SWIPE_HINT_DISMISSED_KEY, "true");
+  } catch {
+    // The hint can still be dismissed for the current expansion.
+  }
 }
 
 function isInteractive(target: EventTarget | null) {
@@ -55,6 +74,8 @@ export default function ResponsiveSideLayout({
   const [mobileVisible, setMobileVisible] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [dismissing, setDismissing] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [hideSwipeHintPermanently, setHideSwipeHintPermanently] = useState(false);
   const gestureRef = useRef<{
     pointerId: number;
     startX: number;
@@ -87,12 +108,16 @@ export default function ResponsiveSideLayout({
   useEffect(() => {
     if (!isMobile || !open) {
       setMobileVisible(false);
+      setShowSwipeHint(false);
+      setHideSwipeHintPermanently(false);
       if (!open) setMobileMounted(false);
       return;
     }
     setMobileMounted(true);
     setDismissing(false);
     setDragX(0);
+    setHideSwipeHintPermanently(false);
+    setShowSwipeHint(!isSwipeHintDismissed());
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setMobileVisible(true));
     });
@@ -101,6 +126,7 @@ export default function ResponsiveSideLayout({
 
   const finishMobileClose = useCallback((direction: -1 | 0 | 1) => {
     if (dismissing) return;
+    if (showSwipeHint && hideSwipeHintPermanently) rememberSwipeHintDismissal();
     setDismissing(true);
     setMobileVisible(false);
     setDragX(direction * window.innerWidth * 1.15);
@@ -111,10 +137,15 @@ export default function ResponsiveSideLayout({
       setDragX(0);
       onClose();
     }, SWIPE_DURATION_MS);
-  }, [dismissing, onClose, onSwipeRight]);
+  }, [dismissing, hideSwipeHintPermanently, onClose, onSwipeRight, showSwipeHint]);
+
+  const dismissSwipeHint = useCallback(() => {
+    if (hideSwipeHintPermanently) rememberSwipeHintDismissal();
+    setShowSwipeHint(false);
+  }, [hideSwipeHintPermanently]);
 
   const onMobilePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (dismissing || isInteractive(event.target)) return;
+    if (showSwipeHint || dismissing || isInteractive(event.target)) return;
     gestureRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -214,17 +245,31 @@ export default function ResponsiveSideLayout({
   const rotation = clamp(dragX / 28, -12, 12);
   const scale = 1 - progress * 0.08;
   const cardOpacity = 1 - progress * 0.62;
+  const rightSwipeTintOpacity = dragX > 0 ? progress * 0.82 : 0;
+  const swipeHintStyle = getMobileSwipeHintMotionStyle(viewportWidth);
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000] overflow-hidden">
-      <button
-        aria-label="Close lemma"
-        className="absolute inset-0 h-full w-full bg-neutral-900 transition-opacity duration-200"
-        style={{ opacity: (mobileVisible ? 0.28 : 0) * (1 - progress) }}
-        onClick={() => finishMobileClose(0)}
-      />
+    <div className="fixed inset-0 z-[1000] overflow-hidden" style={swipeHintStyle}>
+      {showSwipeHint ? (
+        <MobileSwipeHint
+          checked={hideSwipeHintPermanently}
+          visible={mobileVisible}
+          onCheckedChange={setHideSwipeHintPermanently}
+          onClose={dismissSwipeHint}
+        />
+      ) : (
+        <button
+          aria-label="Close lemma"
+          className="absolute inset-0 h-full w-full bg-neutral-900 transition-opacity duration-200"
+          style={{ opacity: (mobileVisible ? 0.28 : 0) * (1 - progress) }}
+          onClick={() => finishMobileClose(0)}
+        />
+      )}
+
       <div
         className={`absolute left-1/2 top-[44%] w-[calc(100%-2rem)] max-w-lg touch-pan-y select-none transition-[transform,opacity] ${
+          showSwipeHint ? "cursor-default" : ""
+        } ${
           gestureRef.current?.horizontal ? "duration-0" : "duration-[220ms] ease-out"
         }`}
         style={{
@@ -236,7 +281,9 @@ export default function ResponsiveSideLayout({
         onPointerUp={onMobilePointerEnd}
         onPointerCancel={onMobilePointerEnd}
       >
-        {children}
+        <MobileSwipeHintCard active={showSwipeHint} tintOpacity={rightSwipeTintOpacity}>
+          {children}
+        </MobileSwipeHintCard>
       </div>
     </div>,
     document.body,

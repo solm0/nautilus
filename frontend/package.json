@@ -24,6 +24,7 @@
     "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.0.0",
     "@capacitor/preferences": "^7.0.0",
+    "@radix-ui/react-toast": "^1.2.23",
     "@tailwindcss/vite": "^4.2.4",
     "axios": "^1.15.2",
     "d3": "^7.9.0",

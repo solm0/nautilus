@@ -1,0 +1,108 @@
+@keyframes mobile-swipe-hint-card {
+  0%,
+  26.67%,
+  77.78%,
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(0) scale(1);
+  }
+
+  42.22%,
+  64.44% {
+    opacity: var(--mobile-swipe-hint-opacity);
+    transform: translateX(var(--mobile-swipe-hint-x)) rotate(var(--mobile-swipe-hint-rotation)) scale(var(--mobile-swipe-hint-scale));
+  }
+}
+
+@keyframes mobile-swipe-hint-touch {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateX(0) scale(0.82);
+  }
+
+  4.44%,
+  26.67% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) translateX(0) scale(1);
+  }
+
+  42.22% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) translateX(var(--mobile-swipe-hint-x)) scale(1);
+  }
+
+  64.44%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateX(var(--mobile-swipe-hint-x)) scale(1);
+  }
+}
+
+@keyframes mobile-swipe-hint-trail {
+  0%,
+  26.67% {
+    opacity: 0;
+    width: 1.625rem;
+  }
+
+  42.22% {
+    opacity: 0.65;
+    width: calc(var(--mobile-swipe-hint-x) + 1.625rem);
+  }
+
+  64.44%,
+  100% {
+    opacity: 0;
+    width: calc(var(--mobile-swipe-hint-x) + 1.625rem);
+  }
+}
+
+@keyframes mobile-swipe-hint-tint {
+  0%,
+  26.67%,
+  77.78%,
+  100% {
+    opacity: 0;
+  }
+
+  42.22%,
+  64.44% {
+    opacity: var(--mobile-swipe-hint-tint-opacity);
+  }
+}
+
+.mobile-swipe-hint-card {
+  transform-origin: center;
+  animation: mobile-swipe-hint-card 4.5s ease-in-out infinite;
+}
+
+.mobile-swipe-hint-touch {
+  opacity: 0;
+  animation: mobile-swipe-hint-touch 4.5s ease-in-out infinite;
+}
+
+.mobile-swipe-hint-trail {
+  opacity: 0;
+  width: 1.625rem;
+  transform: translateY(-50%);
+  animation: mobile-swipe-hint-trail 4.5s ease-in-out infinite;
+}
+
+.mobile-swipe-hint-tint {
+  opacity: 0;
+  animation: mobile-swipe-hint-tint 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-swipe-hint-card,
+  .mobile-swipe-hint-touch,
+  .mobile-swipe-hint-trail,
+  .mobile-swipe-hint-tint {
+    animation: none;
+  }
+
+  .mobile-swipe-hint-touch {
+    opacity: 0.6;
+    transform: translate(-50%, -50%);
+  }
+}

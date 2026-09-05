@@ -568,7 +568,7 @@ export default function PageContent({
             cursor: info ? "pointer" : "default",
           },
           className: `
-            font-source px-1 transition-all text-[18px] md:text-[20px]
+            font-pretendard px-1 transition-all text-[18px] md:text-[20px]
             ${info && 'hover:font-[600]'}
             ${isInPanelLemma ? 'font-bold' : ''}
             ${hasGapFillHighlight ? 'bg-neutral-300 after:absolute after:left-full after:top-0 after:h-full after:w-[var(--selection-gap-width,0px)] after:bg-neutral-300 after:content-[\"\"]' : ''}

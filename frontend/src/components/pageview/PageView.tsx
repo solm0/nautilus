@@ -14,6 +14,7 @@ import {
 import type { Annotation, LemmaData, TextAnalysisResult } from "../pageTypes";
 import ResponsiveSideLayout from "../util/ResponsiveSideLayout";
 import Desk, { type DeskHandle } from "../lemma_expansions/Desk";
+import KnownWordsMilestoneToast, { type KnownWordsMilestone } from "../lemma_expansions/KnownWordsMilestoneToast";
 import { useLayout } from "../RootLayout";
 import { type Pack } from "../setting/PackTable";
 import BlockingLoadingModal from "../util/BlockingLoadingModal";
@@ -60,6 +61,7 @@ export default function PageView() {
 
   const [panel, setPanel] = useState<SidePanelState>(null);
   const [language, setLanguage] = useState<string | null>(null);
+  const [knownWordsMilestone, setKnownWordsMilestone] = useState<KnownWordsMilestone | null>(null);
 
   const scrollRef = useRef<null | ((startIndex: number) => void)>(null);
   const deskRef = useRef<DeskHandle>(null);
@@ -434,6 +436,7 @@ export default function PageView() {
                 language={panel.language ?? language}
                 lemmaInfo={lemmaInfo}
                 interestKeys={interestKeys}
+                onKnownWordsMilestone={setKnownWordsMilestone}
               />
             )}
 
@@ -446,6 +449,10 @@ export default function PageView() {
           )}
         </>
       )}
+      <KnownWordsMilestoneToast
+        milestone={knownWordsMilestone}
+        onClose={() => setKnownWordsMilestone(null)}
+      />
     </div>
   );
 }

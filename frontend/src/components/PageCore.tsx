@@ -657,7 +657,7 @@ export default function PageCore({
           <div
             data-page-header="true"
             className={`
-              flex w-full max-w-[48em] flex-col gap-7 pb-14 select-text font-source
+              flex w-full max-w-[48em] flex-col gap-7 pb-14 select-text font-pretendard
               ${pageSource === 'lrclib' ? 'items-start text-left' : 'items-center text-center'}
             `}
             style={{ userSelect: "text", WebkitUserSelect: "text" }}

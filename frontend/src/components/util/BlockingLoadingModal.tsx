@@ -58,7 +58,7 @@ export default function BlockingLoadingModal({
           aria-busy={open}
         >
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-700" />
-          <p className="text-neutral-700 font-source">{t(message)}</p>
+          <p className="text-neutral-700 font-pretendard">{t(message)}</p>
         </div>
       </div>
     </div>
