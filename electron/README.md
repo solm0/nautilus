@@ -43,9 +43,9 @@ GitHub 저장소 웹사이트에서 아래 순서로 실행할 수 있습니다.
 
 아티팩트 이름:
 
-- `nautilus-electron-macos`
-- `nautilus-electron-windows`
-- `nautilus-electron-linux`
+- `lema-electron-macos`
+- `lema-electron-windows`
+- `lema-electron-linux`
 
 ## Hugging Face 업로드
 
@@ -82,7 +82,7 @@ https://huggingface.co/datasets/<HF_REPO_ID>/resolve/main/releases/desktop/<tag>
 예:
 
 ```text
-https://huggingface.co/datasets/yourname/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/nautilus-electron-windows/Nautilus%20Setup%201.0.0.exe
+https://huggingface.co/datasets/yourname/nautilus-releases/resolve/main/releases/desktop/app-desktop-v1.0.0/lema-electron-windows/Lema%20Setup%201.0.0.exe
 ```
 
 ## 로컬 빌드 명령

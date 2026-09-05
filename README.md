@@ -1,4 +1,4 @@
-# Nautilus Monorepo
+# Lema Monorepo
 
 이 저장소는 여러 실행 표면이 한 repo 안에 함께 있는 멀티앱 구조입니다.
 
@@ -113,25 +113,25 @@ keystore 파일은 바이너리라서 편집기로 열면 깨진 글자처럼 �
 keystore 생성 예:
 
 ```bash
-keytool -genkeypair -v -keystore nautilus-release.keystore -alias nautilus -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -keystore lema-release.keystore -alias lema -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 base64 문자열은 아래 명령의 출력값입니다.
 
 ```bash
-base64 -i nautilus-release.keystore
+base64 -i lema-release.keystore
 ```
 
 macOS에서 바로 클립보드로 보내려면:
 
 ```bash
-base64 -i nautilus-release.keystore | pbcopy
+base64 -i lema-release.keystore | pbcopy
 ```
 
 파일로 저장해서 확인하려면:
 
 ```bash
-base64 -i nautilus-release.keystore > nautilus-release.keystore.base64.txt
+base64 -i lema-release.keystore > lema-release.keystore.base64.txt
 ```
 
 GitHub 저장소 `Settings -> Secrets and variables -> Actions`에 아래 Secret을 추가합니다.

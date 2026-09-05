@@ -20,17 +20,17 @@ jobs:
           - os: macos-latest
             label: macOS
             target: mac
-            artifact_name: nautilus-electron-macos
+            artifact_name: lema-electron-macos
             artifact_glob: electron/dist-electron/*.dmg
           - os: windows-latest
             label: Windows
             target: win
-            artifact_name: nautilus-electron-windows
+            artifact_name: lema-electron-windows
             artifact_glob: electron/dist-electron/*.exe
           - os: ubuntu-latest
             label: Linux
             target: linux
-            artifact_name: nautilus-electron-linux
+            artifact_name: lema-electron-linux
             artifact_glob: electron/dist-electron/*.AppImage
 
     defaults:

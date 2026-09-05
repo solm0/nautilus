@@ -11,7 +11,7 @@ This scaffold adds a separate Chrome extension build without changing the existi
 
 - `extension/content.tsx`
   - Watches hovered elements on normal web pages
-  - Shows the small `nautilus` action button
+  - Shows the small `Lema` action button
   - Mounts a draggable, minimizable panel inside a `shadowRoot`
 - `extension/background.ts`
   - Proxies network requests so the content script does not depend on page CORS
@@ -23,8 +23,8 @@ This scaffold adds a separate Chrome extension build without changing the existi
 ## Current scope
 
 - Hover a text-heavy element
-- Click `nautilus`
-- Probe the local Nautilus server
+- Click `Lema`
+- Probe the local Lema server
 - If unavailable, show an install CTA to `nautilus.solmi.wiki`
 - If available, analyze the element and render tokens in the floating panel
 - Click a token to fetch lemma details
