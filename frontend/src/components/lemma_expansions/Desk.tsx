@@ -54,6 +54,7 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   const [hasExplored, setHasExplored] = useState(false);
   const [knownWordsMilestone, setKnownWordsMilestone] = useState<KnownWordsMilestone | null>(null);
   const profileRef = useRef(profile);
+  const profileLoadRef = useRef<Promise<Record<string, UserLemmaState>> | null>(null);
   const knownCountsRef = useRef<Record<string, number>>({});
   const exposedThisSessionRef = useRef(new Set<string>());
   const prevActiveLemmaRef = useRef<string | null>(null);
@@ -64,8 +65,9 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
 
   useEffect(() => {
     let cancelled = false;
-    void getLemmaProfile().then((items) => {
-      if (cancelled) return;
+    const profileLoad = getLemmaProfile();
+    profileLoadRef.current = profileLoad;
+    void profileLoad.then((items) => {
       const counts: Record<string, number> = {};
       Object.values(items).forEach((item) => {
         if (!item.is_known) return;
@@ -75,7 +77,7 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
       });
       knownCountsRef.current = counts;
       profileRef.current = items;
-      setProfile(items);
+      if (!cancelled) setProfile(items);
     });
     return () => { cancelled = true; };
   }, []);
@@ -116,7 +118,9 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
   }, [activeGlobalKey, interestKeys]);
 
   const markActiveKnown = useCallback(async () => {
-    if (!activeGlobalKey || profileRef.current[activeGlobalKey]?.is_known) return;
+    if (!activeGlobalKey) return;
+    await profileLoadRef.current;
+    if (profileRef.current[activeGlobalKey]?.is_known) return;
     const current = profileRef.current[activeGlobalKey];
     const next: UserLemmaState = {
       key: activeGlobalKey,

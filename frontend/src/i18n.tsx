@@ -127,7 +127,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Installed successfully.": "설치 성공",
     "Installed, but failed to refresh the language list.": "설치는 완료됐지만 언어 목록을 새로고침하지 못했습니다.",
     "I know this word": "아는 단어예요",
-    "Tell us which words you know.": "아는 단어를 알려주세요.",
+    "Swipe right if you know the word.": "아는 단어라면 오른쪽으로 밀어 주세요.",
     "We'll prioritize examples containing words you know.": "아는 단어가 포함된 예문을 우선해서 보여줘요.",
     "Don't show this again": "더 이상 보지 않기",
     "You marked {count} {language} words as known!": "{language} 단어 {count}개를 안다고 표시했어요!",

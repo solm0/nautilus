@@ -553,7 +553,7 @@ export async function getLemmaProfile(): Promise<Record<string, UserLemmaState>>
     const data = await response.json() as { items?: UserLemmaState[] };
     const items = Array.isArray(data.items) ? data.items : [];
     await cacheLemmaProfile(items);
-    return Object.fromEntries(items.map((item) => [item.key, item]));
+    return getOfflineLemmaProfile();
   } catch {
     return getOfflineLemmaProfile();
   }
