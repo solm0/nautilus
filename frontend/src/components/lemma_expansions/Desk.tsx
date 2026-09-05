@@ -168,7 +168,7 @@ const Desk = forwardRef<DeskHandle, DeskProps>(function Desk({
           />
         </div>
       </div>
-      <div className="h-[min(66vh,30rem)] min-h-0 overflow-hidden rounded-3xl bg-neutral-50 shadow-xl md:h-auto md:flex-1 md:rounded-none md:shadow-none">
+      <div className="h-[min(66vh,26rem)] min-h-0 overflow-hidden rounded-3xl bg-neutral-50 shadow-xl md:h-auto md:flex-1 md:rounded-none md:shadow-none">
         <LemmaExpansionWrapper
           activeNode={activeNode}
           lemmaDatas={lemmaDatas}

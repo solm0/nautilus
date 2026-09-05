@@ -47,9 +47,12 @@ export default function LanguagePackRequiredModal({
       await enableMobileLanguage(language);
       invalidateInstalledLanguagesCache();
       setActivationStatus("activated");
-      void Promise.resolve(onActivated?.()).catch((error) => {
+      try {
+        await onActivated?.();
+      } catch (error) {
         console.error("[language-pack] post-activation refresh failed:", error);
-      });
+      }
+      handleClose();
     } catch {
       setActivationStatus("error");
     }
@@ -62,11 +65,16 @@ export default function LanguagePackRequiredModal({
       : t("Activate");
 
   return (
-    <ResponsiveModal open={open} onClose={handleClose} usePortal={false}>
+    <ResponsiveModal
+      open={open}
+      onClose={handleClose}
+      dismissible={false}
+      usePortal={false}
+    >
       <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50">
         <h2 className="pr-6">
           {mobileApp
-            ? t("Activate {language} to continue.", {
+            ? t("Activate {language}?", {
                 language: t(LANG_MAP[language] ?? language),
               })
             : t("Install {language} pack to continue.", {

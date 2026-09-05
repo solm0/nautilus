@@ -16,6 +16,10 @@ declare namespace chrome {
     function connect(connectInfo?: { name?: string }): Port;
     function sendMessage(message: unknown): Promise<unknown>;
 
+    const onInstalled: {
+      addListener(callback: () => void): void;
+    };
+
     const onMessage: {
       addListener(
         callback: (

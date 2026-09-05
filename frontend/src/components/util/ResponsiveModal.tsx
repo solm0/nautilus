@@ -8,6 +8,7 @@ type Props = {
   onClose: () => void;
   children: React.ReactNode;
   big?: boolean;
+  dismissible?: boolean;
   closeOnBackdrop?: boolean;
   usePortal?: boolean;
 };
@@ -17,6 +18,7 @@ export function ResponsiveModal({
   onClose,
   children,
   big = false,
+  dismissible = true,
   closeOnBackdrop = true,
   usePortal = true,
 }: Props) {
@@ -62,14 +64,14 @@ export function ResponsiveModal({
   // ESC
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (dismissible && e.key === "Escape") onClose();
     }
     if (open) {
       document.addEventListener("keydown", onKey);
       setTranslateY(0);
     };
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [dismissible, onClose, open]);
 
   // body scroll lock
   useEffect(() => {
@@ -81,6 +83,7 @@ export function ResponsiveModal({
 
   // touch handlers
   function onTouchStart(e: React.TouchEvent) {
+    if (!dismissible) return;
     dragging.current = true;
     startY.current = e.touches[0].clientY;
   }
@@ -114,7 +117,7 @@ export function ResponsiveModal({
       <div
         className="absolute inset-0 bg-neutral-700 transition-opacity duration-200"
         style={{ opacity: overlayOpacity }}
-        onClick={closeOnBackdrop ? onClose : undefined}
+        onClick={dismissible && closeOnBackdrop ? onClose : undefined}
       />
 
       {/* content */}
@@ -145,19 +148,21 @@ export function ResponsiveModal({
               }
         }
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={isMobile ? onTouchStart : undefined}
-        onTouchMove={isMobile ? onTouchMove : undefined}
-        onTouchEnd={isMobile ? onTouchEnd : undefined}
+        onTouchStart={isMobile && dismissible ? onTouchStart : undefined}
+        onTouchMove={isMobile && dismissible ? onTouchMove : undefined}
+        onTouchEnd={isMobile && dismissible ? onTouchEnd : undefined}
       >
         {/* handle (mobile) */}
-        {isMobile && (
+        {isMobile && dismissible && (
           <div className="w-10 h-1 bg-neutral-200 rounded-full mx-auto mt-2 mb-7" />
         )}
 
         {/* header */}
-        <div className="absolute top-7 right-4 flex justify-end z-60">
-          <IconButton icon={<X size={18} />} onClick={onClose} />
-        </div>
+        {dismissible && (
+          <div className="absolute top-7 right-4 flex justify-end z-60">
+            <IconButton icon={<X size={18} />} onClick={onClose} />
+          </div>
+        )}
 
         <div className="p-4 pt-0">{children}</div>
       </div>

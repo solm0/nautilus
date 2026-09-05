@@ -9,15 +9,11 @@ import {
   EXTENSION_DEEPLINK_BASE,
   ExtensionRequestError,
   getInstalledLanguages,
-  isAuthenticated,
   type InstalledPack,
-  loginWithPassword,
-  logoutExtensionAuth,
   openInstallPage,
   openSavedPage,
   probeLocalApi,
   saveAnalyzedPage,
-  signupWithPassword,
 } from "./api";
 
 const PANEL_HOST_ID = "lema-extension-host";
@@ -73,58 +69,6 @@ function isExtensionReloadError(error: unknown) {
   return error instanceof Error && error.message.includes("Extension context invalidated");
 }
 
-function loginErrorMessage(error: unknown) {
-  if (isExtensionReloadError(error)) {
-    return "The extension was updated. Refresh this page and try again.";
-  }
-  if (isConnectionError(error)) {
-    return "Couldn’t connect. Check your connection and try again.";
-  }
-  if (error instanceof ExtensionRequestError) {
-    if (error.code === "invalid_credentials") {
-      return "The email or password is incorrect.";
-    }
-    if (error.code === "email_not_verified") {
-      return "Verify your email before logging in.";
-    }
-    if (error.status === 422) {
-      return "Enter a valid email address.";
-    }
-  }
-
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("invalid credentials")) {
-    return "The email or password is incorrect.";
-  }
-  if (message.includes("email not verified")) {
-    return "Verify your email before logging in.";
-  }
-  return "Couldn’t log in. Please try again.";
-}
-
-function signupErrorMessage(error: unknown) {
-  if (isExtensionReloadError(error)) {
-    return "The extension was updated. Refresh this page and try again.";
-  }
-  if (isConnectionError(error)) {
-    return "Couldn’t connect. Check your connection and try again.";
-  }
-  if (error instanceof ExtensionRequestError) {
-    if (error.code === "email_already_registered") {
-      return "An account with this email already exists.";
-    }
-    if (error.status === 422) {
-      return "Check your name, email, and password.";
-    }
-  }
-
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("email already registered")) {
-    return "An account with this email already exists.";
-  }
-  return "Couldn’t create your account. Please try again.";
-}
-
 function saveErrorMessage(error: unknown) {
   if (isExtensionReloadError(error)) {
     return "The extension was updated. Refresh this page and try again.";
@@ -141,17 +85,6 @@ function saveErrorMessage(error: unknown) {
     }
   }
   return "Couldn’t save this page. Please try again.";
-}
-
-function logoutErrorMessage(error: unknown) {
-  if (isExtensionReloadError(error)) {
-    return "The extension was updated. Refresh this page and try again.";
-  }
-  return "Couldn’t log out. Please try again.";
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function normalizeTextPreservingBreaks(text: string) {
@@ -361,133 +294,6 @@ async function waitForLocalApiReady() {
   return false;
 }
 
-function AuthModal({
-  authed,
-  busy,
-  mode,
-  message,
-  onClose,
-  onModeChange,
-  onLogin,
-  onLogout,
-  onSignup,
-}: {
-  authed: boolean;
-  busy: boolean;
-  mode: "login" | "signup";
-  message: string | null;
-  onClose: () => void;
-  onModeChange: (mode: "login" | "signup") => void;
-  onLogin: (email: string, password: string) => Promise<void>;
-  onLogout: () => Promise<void>;
-  onSignup: (name: string, email: string, password: string) => Promise<void>;
-}) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  return (
-    <div style={modalBackdropStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={eyebrowStyle}>Lema</div>
-            <h2 style={modalTitleStyle}>{authed ? "Account" : mode === "login" ? "Login" : "Create account"}</h2>
-          </div>
-          <button type="button" onClick={onClose} style={ghostButtonStyle}>
-            Close
-          </button>
-        </div>
-
-        {authed ? (
-          <div style={modalSectionStyle}>
-            <p style={modalParagraphStyle}>You are signed in. Save will open the desktop app on the new page.</p>
-            {message ? <p style={errorTextStyle}>{message}</p> : null}
-            <button type="button" onClick={() => void onLogout()} style={primaryButtonStyle} disabled={busy}>
-              {busy ? "Working..." : "Logout"}
-            </button>
-          </div>
-        ) : (
-          <form
-            style={authFormStyle}
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (mode === "login") {
-                void onLogin(email, password);
-              } else {
-                void onSignup(name, email, password);
-              }
-            }}
-          >
-            <div style={modalSectionStyle}>
-              <p style={modalParagraphStyle}>
-                {mode === "login"
-                  ? "Sign in to sync favorite lemmas across devices."
-                  : "Create your account here, then continue from the same page."}
-              </p>
-              {mode === "signup" ? (
-                <input
-                  type="text"
-                  placeholder="name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  style={inputStyle}
-                />
-              ) : null}
-              <input
-                type="email"
-                placeholder="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                style={inputStyle}
-                autoFocus
-              />
-              <input
-                type="password"
-                placeholder="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                style={inputStyle}
-              />
-              {message ? <p style={errorTextStyle}>{message}</p> : null}
-            </div>
-
-            <div style={buttonRowStyle}>
-              {mode === "login" ? (
-                <button
-                  type="submit"
-                  style={primaryButtonStyle}
-                  disabled={busy}
-                >
-                  {busy ? "Logging in..." : "Login"}
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  style={primaryButtonStyle}
-                  disabled={busy}
-                >
-                  {busy ? "Creating..." : "Create account"}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => onModeChange(mode === "login" ? "signup" : "login")}
-                style={ghostButtonStyle}
-                disabled={busy}
-              >
-                {mode === "login" ? "Create account" : "Back to login"}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function OverlayApp() {
   const hostRef = useRef<HTMLElement | null>(null);
   const rootRef = useRef<ShadowRoot | null>(null);
@@ -509,11 +315,6 @@ function OverlayApp() {
   const [languagesLoading, setLanguagesLoading] = useState(false);
   const [uiCollapsed, setUiCollapsed] = useState(true);
   const [collapsedHovered, setCollapsedHovered] = useState(false);
-  const [authed, setAuthed] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreviewElements, setDragPreviewElements] = useState<HTMLElement[]>([]);
@@ -534,16 +335,6 @@ function OverlayApp() {
     hostRef.current = document.getElementById(PANEL_HOST_ID) as HTMLElement | null;
     rootRef.current = hostRef.current?.shadowRoot ?? null;
 
-    let active = true;
-    void isAuthenticated().then((nextAuthed) => {
-      if (active) {
-        setAuthed(nextAuthed);
-      }
-    });
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -907,7 +698,6 @@ function OverlayApp() {
 
     setSaveBusy(true);
     setMessage("Waking the desktop app...");
-    setAuthMessage(null);
 
     try {
       const ready = await ensureLocalAppAvailable();
@@ -942,67 +732,6 @@ function OverlayApp() {
     }
   };
 
-  const handleLogin = async (email: string, password: string) => {
-    if (!email.trim() || !password.trim()) {
-      setAuthMessage("Enter your email and password.");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setAuthMessage("Enter a valid email address.");
-      return;
-    }
-
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      await loginWithPassword(email, password);
-      setAuthed(true);
-      setAuthOpen(false);
-
-    } catch (error) {
-      setAuthMessage(loginErrorMessage(error));
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const handleSignup = async (name: string, email: string, password: string) => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setAuthMessage("Enter your name, email, and password.");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setAuthMessage("Enter a valid email address.");
-      return;
-    }
-
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      await signupWithPassword(name, email, password);
-      setAuthMode("login");
-      setAuthMessage("Account created. Verify your email, then log in.");
-    } catch (error) {
-      setAuthMessage(signupErrorMessage(error));
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setAuthBusy(true);
-    setAuthMessage(null);
-    try {
-      await logoutExtensionAuth();
-      setAuthed(false);
-      setAuthOpen(false);
-    } catch (error) {
-      setAuthMessage(logoutErrorMessage(error));
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
   return (
     <>
       {hoveredRect ? <div style={makeOverlayStyle(hoveredRect, "hover")} /> : null}
@@ -1014,7 +743,7 @@ function OverlayApp() {
       ))}
 
       <div style={panelShellStyle}>
-        {uiCollapsed && !authOpen ? (
+        {uiCollapsed ? (
           <button
             type="button"
             onClick={() => setUiCollapsed(false)}
@@ -1034,7 +763,7 @@ function OverlayApp() {
         <div
           style={{
             ...panelCardStyle,
-            ...((authOpen || uiCollapsed) ? hiddenPanelCardStyle : null),
+            ...(uiCollapsed ? hiddenPanelCardStyle : null),
           }}
         >
           <div style={panelHeaderStyle}>
@@ -1220,42 +949,12 @@ function OverlayApp() {
             >
               {saveBusy ? "Saving..." : "Save"}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMessage(null);
-                setAuthOpen(true);
-              }}
-              style={ghostButtonStyle}
-              disabled={authBusy}
-            >
-              {authed ? "Account" : "Login"}
-            </button>
           </div>
 
           {message ? <p style={messageTextStyle}>{message}</p> : null}
         </div>
       </div>
 
-      {authOpen ? (
-        <AuthModal
-          authed={authed}
-          busy={authBusy}
-          mode={authMode}
-          message={authMessage}
-          onClose={() => {
-            setAuthOpen(false);
-            setAuthMessage(null);
-          }}
-          onModeChange={(mode) => {
-            setAuthMode(mode);
-            setAuthMessage(null);
-          }}
-          onLogin={handleLogin}
-          onLogout={handleLogout}
-          onSignup={handleSignup}
-        />
-      ) : null}
     </>
   );
 }
@@ -1537,84 +1236,6 @@ const messageTextStyle: CSSProperties = {
   fontSize: "12px",
   lineHeight: 1.5,
   color: "rgba(255,255,255,0.76)",
-};
-
-const modalBackdropStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 2147483647,
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "flex-end",
-  padding: "16px",
-  background: "rgba(3, 7, 18, 0.16)",
-};
-
-const modalCardStyle: CSSProperties = {
-  width: "min(360px, calc(100vw - 32px))",
-  borderRadius: "24px",
-  padding: "18px",
-  background: "rgba(17, 24, 39, 0.96)",
-  color: "#f8fafc",
-  border: "1px solid rgba(255,255,255,0.12)",
-  boxShadow: "0 28px 60px rgba(15, 23, 42, 0.34)",
-  display: "flex",
-  flexDirection: "column",
-  gap: "14px",
-  fontFamily: "ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif",
-  boxSizing: "border-box",
-};
-
-const modalHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "12px",
-};
-
-const modalTitleStyle: CSSProperties = {
-  margin: "4px 0 0",
-  fontSize: "24px",
-  lineHeight: 1.1,
-};
-
-const modalSectionStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px",
-};
-
-const authFormStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "14px",
-};
-
-const modalParagraphStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "14px",
-  lineHeight: 1.55,
-  color: "rgba(248,250,252,0.78)",
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  border: "2px solid rgba(250, 250, 250, 0.2)",
-  color: "#f8fafc",
-  borderRadius: "10px",
-  padding: "11px 12px",
-  fontSize: "14px",
-  background: "rgba(255,255,255,0.04)",
-  outline: "none",
-  boxSizing: "border-box",
-  maxWidth: "100%",
-};
-
-const errorTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "13px",
-  lineHeight: 1.5,
-  color: "#fca5a5",
 };
 
 function mountPanel() {

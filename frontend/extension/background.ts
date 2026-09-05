@@ -1,10 +1,18 @@
-const ALLOWED_REMOTE_ORIGINS = new Set([
-  "https://nautilus.solmi.wiki",
+const ALLOWED_FETCH_ORIGINS = new Set([
   "http://localhost:8010",
   "http://127.0.0.1:8010",
   "http://localhost:8000",
   "http://127.0.0.1:8000",
 ]);
+const ALLOWED_OPEN_ORIGINS = new Set(["https://nautilus.solmi.wiki"]);
+const LEGACY_AUTH_STORAGE_KEYS = [
+  "lema_extension_token",
+  "nautilus_extension_token",
+];
+
+async function purgeLegacyAuthStorage() {
+  await chrome.storage.local.remove(LEGACY_AUTH_STORAGE_KEYS);
+}
 
 function parseUrl(rawUrl: string) {
   try {
@@ -18,14 +26,14 @@ function isAllowedFetchUrl(rawUrl: string) {
   const parsed = parseUrl(rawUrl);
   if (!parsed) return false;
   if (!/^https?:$/.test(parsed.protocol)) return false;
-  return ALLOWED_REMOTE_ORIGINS.has(parsed.origin);
+  return ALLOWED_FETCH_ORIGINS.has(parsed.origin);
 }
 
 function isAllowedOpenUrl(rawUrl: string) {
   const parsed = parseUrl(rawUrl);
   if (!parsed) return false;
   if (parsed.protocol === "lema:") return true;
-  return isAllowedFetchUrl(rawUrl);
+  return /^https?:$/.test(parsed.protocol) && ALLOWED_OPEN_ORIGINS.has(parsed.origin);
 }
 
 type RequestMessage = {
@@ -103,6 +111,10 @@ if (chrome.action?.onClicked) {
     });
   });
 }
+
+chrome.runtime.onInstalled.addListener(() => {
+  void purgeLegacyAuthStorage();
+});
 
 chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   const message = rawMessage as ExtensionMessage;

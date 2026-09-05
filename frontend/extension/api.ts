@@ -8,10 +8,7 @@ const FALLBACK_LOCAL_APIS = [
   "http://localhost:8000/api",
   "http://127.0.0.1:8000/api",
 ];
-const DEFAULT_CENTRAL_API = "https://nautilus.solmi.wiki/api";
 const DEFAULT_DEEPLINK_BASE = "lema://page/";
-const TOKEN_STORAGE_KEY = "lema_extension_token";
-const LEGACY_TOKEN_STORAGE_KEY = "nautilus_extension_token";
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -42,10 +39,6 @@ const localApiCandidates = Array.from(
       .filter((value): value is string => typeof value === "string" && value.length > 0)
       .map(trimTrailingSlash),
   ),
-);
-
-export const EXTENSION_CENTRAL_API = trimTrailingSlash(
-  getEnv("VITE_EXTENSION_CENTRAL_API", DEFAULT_CENTRAL_API),
 );
 
 export const EXTENSION_DEEPLINK_BASE = getEnv(
@@ -164,100 +157,6 @@ async function parseResponse<T>(response: ExtensionResponse) {
   return JSON.parse(response.text) as T;
 }
 
-async function getToken() {
-  try {
-    const result = await chrome.storage.local.get([TOKEN_STORAGE_KEY, LEGACY_TOKEN_STORAGE_KEY]);
-    const token = result[TOKEN_STORAGE_KEY] ?? result[LEGACY_TOKEN_STORAGE_KEY];
-    if (!result[TOKEN_STORAGE_KEY] && typeof token === "string" && token.length > 0) {
-      await chrome.storage.local.set({ [TOKEN_STORAGE_KEY]: token });
-    }
-    return typeof token === "string" && token.length > 0 ? token : null;
-  } catch (error) {
-    if (isExtensionContextInvalidatedError(error)) {
-      return null;
-    }
-
-    throw error;
-  }
-}
-
-async function authHeaders() {
-  const token = await getToken();
-  if (!token) return {} as Record<string, string>;
-
-  return {
-    Authorization: `Bearer ${token}`,
-  } as Record<string, string>;
-}
-
-export async function isAuthenticated() {
-  const token = await getToken();
-  return Boolean(token);
-}
-
-export async function loginWithPassword(email: string, password: string) {
-  const response = await extensionFetch<{ access_token?: string; detail?: string | Array<{ msg?: string }> }>(
-    `${EXTENSION_CENTRAL_API}/login`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    },
-  );
-
-  if (!response?.access_token) {
-    const detail = response?.detail;
-    const message = Array.isArray(detail) ? detail[0]?.msg : detail;
-    throw new Error(message || "login failed");
-  }
-
-  try {
-    await chrome.storage.local.set({
-      [TOKEN_STORAGE_KEY]: response.access_token,
-    });
-  } catch (error) {
-    if (!isExtensionContextInvalidatedError(error)) {
-      throw error;
-    }
-  }
-
-  return response.access_token;
-}
-
-export async function signupWithPassword(name: string, email: string, password: string) {
-  const response = await extensionFetch<{ detail?: string | Array<{ msg?: string }> }>(
-    `${EXTENSION_CENTRAL_API}/signup`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password }),
-    },
-  );
-
-  if (response?.detail) {
-    const message = Array.isArray(response.detail)
-      ? response.detail[0]?.msg
-      : response.detail;
-    throw new Error(message || "signup failed");
-  }
-
-  return true;
-}
-
-export async function logoutExtensionAuth() {
-  try {
-    await chrome.storage.local.remove([TOKEN_STORAGE_KEY, LEGACY_TOKEN_STORAGE_KEY]);
-  } catch (error) {
-    if (!isExtensionContextInvalidatedError(error)) {
-      throw error;
-    }
-  }
-}
-
 export async function probeLocalApi() {
   for (const candidate of localApiCandidates) {
     const ok = await probeSpecificLocalApi(candidate);
@@ -361,11 +260,10 @@ export async function lookupBatch(blocks: TextBlock[], language: string) {
     return {} as Record<string, LemmaData>;
   }
 
-  return extensionFetchWithLocalFallback<Record<string, LemmaData>>("/lookup_batch", async () => ({
+  return extensionFetchWithLocalFallback<Record<string, LemmaData>>("/lookup_batch", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(await authHeaders()),
     },
     body: JSON.stringify({
       items,
@@ -375,11 +273,10 @@ export async function lookupBatch(blocks: TextBlock[], language: string) {
 }
 
 export async function lookupLemma(lemma: string, pos: string, language: string) {
-  return extensionFetchWithLocalFallback<LemmaData>("/lookup", async () => ({
+  return extensionFetchWithLocalFallback<LemmaData>("/lookup", () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(await authHeaders()),
     },
     body: JSON.stringify({
       lemma,
@@ -409,19 +306,6 @@ export async function saveAnalyzedPage(
       metadata: sourceUrl ? [sourceUrl] : [],
     }),
   }));
-}
-
-export async function setFavorite(globalKey: string, next: boolean) {
-  return extensionFetch(`${EXTENSION_CENTRAL_API}/lemma/favorite`, {
-    method: next ? "POST" : "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...(await authHeaders()),
-    },
-    body: JSON.stringify({
-      key: globalKey,
-    }),
-  });
 }
 
 export async function openInstallPage() {
