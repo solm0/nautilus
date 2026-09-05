@@ -29,6 +29,7 @@ import OfflineState from "../util/OfflineState";
 const lemmaInfoCache = new Map<string, Record<string, LemmaData>>();
 const lemmaAttemptedKeysCache = new Map<string, Set<string>>();
 const LEMMA_PREFETCH_BLOCK_MARGIN = 8;
+const MAX_LOOKUP_BATCH_ITEMS = 100;
 
 export type SidePanelState =
   | { type: "lemma"; data: LemmaData; language?: string }
@@ -209,6 +210,8 @@ export default function PageView() {
 
     for (let blockIndex = start; blockIndex <= end; blockIndex += 1) {
       const block = result.blocks[blockIndex];
+      const blockItems: { lemma: string; pos: string }[] = [];
+      const blockKeys = new Set<string>();
 
       block?.tokens?.forEach((token) => {
         const lookup = getLookupMorph(token, language);
@@ -219,9 +222,32 @@ export default function PageView() {
         if (attemptedKeys.has(key)) return;
         if (inflightLemmaKeysRef.current.has(key)) return;
         if (pendingKeys.has(key)) return;
+        if (blockKeys.has(key)) return;
 
-        pendingKeys.add(key);
-        pendingItems.push(lookup);
+        blockKeys.add(key);
+        blockItems.push(lookup);
+      });
+
+      if (blockItems.length === 0) continue;
+
+      // Keep normal requests at block (sentence) boundaries. The following
+      // render picks up this block after the current batch has completed.
+      if (pendingItems.length + blockItems.length > MAX_LOOKUP_BATCH_ITEMS) {
+        // A single block can itself exceed the server limit. Fetch the part
+        // that fits so it cannot block all prefetching for the page.
+        if (pendingItems.length === 0) {
+          const fittingItems = blockItems.slice(0, MAX_LOOKUP_BATCH_ITEMS);
+          fittingItems.forEach((item) => {
+            pendingItems.push(item);
+            pendingKeys.add(`${item.lemma}_${item.pos}`);
+          });
+        }
+        break;
+      }
+
+      blockItems.forEach((item) => {
+        pendingItems.push(item);
+        pendingKeys.add(`${item.lemma}_${item.pos}`);
       });
     }
 

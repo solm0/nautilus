@@ -126,6 +126,7 @@ const translations: Record<AppLocale, Record<string, string>> = {
     "Install languages to continue.": "계속하려면 언어를 설치하세요.",
     "Installed successfully.": "설치 성공",
     "Installed, but failed to refresh the language list.": "설치는 완료됐지만 언어 목록을 새로고침하지 못했습니다.",
+    "I know this word": "아는 단어예요",
     "Installation complete.": "설치가 완료되었습니다.",
     "Installation failed.": "설치에 실패했습니다.",
     "Installing {modelLabel}...": "{modelLabel} 설치 중...",

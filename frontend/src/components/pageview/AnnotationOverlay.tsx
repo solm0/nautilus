@@ -141,7 +141,7 @@ export default function AnnotationOverlay({
       style={mobile ? undefined : desktopStyle}
     >
       {mobile ? <button type="button" aria-label={t("Close")} className="absolute inset-0 bg-neutral-700/40" onClick={onClose} /> : null}
-      <div className={mobile ? "relative z-10 h-auto max-h-[calc(100vh-5rem)] w-full overflow-y-auto rounded-t-2xl bg-neutral-50 p-4 pb-7 shadow-xl" : "w-full"}>
+      <div className={mobile ? "relative z-10 h-auto min-h-30 max-h-[calc(100vh-5rem)] w-full overflow-y-auto rounded-t-2xl bg-neutral-50 p-5 pb-7 shadow-xl" : "w-full"}>
         {editing && annotation.type !== "emoji" ? (
           <AnnotationInput
             type={annotation.type}

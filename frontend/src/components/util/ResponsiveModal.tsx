@@ -11,6 +11,7 @@ type Props = {
   dismissible?: boolean;
   closeOnBackdrop?: boolean;
   usePortal?: boolean;
+  zIndex?: number;
 };
 
 export function ResponsiveModal({
@@ -21,6 +22,7 @@ export function ResponsiveModal({
   dismissible = true,
   closeOnBackdrop = true,
   usePortal = true,
+  zIndex,
 }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(open);
@@ -112,7 +114,10 @@ export function ResponsiveModal({
     : 0;
 
   const modalContent = (
-    <div className={`${usePortal ? "fixed" : "absolute"} inset-0 z-60 ${big && !isMobile && usePortal ? 'p-20' : ''}`}>
+    <div
+      className={`${usePortal ? "fixed" : "absolute"} inset-0 z-60 ${big && !isMobile && usePortal ? 'p-20' : ''}`}
+      style={zIndex === undefined ? undefined : { zIndex }}
+    >
       {/* overlay */}
       <div
         className="absolute inset-0 bg-neutral-700 transition-opacity duration-200"

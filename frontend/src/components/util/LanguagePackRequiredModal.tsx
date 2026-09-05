@@ -69,7 +69,7 @@ export default function LanguagePackRequiredModal({
       open={open}
       onClose={handleClose}
       dismissible={false}
-      usePortal={false}
+      zIndex={1100}
     >
       <div className="flex w-full max-w-sm flex-col gap-7 rounded-sm bg-neutral-50">
         <h2 className="pr-6">

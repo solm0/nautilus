@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Star } from "lucide-react";
 import LemmaKwic from "./LemmaKwic";
 import type { LemmaData } from "../pageTypes";
+import { useI18n } from "../../i18n";
 
 export default function LemmaExpansion({
   data,
@@ -22,6 +23,7 @@ export default function LemmaExpansion({
   isKnown: boolean;
   onMarkKnown: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [showKnownConfirmation, setShowKnownConfirmation] = useState(false);
   const confirmationTimerRef = useRef<number | null>(null);
@@ -99,7 +101,7 @@ export default function LemmaExpansion({
             onClick={handleKnownClick}
             disabled={showKnownConfirmation}
           >
-            {showKnownConfirmation ? <Check className="h-4 w-4 text-green-500" /> : "아는 단어예요"}
+            {showKnownConfirmation ? <Check className="h-4 w-4 text-green-500" /> : t("I know this word")}
           </button>
         )}
       </footer>

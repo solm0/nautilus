@@ -473,8 +473,10 @@ export default function LemmaKwic({
       </div>
 
       {loadingLemma && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm md:bottom-4">
-          {t("Fetching lemmas...")}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex h-12 items-center justify-center md:inset-x-auto md:bottom-4 md:left-1/2 md:h-auto md:w-max md:-translate-x-1/2">
+          <span className="rounded-full bg-neutral-50/90 px-3 py-1 text-xs text-neutral-500 shadow-sm backdrop-blur-sm">
+            {t("Fetching lemmas...")}
+          </span>
         </div>
       )}
 
