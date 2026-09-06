@@ -307,7 +307,7 @@ export default function LemmaKwic({
     () => lemmaInfo ?? {},
   );
   const [loadingLemma, setLoadingLemma] = useState(false);
-  const [misalignedRows, setMisalignedRows] = useState<Set<number>>(new Set());
+  const [showCenterButton, setShowCenterButton] = useState(false);
 
   const canSelectKey = (tokenKey: string) => {
     if (availableKeys[tokenKey] != null) {
@@ -328,7 +328,7 @@ export default function LemmaKwic({
   }, [data, language, lemma]);
 
   useEffect(() => {
-    setMisalignedRows(new Set());
+    setShowCenterButton(false);
   }, [data, lemma]);
 
   const lookupItems = useMemo(() => {
@@ -430,13 +430,16 @@ export default function LemmaKwic({
       className="relative flex h-full min-h-0 w-full overflow-hidden"
     >
       <div className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 bg-neutral-100/70 backdrop-blur-2xl transition-[opacity,transform] duration-200 ${
-        misalignedRows.size > 0
+        showCenterButton
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none -translate-y-2 opacity-0"
       }`}>
         <IconButton
           icon={<AlignCenterVertical className="w-4 h-4 md:w-3.5 md:h-3.5" />}
-          onClick={() => rowRefs.current.forEach((r) => r?.setCenter())}
+          onClick={() => {
+            setShowCenterButton(false);
+            rowRefs.current.forEach((r) => r?.setCenter());
+          }}
           title={t("Align center")}
         />
       </div>
@@ -461,12 +464,7 @@ export default function LemmaKwic({
             lemmaInfo={availableKeys}
             interestKeys={interestKeys}
             onMisalignedChange={(misaligned) => {
-              setMisalignedRows((prev) => {
-                const next = new Set(prev);
-                if (misaligned) next.add(i);
-                else next.delete(i);
-                return next;
-              });
+              if (misaligned) setShowCenterButton(true);
             }}
           />
         ))}
